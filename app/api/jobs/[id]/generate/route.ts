@@ -23,6 +23,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     return Response.json({ id, status: "completed" });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Generation failed.";
+    console.error("Course generation failed", { id, error });
     await writeJob({ id, status: "failed", error: message });
     return Response.json({ id, status: "failed", error: message }, { status: 502 });
   }

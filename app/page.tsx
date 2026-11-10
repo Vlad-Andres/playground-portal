@@ -49,7 +49,7 @@ export default function HomePage() {
     const timeout = window.setTimeout(() => controller.abort(), 120_000);
     try {
       const response = await fetch(`/api/jobs/${jobId}/generate`, { method: "POST", signal: controller.signal });
-      const body = (await response.json()) as { status?: string; error?: string };
+      const body = (await response.json().catch(() => ({}))) as { status?: string; error?: string };
       setStatus(body.status === "completed" ? "Your draft playground is ready." : body.error ?? "Generation failed.");
     } catch (error: unknown) {
       setStatus(error instanceof DOMException && error.name === "AbortError"
