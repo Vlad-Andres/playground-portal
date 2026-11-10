@@ -5,3 +5,4 @@ jobs/*
 .env*
 .vercel
 *.log
+*.tsbuildinfo

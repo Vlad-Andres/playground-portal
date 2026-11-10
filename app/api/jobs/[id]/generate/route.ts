@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { generateLecture } from "@/lib/gemini";
 import { jobDirectory, readJob, writeJob } from "@/lib/job";
 
@@ -16,7 +16,8 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
 
   await writeJob({ ...job, status: "running" });
   try {
-    const output = await generateLecture(`${jobDirectory(id)}/source.pdf`);
+    const brief = JSON.parse(await readFile(`${jobDirectory(id)}/brief.json`, "utf8"));
+    const output = await generateLecture(jobDirectory(id), brief);
     await writeFile(`${jobDirectory(id)}/lecture.json`, `${JSON.stringify(JSON.parse(output), null, 2)}\n`, { flag: "wx" });
     await writeJob({ id, status: "completed", output: "lecture.json" });
     return Response.json({ id, status: "completed" });
