@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useRef, useState } from "react";
 
 const steps = ["Materials", "Shape your site", "Review"];
 
@@ -8,6 +8,23 @@ export default function HomePage() {
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState("");
   const [jobId, setJobId] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  function chooseFiles(event: ChangeEvent<HTMLInputElement>) {
+    setSelectedFiles(Array.from(event.target.files ?? []));
+    setStatus("");
+  }
+
+  function removeFile(index: number) {
+    const remaining = selectedFiles.filter((_, fileIndex) => fileIndex !== index);
+    setSelectedFiles(remaining);
+    if (fileInput.current) {
+      const transfer = new DataTransfer();
+      remaining.forEach((file) => transfer.items.add(file));
+      fileInput.current.files = transfer.files;
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -20,7 +37,7 @@ export default function HomePage() {
     }
     setJobId(body.id);
     setStep(2);
-    setStatus("Your brief is ready to generate.");
+    setStatus(`${selectedFiles.length} ${selectedFiles.length === 1 ? "file" : "files"} uploaded securely. Your brief is ready to generate.`);
   }
 
   async function generate() {
@@ -65,11 +82,22 @@ export default function HomePage() {
             <span className="panel-hint">PDFs & images · up to 10 MB each</span>
           </div>
           <label className="dropzone">
-            <input name="material" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" multiple required />
+            <input ref={fileInput} name="material" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" multiple required onChange={chooseFiles} />
             <span className="upload-icon">↑</span>
-            <strong>Drop your files here</strong>
+            <strong>{selectedFiles.length ? "Materials selected" : "Drop your files here"}</strong>
             <span>or click to browse · PDF, PNG, JPG, WEBP</span>
           </label>
+          {selectedFiles.length > 0 ? (
+            <ul className="file-list" aria-label="Selected materials">
+              {selectedFiles.map((file, index) => (
+                <li key={`${file.name}-${file.lastModified}`}>
+                  <span className="file-type">{file.type === "application/pdf" ? "PDF" : "IMG"}</span>
+                  <span className="file-name"><b>{file.name}</b><small>{(file.size / 1024 / 1024).toFixed(2)} MB</small></span>
+                  <button type="button" onClick={() => removeFile(index)} aria-label={`Remove ${file.name}`}>×</button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <p className="helper">Upload lecture slides, reading notes, diagrams, or screenshots. The source files are used only to create your draft.</p>
         </section>
 
