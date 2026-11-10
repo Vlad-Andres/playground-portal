@@ -15,6 +15,18 @@ function list(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
+function object(value: unknown): JsonObject {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonObject : {};
+}
+
+function firstText(value: JsonObject, keys: string[]): string {
+  for (const key of keys) {
+    const candidate = text(value[key]);
+    if (candidate) return candidate;
+  }
+  return "";
+}
+
 function paragraphs(markdown: string) {
   return markdown.split(/\n{2,}/).filter(Boolean).map((paragraph, index) => (
     <p key={index}>{paragraph.replace(/^#+\s/, "")}</p>
@@ -34,9 +46,10 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
     notFound();
   }
 
-  const meta = (lecture.meta ?? lecture) as JsonObject;
-  const concepts = Array.isArray(lecture.concepts) ? lecture.concepts as JsonObject[] : [];
-  const sections = Array.isArray(lecture.sections) ? lecture.sections as JsonObject[] : [];
+  const content = object(lecture.lecture ?? lecture.course ?? lecture);
+  const meta = object(content.meta ?? content);
+  const concepts = Array.isArray(content.concepts) ? content.concepts : [];
+  const sections = Array.isArray(content.sections) ? content.sections.map(object) : [];
   const objectives = list(meta.objectives);
   const takeaways = list(meta.takeaways);
 
@@ -55,18 +68,25 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
       {concepts.length ? (
         <section className="course-section">
           <div className="course-section-label">Key concepts</div>
-          <div className="concept-grid">{concepts.map((concept, index) => <article className="concept-card" key={text(concept.id) || index}><b>{text(concept.term)}</b><p>{text(concept.short) || text(concept.detail)}</p></article>)}</div>
+          <div className="concept-grid">{concepts.map((rawConcept, index) => {
+            const concept = object(rawConcept);
+            const term = typeof rawConcept === "string" ? rawConcept : firstText(concept, ["term", "title", "name", "id"]);
+            const detail = typeof rawConcept === "string" ? "" : firstText(concept, ["short", "detail", "description", "summary"]);
+            return <article className="concept-card" key={term || index}><b>{term || "Key concept"}</b><p>{detail}</p></article>;
+          })}</div>
         </section>
       ) : null}
       <section className="course-content">
         {sections.map((section, index) => {
-          const blocks = Array.isArray(section.blocks) ? section.blocks as JsonObject[] : [];
+          const rawBlocks = Array.isArray(section.blocks) ? section.blocks : Array.isArray(section.content) ? section.content : [];
+          const blocks = rawBlocks.map(object);
           return <article className="lecture-section" key={text(section.id) || index}>
             <p className="course-section-label">Section {index + 1}</p>
-            <h2>{text(section.title) || "Lecture section"}</h2>
+            <h2>{firstText(section, ["title", "name", "heading"]) || "Lecture section"}</h2>
             {blocks.map((block, blockIndex) => {
               const kind = text(block.kind);
-              if (kind === "prose" || kind === "info") return <div className={`lecture-block ${kind}`} key={blockIndex}>{kind === "info" ? <b>{text(block.title)}</b> : null}{paragraphs(text(block.md))}</div>;
+              const markdown = firstText(block, ["md", "text", "content", "description"]);
+              if (kind === "prose" || kind === "info" || markdown) return <div className={`lecture-block ${kind || "prose"}`} key={blockIndex}>{kind === "info" ? <b>{firstText(block, ["title", "heading"])}</b> : null}{paragraphs(markdown)}</div>;
               if (kind === "list") return <ul className="lecture-list" key={blockIndex}>{list(block.items).map((item) => <li key={item}>{item}</li>)}</ul>;
               return null;
             })}
