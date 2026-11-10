@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { jobKey, readJob } from "@/lib/job";
 import { readStorageFile } from "@/lib/storage";
+import CourseRuntime from "./CourseRuntime";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -88,47 +89,6 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
   const objectives = list(meta.objectives);
   const takeaways = list(meta.takeaways);
 
-  return (
-    <main className="course-page">
-      <header className="course-header">
-        <a className="brand" href="/">✦ playground<span className="brand-dot">.</span></a>
-        <span className="course-badge">Draft playground</span>
-      </header>
-      <section className="course-hero">
-        <p className="eyebrow"><span className="eyebrow-line" /> Source-grounded course</p>
-        <h1>{text(meta.title) || "Generated course"}</h1>
-        <p className="course-subtitle">{text(meta.subtitle) || text(meta.summary)}</p>
-        {objectives.length ? <div className="course-callout"><b>What you will learn</b><ul>{objectives.map((item) => <li key={item}>{item}</li>)}</ul></div> : null}
-      </section>
-      {concepts.length ? (
-        <section className="course-section">
-          <div className="course-section-label">Key concepts</div>
-          <div className="concept-grid">{concepts.map((rawConcept, index) => {
-            const concept = object(rawConcept);
-            const term = typeof rawConcept === "string" ? rawConcept : firstText(concept, ["term", "title", "name", "label"]) || firstString(concept, ["id", "short", "detail", "description", "summary"]) || `Concept ${index + 1}`;
-            const detail = typeof rawConcept === "string" ? "" : firstText(concept, ["short", "detail", "description", "summary"]) || readable(rawConcept) || humanText(rawConcept);
-            return <article className="concept-card" key={term || index}><b>{term || "Key concept"}</b><p>{detail}</p></article>;
-          })}</div>
-        </section>
-      ) : null}
-      <section className="course-content">
-        {sections.map((section, index) => {
-          const rawBlocks = section.blocks ?? section.content ?? section.items;
-          const blocks = records(rawBlocks).map(object);
-          return <article className="lecture-section" key={text(section.id) || index}>
-            <p className="course-section-label">Section {index + 1}</p>
-            <h2>{firstText(section, ["title", "name", "heading", "sectionTitle"]) || humanText(section).slice(0, 120) || "Lecture section"}</h2>
-            {blocks.map((block, blockIndex) => {
-              const kind = text(block.kind);
-              const markdown = firstText(block, ["md", "text", "content", "description", "body"]) || firstString(block, ["kind", "title", "heading"]) || humanText(block);
-              if (kind === "prose" || kind === "info" || markdown) return <div className={`lecture-block ${kind || "prose"}`} key={blockIndex}>{kind === "info" ? <b>{firstText(block, ["title", "heading"])}</b> : null}{paragraphs(markdown)}</div>;
-              if (kind === "list") return <ul className="lecture-list" key={blockIndex}>{list(block.items).map((item) => <li key={item}>{item}</li>)}</ul>;
-              return null;
-            })}
-          </article>;
-        })}
-      </section>
-      {takeaways.length ? <section className="course-callout"><b>Takeaways</b><ul>{takeaways.map((item) => <li key={item}>{item}</li>)}</ul></section> : null}
-    </main>
-  );
+  const brief = await readStorageFile(jobKey(id, "brief.json")).then((value) => JSON.parse(value.toString("utf8"))).catch(() => ({}));
+  return <CourseRuntime id={id} title={text(meta.title)} subtitle={text(meta.subtitle) || text(meta.summary)} objectives={objectives} takeaways={takeaways} concepts={concepts} sections={sections} quiz={records(content.quiz).map(object)} examPreparation={brief.examPreparation === true} />;
 }
