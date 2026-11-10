@@ -50,6 +50,18 @@ function readable(value: unknown): string {
   return "";
 }
 
+function humanText(value: unknown, depth = 0): string {
+  if (depth > 3) return "";
+  if (typeof value === "string") return value.trim();
+  if (Array.isArray(value)) return value.map((item) => humanText(item, depth + 1)).filter(Boolean).join(" ");
+  if (!value || typeof value !== "object") return "";
+  return Object.entries(object(value))
+    .filter(([key]) => !["id", "kind", "type", "slug", "number"].includes(key))
+    .map(([, item]) => humanText(item, depth + 1))
+    .filter(Boolean)
+    .join(" ");
+}
+
 function paragraphs(markdown: string) {
   return markdown.split(/\n{2,}/).filter(Boolean).map((paragraph, index) => (
     <p key={index}>{paragraph.replace(/^#+\s/, "")}</p>
@@ -93,8 +105,8 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
           <div className="course-section-label">Key concepts</div>
           <div className="concept-grid">{concepts.map((rawConcept, index) => {
             const concept = object(rawConcept);
-            const term = typeof rawConcept === "string" ? rawConcept : firstText(concept, ["term", "title", "name", "label"]) || firstString(concept, ["id", "short", "detail", "description", "summary"]);
-            const detail = typeof rawConcept === "string" ? "" : firstText(concept, ["short", "detail", "description", "summary"]) || readable(rawConcept);
+            const term = typeof rawConcept === "string" ? rawConcept : firstText(concept, ["term", "title", "name", "label"]) || firstString(concept, ["id", "short", "detail", "description", "summary"]) || `Concept ${index + 1}`;
+            const detail = typeof rawConcept === "string" ? "" : firstText(concept, ["short", "detail", "description", "summary"]) || readable(rawConcept) || humanText(rawConcept);
             return <article className="concept-card" key={term || index}><b>{term || "Key concept"}</b><p>{detail}</p></article>;
           })}</div>
         </section>
@@ -105,10 +117,10 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
           const blocks = records(rawBlocks).map(object);
           return <article className="lecture-section" key={text(section.id) || index}>
             <p className="course-section-label">Section {index + 1}</p>
-            <h2>{firstText(section, ["title", "name", "heading"]) || "Lecture section"}</h2>
+            <h2>{firstText(section, ["title", "name", "heading", "sectionTitle"]) || humanText(section).slice(0, 120) || "Lecture section"}</h2>
             {blocks.map((block, blockIndex) => {
               const kind = text(block.kind);
-              const markdown = firstText(block, ["md", "text", "content", "description", "body"]) || firstString(block, ["kind", "title", "heading"]);
+              const markdown = firstText(block, ["md", "text", "content", "description", "body"]) || firstString(block, ["kind", "title", "heading"]) || humanText(block);
               if (kind === "prose" || kind === "info" || markdown) return <div className={`lecture-block ${kind || "prose"}`} key={blockIndex}>{kind === "info" ? <b>{firstText(block, ["title", "heading"])}</b> : null}{paragraphs(markdown)}</div>;
               if (kind === "list") return <ul className="lecture-list" key={blockIndex}>{list(block.items).map((item) => <li key={item}>{item}</li>)}</ul>;
               return null;
