@@ -20,7 +20,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     const output = await generateLecture(id, brief);
     await writeStorageFile(jobKey(id, "lecture.json"), `${JSON.stringify(JSON.parse(output), null, 2)}\n`, "application/json");
     await writeJob({ id, status: "completed", output: "lecture.json" });
-    return Response.json({ id, status: "completed" });
+    return Response.json({ id, status: "completed", previewUrl: `/courses/${id}` });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Generation failed.";
     console.error("Course generation failed", { id, error });

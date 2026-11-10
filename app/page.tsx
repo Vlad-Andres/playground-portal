@@ -8,6 +8,7 @@ export default function HomePage() {
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState("");
   const [jobId, setJobId] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
   const [generating, setGenerating] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -49,7 +50,8 @@ export default function HomePage() {
     const timeout = window.setTimeout(() => controller.abort(), 120_000);
     try {
       const response = await fetch(`/api/jobs/${jobId}/generate`, { method: "POST", signal: controller.signal });
-      const body = (await response.json().catch(() => ({}))) as { status?: string; error?: string };
+      const body = (await response.json().catch(() => ({}))) as { status?: string; error?: string; previewUrl?: string };
+      if (body.previewUrl) setPreviewUrl(body.previewUrl);
       setStatus(body.status === "completed" ? "Your draft playground is ready." : body.error ?? "Generation failed.");
     } catch (error: unknown) {
       setStatus(error instanceof DOMException && error.name === "AbortError"
@@ -147,6 +149,7 @@ export default function HomePage() {
           <button className="primary-button" type="submit">Create my playground <span>→</span></button>
           <p className="status" aria-live="polite">{status}</p>
           {jobId ? <button className="secondary-button" type="button" onClick={generate} disabled={generating}>{generating ? "Generating…" : "Generate draft now"}</button> : null}
+          {previewUrl ? <a className="preview-link" href={previewUrl}>Open your draft playground <span>→</span></a> : null}
         </section>
       </form>
 
