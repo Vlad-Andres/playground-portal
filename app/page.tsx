@@ -8,6 +8,7 @@ export default function HomePage() {
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState("");
   const [jobId, setJobId] = useState("");
+  const [generating, setGenerating] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -41,10 +42,23 @@ export default function HomePage() {
   }
 
   async function generate() {
+    if (!jobId || generating) return;
+    setGenerating(true);
     setStatus("Generation is starting…");
-    const response = await fetch(`/api/jobs/${jobId}/generate`, { method: "POST" });
-    const body = (await response.json()) as { status?: string; error?: string };
-    setStatus(body.status === "completed" ? "Your draft playground is ready." : body.error ?? "Generation failed.");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 120_000);
+    try {
+      const response = await fetch(`/api/jobs/${jobId}/generate`, { method: "POST", signal: controller.signal });
+      const body = (await response.json()) as { status?: string; error?: string };
+      setStatus(body.status === "completed" ? "Your draft playground is ready." : body.error ?? "Generation failed.");
+    } catch (error: unknown) {
+      setStatus(error instanceof DOMException && error.name === "AbortError"
+        ? "Generation timed out after two minutes. Check the deployment logs before trying again."
+        : "Generation could not be completed. Check the deployment logs.");
+    } finally {
+      window.clearTimeout(timeout);
+      setGenerating(false);
+    }
   }
 
   return (
@@ -132,7 +146,7 @@ export default function HomePage() {
           <div className="review-row"><span className="review-icon">◌</span><span><b>One careful generation</b><small>We use a cost-conscious model and validate every output.</small></span></div>
           <button className="primary-button" type="submit">Create my playground <span>→</span></button>
           <p className="status" aria-live="polite">{status}</p>
-          {jobId ? <button className="secondary-button" type="button" onClick={generate}>Generate draft now</button> : null}
+          {jobId ? <button className="secondary-button" type="button" onClick={generate} disabled={generating}>{generating ? "Generating…" : "Generate draft now"}</button> : null}
         </section>
       </form>
 
