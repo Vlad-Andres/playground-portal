@@ -133,6 +133,17 @@ export default function CourseRuntime(props: CourseRuntimeProps) {
             <h2>{firstText(section, ["title", "name", "heading", "sectionTitle"]) || humanText(section).slice(0, 120) || "Lecture section"}</h2>
             {blocks.map((block, blockIndex) => {
               const kind = text(block.kind);
+              if (kind === "figure") return <figure className="course-figure" key={blockIndex}><img src={text(block.src)} alt={text(block.alt)} /><figcaption>{text(block.caption)}</figcaption></figure>;
+              if (kind === "formula") return <div className="formula-block" key={blockIndex}><code>{text(block.tex)}</code>{text(block.caption) ? <small>{text(block.caption)}</small> : null}</div>;
+              if (kind === "code") return <pre className="code-block" key={blockIndex}><code>{text(block.code)}</code></pre>;
+              if (kind === "table") {
+                const headers = records(block.headers).map(String);
+                const rows = records(block.rows).map((row) => records(row).map(String));
+                return <div className="table-wrap" key={blockIndex}><table><thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}</tr>)}</tbody></table></div>;
+              }
+              if (kind === "steps") return <div className="steps-block" key={blockIndex}>{records(block.steps).map((rawStep, stepIndex) => { const step = object(rawStep); return <div key={stepIndex}><b>{stepIndex + 1}. {firstText(step, ["title", "name"])}</b>{paragraphs(firstText(step, ["md", "text", "content"]))}</div>; })}</div>;
+              if (kind === "timeline") return <div className="timeline-block" key={blockIndex}>{records(block.items).map((rawItem, itemIndex) => { const item = object(rawItem); return <div key={itemIndex}><b>{firstText(item, ["label", "title"])}</b>{paragraphs(firstText(item, ["md", "text", "content"]))}</div>; })}</div>;
+              if (kind === "recall") return <div className="recall-grid" key={blockIndex}>{records(block.cards).map((rawCard, cardIndex) => { const card = object(rawCard); return <details key={cardIndex}><summary>{firstText(card, ["prompt", "question"])}</summary><p>{firstText(card, ["answer", "response"])}</p></details>; })}</div>;
               if (kind === "list") return <ul className="lecture-list" key={blockIndex}>{records(block.items).map((item) => <li key={String(item)}>{humanText(item)}</li>)}</ul>;
               const content = blockText(block);
               return content ? <div className={`lecture-block ${kind || "prose"}`} key={blockIndex}>{kind === "info" ? <b>{firstText(block, ["title", "heading"])}</b> : null}{paragraphs(content)}</div> : null;
