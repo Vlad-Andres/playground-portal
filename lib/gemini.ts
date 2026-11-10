@@ -2,6 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { GoogleGenAI } from "@google/genai";
 import { readdir } from "node:fs/promises";
+import { jobKey } from "@/lib/job";
+import { readStorageFile } from "@/lib/storage";
 
 const model = process.env.GEMINI_MODEL ?? "gemini-3.1-flash-lite";
 const maxOutputBytes = 250 * 1024;
@@ -23,27 +25,42 @@ export interface GenerationBrief {
   interactiveWidgets: boolean;
 }
 
-export async function generateLecture(directory: string, brief: GenerationBrief): Promise<string> {
-  const files = (await readdir(directory)).filter((file) => file.startsWith("source-"));
-  if (files.length === 0) throw new Error("No source files were found.");
-  const totalBytes = (await Promise.all(files.map(async (file) => (await fs.stat(path.join(directory, file))).size)))
+export async function generateLecture(id: string, brief: GenerationBrief): Promise<string> {
+  const directory = path.join(process.cwd(), "jobs", id);
+  const files = process.env.BLOB_READ_WRITE_TOKEN
+    ? JSON.parse((await readStorageFile(jobKey(id, "manifest.json"))).toString("utf8")) as string[]
+    : (await readdir(directory)).filter((file) => file.startsWith("source-"));
+  const sourceFiles = process.env.BLOB_READ_WRITE_TOKEN
+    ? (await Promise.all(files.map(async (file) => {
+      try {
+        return { name: file, data: await readStorageFile(jobKey(id, file)) };
+      } catch {
+        return null;
+      }
+    }))).filter((file): file is { name: string; data: Buffer } => file !== null)
+    : await Promise.all(files.map(async (file) => ({ name: file, data: await fs.readFile(path.join(directory, file)) })));
+  if (sourceFiles.length === 0) throw new Error("No source files were found.");
+  const totalBytes = sourceFiles
+    .map((file) => file.data.byteLength)
     .reduce((total, size) => total + size, 0);
   if (totalBytes > maxInputBytes) throw new Error("Materials exceed the 10 MB generation limit.");
 
   const ai = new GoogleGenAI({ apiKey: apiKey() });
   const uploaded: { name?: string; uri?: string; mimeType?: string }[] = [];
   try {
-    for (const file of files) {
-      const filePath = path.join(directory, file);
-      const mimeType = file.endsWith(".pdf") ? "application/pdf" : `image/${path.extname(file).slice(1)}`;
+    for (const file of sourceFiles) {
+      const filePath = path.join("/tmp", `${id}-${file.name}`);
+      await fs.writeFile(filePath, file.data);
+      const mimeType = file.name.endsWith(".pdf") ? "application/pdf" : `image/${path.extname(file.name).slice(1)}`;
       const uploadedFile = (await ai.files.upload({
         file: filePath,
-        config: { mimeType, displayName: file },
+        config: { mimeType, displayName: file.name },
       })) as unknown as { name?: string; uri?: string; mimeType?: string };
       if (!uploadedFile.name || !uploadedFile.uri || !uploadedFile.mimeType) {
         throw new Error("Gemini upload returned incomplete metadata.");
       }
       uploaded.push(uploadedFile);
+      await fs.rm(filePath, { force: true });
     }
 
     const response = await ai.models.generateContent({

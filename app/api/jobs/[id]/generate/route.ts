@@ -1,6 +1,6 @@
-import { readFile, writeFile } from "node:fs/promises";
 import { generateLecture } from "@/lib/gemini";
-import { jobDirectory, readJob, writeJob } from "@/lib/job";
+import { jobKey, readJob, writeJob } from "@/lib/job";
+import { readStorageFile, writeStorageFile } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -16,9 +16,9 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
 
   await writeJob({ ...job, status: "running" });
   try {
-    const brief = JSON.parse(await readFile(`${jobDirectory(id)}/brief.json`, "utf8"));
-    const output = await generateLecture(jobDirectory(id), brief);
-    await writeFile(`${jobDirectory(id)}/lecture.json`, `${JSON.stringify(JSON.parse(output), null, 2)}\n`, { flag: "wx" });
+    const brief = JSON.parse((await readStorageFile(jobKey(id, "brief.json"))).toString("utf8"));
+    const output = await generateLecture(id, brief);
+    await writeStorageFile(jobKey(id, "lecture.json"), `${JSON.stringify(JSON.parse(output), null, 2)}\n`, "application/json");
     await writeJob({ id, status: "completed", output: "lecture.json" });
     return Response.json({ id, status: "completed" });
   } catch (error: unknown) {

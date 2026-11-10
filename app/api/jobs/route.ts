@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { writeStorageFile } from "@/lib/storage";
+import { jobKey } from "@/lib/job";
 
 export const runtime = "nodejs";
 const maxBytes = 10 * 1024 * 1024;
@@ -17,13 +17,16 @@ export async function POST(request: Request) {
   }
 
   const id = randomUUID();
-  const directory = path.join(process.cwd(), "jobs", id);
-  await mkdir(directory, { recursive: true });
   for (const [index, material] of materials.entries()) {
     const extension = material.type === "application/pdf" ? "pdf" : material.type.split("/")[1];
-    await writeFile(path.join(directory, `source-${index + 1}.${extension}`), Buffer.from(await material.arrayBuffer()), { flag: "wx" });
+    await writeStorageFile(jobKey(id, `source-${index + 1}.${extension}`), material, material.type);
   }
-  await writeFile(path.join(directory, "brief.json"), JSON.stringify({
+  const sourceNames = materials.map((material, index) => {
+    const extension = material.type === "application/pdf" ? "pdf" : material.type.split("/")[1];
+    return `source-${index + 1}.${extension}`;
+  });
+  await writeStorageFile(jobKey(id, "manifest.json"), JSON.stringify(sourceNames) + "\n", "application/json");
+  await writeStorageFile(jobKey(id, "brief.json"), JSON.stringify({
     context: String(form.get("context") ?? "").slice(0, 4000),
     language: String(form.get("language") ?? "en"),
     level: String(form.get("level") ?? "university"),
@@ -31,7 +34,7 @@ export async function POST(request: Request) {
     figures: form.get("figures") === "on",
     quizzes: form.get("quizzes") === "on",
     interactiveWidgets: form.get("interactiveWidgets") === "on",
-  }) + "\n", { flag: "wx" });
-  await writeFile(path.join(directory, "status.json"), JSON.stringify({ id, status: "accepted" }) + "\n", { flag: "wx" });
+  }) + "\n", "application/json");
+  await writeStorageFile(jobKey(id), JSON.stringify({ id, status: "accepted" }) + "\n", "application/json");
   return Response.json({ id, status: "accepted" }, { status: 202 });
 }
