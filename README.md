@@ -13,8 +13,9 @@ npm run dev
 
 The upload endpoint accepts PDFs and images up to 10 MB each. Without `BLOB_READ_WRITE_TOKEN`,
 jobs use the local `jobs/` directory for development. With the token configured, job files and
-status are stored in Vercel Blob so they survive serverless requests. `GET /api/jobs/:id` reads
-the accepted status.
+status are stored in Vercel Blob so they survive serverless requests. Source PDFs and images are
+deleted after generation, while the brief, status, and generated lecture remain. `GET /api/jobs/:id`
+reads the accepted status.
 
 ## Deployment
 

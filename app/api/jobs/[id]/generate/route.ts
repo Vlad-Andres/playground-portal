@@ -1,5 +1,5 @@
 import { generateLecture } from "@/lib/gemini";
-import { jobKey, readJob, writeJob } from "@/lib/job";
+import { deleteJobSources, jobKey, readJob, writeJob } from "@/lib/job";
 import { readStorageFile, writeStorageFile } from "@/lib/storage";
 
 export const runtime = "nodejs";
@@ -20,11 +20,21 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     const output = await generateLecture(id, brief);
     await writeStorageFile(jobKey(id, "lecture.json"), `${JSON.stringify(JSON.parse(output), null, 2)}\n`, "application/json");
     await writeJob({ id, status: "completed", output: "lecture.json" });
+    try {
+      await deleteJobSources(id);
+    } catch (cleanupError) {
+      console.error("Course source cleanup failed", { id, error: cleanupError });
+    }
     return Response.json({ id, status: "completed", previewUrl: `/courses/${id}` });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Generation failed.";
     console.error("Course generation failed", { id, error });
     await writeJob({ id, status: "failed", error: message });
+    try {
+      await deleteJobSources(id);
+    } catch (cleanupError) {
+      console.error("Course source cleanup failed", { id, error: cleanupError });
+    }
     return Response.json({ id, status: "failed", error: message }, { status: 502 });
   }
 }

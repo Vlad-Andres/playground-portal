@@ -1,4 +1,4 @@
-import { readStorageFile, writeStorageFile } from "@/lib/storage";
+import { deleteStorageFile, readStorageFile, writeStorageFile } from "@/lib/storage";
 
 export type JobStatus = "accepted" | "running" | "completed" | "failed";
 
@@ -23,4 +23,17 @@ export async function readJob(id: string): Promise<JobRecord | null> {
 
 export async function writeJob(job: JobRecord): Promise<void> {
   await writeStorageFile(jobKey(job.id), `${JSON.stringify(job)}\n`, "application/json");
+}
+
+export async function deleteJobSources(id: string): Promise<void> {
+  let files: string[];
+  try {
+    files = JSON.parse((await readStorageFile(jobKey(id, "manifest.json"))).toString("utf8")) as string[];
+  } catch {
+    files = [];
+  }
+  await Promise.all([
+    ...files.map((file) => deleteStorageFile(jobKey(id, file))),
+    deleteStorageFile(jobKey(id, "manifest.json")),
+  ]);
 }

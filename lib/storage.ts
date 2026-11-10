@@ -1,4 +1,4 @@
-import { get, put } from "@vercel/blob";
+import { del, get, put } from "@vercel/blob";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -43,4 +43,12 @@ export async function storageFileExists(key: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function deleteStorageFile(key: string): Promise<void> {
+  if (blobEnabled()) {
+    await del(key);
+    return;
+  }
+  await fs.rm(localPath(key), { force: true });
 }
