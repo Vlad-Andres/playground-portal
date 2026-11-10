@@ -14,7 +14,12 @@ function localPath(key: string): string {
 
 export async function writeStorageFile(key: string, body: BodyInit, contentType: string): Promise<void> {
   if (blobEnabled()) {
-    await put(key, Buffer.from(await new Response(body).arrayBuffer()), { access: "private", addRandomSuffix: false, contentType });
+    await put(key, Buffer.from(await new Response(body).arrayBuffer()), {
+      access: "private",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType,
+    });
     return;
   }
   const target = localPath(key);
