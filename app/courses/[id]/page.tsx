@@ -19,10 +19,33 @@ function object(value: unknown): JsonObject {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonObject : {};
 }
 
+function records(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === "object") return Object.values(value);
+  return [];
+}
+
 function firstText(value: JsonObject, keys: string[]): string {
   for (const key of keys) {
     const candidate = text(value[key]);
     if (candidate) return candidate;
+  }
+  return "";
+}
+
+function firstString(value: JsonObject, excluded: string[] = []): string {
+  for (const [key, candidate] of Object.entries(value)) {
+    if (excluded.includes(key)) continue;
+    if (typeof candidate === "string" && candidate.trim()) return candidate;
+  }
+  return "";
+}
+
+function readable(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object") {
+    const record = object(value);
+    return firstString(record, ["id", "kind", "type"]);
   }
   return "";
 }
@@ -48,8 +71,8 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
 
   const content = object(lecture.lecture ?? lecture.course ?? lecture);
   const meta = object(content.meta ?? content);
-  const concepts = Array.isArray(content.concepts) ? content.concepts : [];
-  const sections = Array.isArray(content.sections) ? content.sections.map(object) : [];
+  const concepts = records(content.concepts);
+  const sections = records(content.sections).map(object);
   const objectives = list(meta.objectives);
   const takeaways = list(meta.takeaways);
 
@@ -70,22 +93,22 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
           <div className="course-section-label">Key concepts</div>
           <div className="concept-grid">{concepts.map((rawConcept, index) => {
             const concept = object(rawConcept);
-            const term = typeof rawConcept === "string" ? rawConcept : firstText(concept, ["term", "title", "name", "id"]);
-            const detail = typeof rawConcept === "string" ? "" : firstText(concept, ["short", "detail", "description", "summary"]);
+            const term = typeof rawConcept === "string" ? rawConcept : firstText(concept, ["term", "title", "name", "label"]) || firstString(concept, ["id", "short", "detail", "description", "summary"]);
+            const detail = typeof rawConcept === "string" ? "" : firstText(concept, ["short", "detail", "description", "summary"]) || readable(rawConcept);
             return <article className="concept-card" key={term || index}><b>{term || "Key concept"}</b><p>{detail}</p></article>;
           })}</div>
         </section>
       ) : null}
       <section className="course-content">
         {sections.map((section, index) => {
-          const rawBlocks = Array.isArray(section.blocks) ? section.blocks : Array.isArray(section.content) ? section.content : [];
-          const blocks = rawBlocks.map(object);
+          const rawBlocks = section.blocks ?? section.content ?? section.items;
+          const blocks = records(rawBlocks).map(object);
           return <article className="lecture-section" key={text(section.id) || index}>
             <p className="course-section-label">Section {index + 1}</p>
             <h2>{firstText(section, ["title", "name", "heading"]) || "Lecture section"}</h2>
             {blocks.map((block, blockIndex) => {
               const kind = text(block.kind);
-              const markdown = firstText(block, ["md", "text", "content", "description"]);
+              const markdown = firstText(block, ["md", "text", "content", "description", "body"]) || firstString(block, ["kind", "title", "heading"]);
               if (kind === "prose" || kind === "info" || markdown) return <div className={`lecture-block ${kind || "prose"}`} key={blockIndex}>{kind === "info" ? <b>{firstText(block, ["title", "heading"])}</b> : null}{paragraphs(markdown)}</div>;
               if (kind === "list") return <ul className="lecture-list" key={blockIndex}>{list(block.items).map((item) => <li key={item}>{item}</li>)}</ul>;
               return null;
