@@ -66,3 +66,10 @@ describe("loadSite", () => {
     expect(await loadSite("unknown-abcd1234", memoryStore())).toBeNull();
   });
 });
+
+describe("next.config", () => {
+  it("serves the course UI's trailing-slash links without a redirect", async () => {
+    const { default: config } = await import("../next.config");
+    expect(config.skipTrailingSlashRedirect).toBe(true);
+  });
+});
