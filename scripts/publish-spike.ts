@@ -66,3 +66,4 @@ while (true) {
   process.stdout.write(`... still building (${checkDuration}s)\r`);
   await new Promise((r) => setTimeout(r, 5000));
 }
+

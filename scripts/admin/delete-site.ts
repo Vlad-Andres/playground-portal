@@ -57,3 +57,4 @@ if (response.status === 204) {
   console.error(`Failed to delete (HTTP ${response.status}): ${body}`);
   process.exit(1);
 }
+
