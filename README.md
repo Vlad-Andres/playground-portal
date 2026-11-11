@@ -1,10 +1,11 @@
 # Learning Playground Portal
 
-The portal turns course material into a validated bundle for
+The portal turns course material into an interactive study site and hosts it itself at
+`/courses/<course>-<id>/`, rendered with the UI of
 [playground-template](https://github.com/Vlad-Andres/playground-template). Text is extracted in
 the browser, then a short-lived job advances through planning, outline review, lecture writing,
-validation, packaging, and optional publishing. The portal does not create a GitHub repository
-for every course.
+validation and publishing. Courses are stored in the portal's private Blob store; nothing is
+published to GitHub and no repository is created for a course.
 
 ## Local development
 
@@ -26,8 +27,7 @@ npm run dev
 ```
 
 Open the site, enter the same access code, upload a small text-readable PDF, review the outline,
-and choose **Build my site**. The finished job provides a course bundle download until GitHub
-publishing is configured.
+and choose **Build my site**. The finished job links to the course at `/courses/<key>/`.
 
 ## Environment
 
@@ -40,8 +40,7 @@ Copy `.env.example` conceptually into your hosting configuration; do not commit 
 - `GEMINI_API_KEY`: server-side provider key.
 - `GEMINI_MODEL`: generation model, default `gemini-3.1-flash-lite`.
 - `BLOB_READ_WRITE_TOKEN`: private Vercel Blob storage token.
-- `CRON_SECRET`, `GITHUB_PUBLISH_TOKEN`, `GITHUB_PUBLISH_OWNER`, and `TEMPLATE_REPO` are
-  required only when the corresponding publishing/cleanup adapters are enabled.
+- `CRON_SECRET`: protects the daily cleanup of finished jobs (published courses are kept).
 
 ## Deployment
 
@@ -49,6 +48,5 @@ Connect the repository to Vercel with the Node.js runtime. Create a **private** 
 connect it to the project. Set the environment variables for Preview and Production. Keep
 `PORTAL_ENABLE_GENERATION=false` until the access code and budget limits have been configured.
 
-The current branch can package a validated course bundle. GitHub Pages publishing is the next
-adapter and requires an operator-owned GitHub account and token; it does not require learner
-GitHub accounts or one repository per course.
+Vercel deploys `main` to production. Users never see model names, token counts or internal files;
+those stay in the server logs.

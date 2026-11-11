@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { bundleSchema, cannedModel, type Brief } from "@core/generate/index";
 import { courseSchema, lectureFileSchema } from "@core/schema";
 import { validateCourseData } from "@core/validate";
-import { advanceHandler, bundleHandler, cleanupHandler, createJobHandler, getJobHandler, MAX_BODY_BYTES, outlineHandler } from "@/lib/api/handlers";
+import { advanceHandler, cleanupHandler, createJobHandler, getJobHandler, MAX_BODY_BYTES, outlineHandler } from "@/lib/api/handlers";
+import { jobKey } from "@/lib/jobs/state";
 import { memoryStore } from "@/lib/jobs/store";
 
 const CODE = "correct-horse-battery";
@@ -57,7 +58,6 @@ describe("job routes", () => {
 
     // wrong-state cases before the plan exists
     expect((await outlineHandler(id, new Request("http://x", { method: "PUT", body: "{}" }), store)).status).toBe(409);
-    expect((await bundleHandler(id, store)).status).toBe(409);
 
     let state = await (await advanceHandler(id, deps, env)).json();
     expect(state.status).toBe("awaiting-review");
@@ -73,11 +73,15 @@ describe("job routes", () => {
     expect((await outlined.json()).lecturesTotal).toBe(1);
 
     for (let i = 0; i < 10 && state.status !== "done"; i += 1) state = await (await advanceHandler(id, deps, env)).json();
-    expect(state).toMatchObject({ status: "done", bundleReady: true, lecturesDone: 1 });
+    expect(state).toMatchObject({ status: "done", lecturesDone: 1 });
+    // Learners and authors never see usage, models or internal files.
+    for (const body of [state, await (await getJobHandler(id, store)).json()]) {
+      expect(Object.keys(body)).not.toContain("usage");
+      expect(Object.keys(body)).not.toContain("bundleReady");
+      expect(JSON.stringify(body)).not.toMatch(/token|model|gemini/i);
+    }
 
-    const bundleResponse = await bundleHandler(id, store);
-    expect(bundleResponse.headers.get("content-disposition")).toContain("course-bundle.json");
-    const bundle = bundleSchema.parse(await bundleResponse.json());
+    const bundle = bundleSchema.parse(JSON.parse((await store.read(jobKey(id, "bundle.json"))) ?? "null"));
     const lectures = Object.entries(bundle.files).filter(([path]) => path.startsWith("lectures/"));
     expect(lectures).toHaveLength(1);
     const problems = validateCourseData({

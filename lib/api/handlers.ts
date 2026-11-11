@@ -68,7 +68,15 @@ export async function createJobHandler(request: Request, store: Store, env: Node
   return json({ id }, 202);
 }
 
-export type PublicJob = JobState & { outline?: { slug: string; title: string; summary: string }[] };
+/** What a job page may see: progress and the result, never usage, models or internal files. */
+export type PublicJob = Pick<JobState, "id" | "step" | "status" | "lecturesTotal" | "lecturesDone" | "attempts" | "error" | "siteUrl" | "createdAt" | "updatedAt"> & {
+  outline?: { slug: string; title: string; summary: string }[];
+};
+
+export function publicJob(state: JobState): PublicJob {
+  const { id, step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt } = state;
+  return { id, step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt };
+}
 
 function validId(id: string): boolean {
   return JOB_ID.test(id);
@@ -79,7 +87,7 @@ export async function getJobHandler(id: string, store: Store): Promise<Response>
   if (!validId(id)) return error("Invalid job id.", 400);
   const state = await readState(store, id);
   if (!state) return error("Job not found.", 404);
-  const result: PublicJob = { ...state };
+  const result: PublicJob = publicJob(state);
   if (state.status === "awaiting-review") {
     const plan = await loadPlan(store, id);
     result.outline = plan.lectures.map(({ slug, title, summary }) => ({ slug, title, summary }));
@@ -95,10 +103,10 @@ export async function advanceHandler(id: string, deps: () => AdvanceDeps, env: N
   try {
     resolved = deps();
   } catch {
-    return error("The model is not configured on this server.", 503);
+    return error("Course creation is not available right now.", 503);
   }
   if (!(await readState(resolved.store, id))) return error("Job not found.", 404);
-  return json(await advance(id, resolved));
+  return json(publicJob(await advance(id, resolved)));
 }
 
 const outlineSchema = z
@@ -130,25 +138,9 @@ export async function outlineHandler(id: string, request: Request, store: Store,
   await store.write(jobKey(id, "plan.json"), `${JSON.stringify(next)}\n`);
   const updated: JobState = { ...state, step: "lecture:1", status: "idle", lecturesTotal: lectures.length, lecturesDone: 0, attempts: 0, updatedAt: now.toISOString() };
   await store.write(jobKey(id, "state.json"), `${JSON.stringify(updated)}\n`);
-  return json(updated);
+  return json(publicJob(updated));
 }
 
-/** GET /api/jobs/:id/bundle */
-export async function bundleHandler(id: string, store: Store): Promise<Response> {
-  if (!validId(id)) return error("Invalid job id.", 400);
-  const state = await readState(store, id);
-  if (!state) return error("Job not found.", 404);
-  if (!state.bundleReady) return error("The course bundle is not ready yet.", 409);
-  const bundle = await store.read(jobKey(id, "bundle.json"));
-  if (!bundle) return error("The course bundle is no longer available.", 410);
-  return new Response(bundle, {
-    headers: {
-      "Content-Type": "application/json",
-      "Content-Disposition": 'attachment; filename="course-bundle.json"',
-      "Cache-Control": "no-store",
-    },
-  });
-}
 
 function secretMatches(header: string | null, secret: string | undefined): boolean {
   if (!secret || secret.length < 16 || !header) return false;
