@@ -8,3 +8,4 @@ jobs/*
 *.tsbuildinfo
 .data
 public/pdf.worker.min.mjs
+public/pglite/
