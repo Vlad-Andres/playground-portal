@@ -7,3 +7,4 @@ jobs/*
 *.log
 *.tsbuildinfo
 .data
+public/pdf.worker.min.mjs

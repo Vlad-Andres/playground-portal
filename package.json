@@ -8,12 +8,15 @@
     "start": "next start",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "sync:core": "node scripts/sync-core.mjs"
+    "sync:core": "node scripts/sync-core.mjs",
+    "predev": "node scripts/copy-pdf-worker.mjs",
+    "prebuild": "node scripts/copy-pdf-worker.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.24.0",
     "@vercel/blob": "^2.9.0",
     "next": "^16.4.6",
+    "pdfjs-dist": "^5.7.284",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "^4.6.7"
@@ -26,6 +29,6 @@
     "vitest": "^3.2.7"
   },
   "overrides": {
-    "zod": "^4.6.6"
+    "zod": "$zod"
   }
 }
