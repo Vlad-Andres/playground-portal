@@ -110,14 +110,16 @@ export async function loadPlan(store: Store, id: string): Promise<CoursePlan> {
 
 /** Short, user-safe text for an error (never a provider body or a key). */
 function safeMessage(error: unknown): string {
-  if (error instanceof BudgetExceeded) return "Generation budget reached.";
+  // Users never see providers, models or token counts; details stay in the server logs.
+  if (error instanceof BudgetExceeded) return "This course is too large to finish. Try fewer or shorter files.";
   const message = error instanceof Error ? error.message : "";
-  if (/^The course plan was invalid twice/.test(message)) return "The model returned an invalid course plan.";
-  if (message === "lecture produced no valid content") return "The model returned no usable content for this lecture.";
-  if (/^The lecture reply was not JSON/.test(message)) return "The model did not return JSON for this lecture.";
-  if (/^(Gemini|Model) request failed( \(HTTP \d+\))?\.$/.test(message)) return message;
+  if (/^The course plan was invalid twice/.test(message)) return "We could not plan this course. Please try again.";
+  if (message === "lecture produced no valid content" || /^The lecture reply was not JSON/.test(message)) {
+    return "We could not write this lecture. Please try again.";
+  }
+  if (/^(Gemini|Model) request failed( \(HTTP \d+\))?\.$/.test(message)) return "The service is busy. Please try again in a minute.";
   if (message === "The uploaded material is no longer available.") return message;
-  return "This step failed.";
+  return "This step failed. Please try again.";
 }
 
 /** Run exactly one step. Returns the state to save. */

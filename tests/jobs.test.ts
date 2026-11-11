@@ -109,25 +109,25 @@ describe("advance", () => {
     expect(state.status).toBe("failed");
   });
 
-  it("fails with 'Generation budget reached.' when the budget is used up", async () => {
+  it("fails with a plain message when the budget is used up", async () => {
     const { store, deps } = setup();
     const { id } = await createJob(store, { brief, materials }, deps.now());
     const state = await readState(store, id);
     await store.write(jobKey(id, "state.json"), JSON.stringify({ ...state, usage: { inputTokens: 600_000, outputTokens: 0, calls: 99 } }));
-    expect(await advance(id, deps)).toMatchObject({ status: "failed", error: "Generation budget reached." });
+    expect(await advance(id, deps)).toMatchObject({ status: "failed", error: "This course is too large to finish. Try fewer or shorter files." });
   });
 
   it("publishes and waits for the site when a publisher is configured", async () => {
     let checks = 0;
     const publisher: Publisher = {
-      start: async () => ({ repo: "owner/pg-x", commitSha: "abc" }),
-      check: async () => (++checks < 2 ? { state: "building" } : { state: "live", siteUrl: "https://owner.github.io/pg-x/" }),
+      start: async () => ({ repo: "demo-abcd1234", commitSha: "abc" }),
+      check: async () => (++checks < 2 ? { state: "building" } : { state: "live", siteUrl: "/courses/demo-abcd1234/" }),
     };
     const { store, deps } = setup();
     const { id } = await createJob(store, { brief, materials }, deps.now());
     const state = await advance(id, { ...deps, publish: publisher });
     await store.write(jobKey(id, "state.json"), JSON.stringify({ ...state, step: "lecture:1", status: "idle" }));
     const done = await run(id, { ...deps, publish: publisher });
-    expect(done).toMatchObject({ status: "done", siteUrl: "https://owner.github.io/pg-x/", bundleReady: true });
+    expect(done).toMatchObject({ status: "done", siteUrl: "/courses/demo-abcd1234/", bundleReady: true });
   });
 });

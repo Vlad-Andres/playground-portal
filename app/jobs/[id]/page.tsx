@@ -137,11 +137,6 @@ export default function JobPage() {
       <section className="job-hero">
         <div className="eyebrow"><span className="eyebrow-line" /> Building your study site</div>
         <h1 className="job-title">{job ? currentLabel(job) : "Loading…"}</h1>
-        {job ? (
-          <p className="job-usage">
-            {job.usage.calls} model calls · {(job.usage.inputTokens + job.usage.outputTokens).toLocaleString("en")} tokens used
-          </p>
-        ) : null}
       </section>
 
       <div className="job-grid">
@@ -227,17 +222,6 @@ export default function JobPage() {
               {job.siteUrl ? (
                 <a className="primary-button" href={job.siteUrl} target="_blank" rel="noreferrer">Open your site <span>→</span></a>
               ) : null}
-              {job.bundleReady ? (
-                <>
-                  <a className="secondary-button" href={`/api/jobs/${id}/bundle`} download>Download course bundle</a>
-                  <p className="helper">Preview it on your computer with the open-source template:</p>
-                  <pre className="commands">{`git clone https://github.com/Vlad-Andres/playground-template my-course
-cd my-course && npm install
-npm run import -- ~/Downloads/course-bundle.json && npm run dev`}</pre>
-                </>
-              ) : (
-                <p className="helper">The course bundle has been deleted.</p>
-              )}
             </div>
           ) : null}
         </section>
