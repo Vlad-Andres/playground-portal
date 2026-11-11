@@ -31,10 +31,22 @@ export default function HomePage() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus("Uploading your materials…");
-    const response = await fetch("/api/jobs", { method: "POST", body: new FormData(event.currentTarget) });
-    const body = (await response.json()) as { id?: string; error?: string };
+    let response: Response;
+    try {
+      response = await fetch("/api/jobs", { method: "POST", body: new FormData(event.currentTarget) });
+    } catch {
+      setStatus("Upload failed. Check your connection and try again.");
+      return;
+    }
+    let body: { id?: string; error?: string };
+    try {
+      body = (await response.json()) as { id?: string; error?: string };
+    } catch {
+      setStatus(`Upload failed (status ${response.status}).`);
+      return;
+    }
     if (!response.ok || !body.id) {
-      setStatus(body.error ?? "Upload failed.");
+      setStatus(body.error ?? `Upload failed (status ${response.status}).`);
       return;
     }
     setJobId(body.id);
@@ -70,7 +82,7 @@ export default function HomePage() {
           <span className="brand-mark">✦</span>
           <span>playground<span className="brand-dot">.</span></span>
         </a>
-        <span className="topbar-note">Private by default · source-grounded</span>
+        <span className="topbar-note">Invite-only beta</span>
       </header>
 
       <section className="hero">
@@ -95,7 +107,7 @@ export default function HomePage() {
         <section className={`panel ${step === 0 ? "" : "muted-panel"}`}>
           <div className="panel-heading">
             <div><span className="panel-kicker">01</span><h2>Bring your materials</h2></div>
-            <span className="panel-hint">PDFs & images · up to 10 MB each</span>
+            <span className="panel-hint">PDFs & images · up to 4 MB in total</span>
           </div>
           <label className="dropzone">
             <input ref={fileInput} name="material" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" multiple required onChange={chooseFiles} />
@@ -133,7 +145,7 @@ export default function HomePage() {
             </label>
           </div>
           <div className="option-grid">
-            <label className="option-card"><input name="examPreparation" type="checkbox" defaultChecked /><span><b>Exam preparation</b><small>Practice questions, expected topics, mock exam</small></span></label>
+            <label className="option-card"><input name="examPreparation" type="checkbox" defaultChecked /><span><b>Exam preparation</b><small>Focus the draft on exam practice</small></span></label>
             <label className="option-card"><input name="figures" type="checkbox" defaultChecked /><span><b>Use source figures</b><small>Keep helpful diagrams and illustrations</small></span></label>
             <label className="option-card"><input name="quizzes" type="checkbox" defaultChecked /><span><b>Quizzes & recall</b><small>Lightweight checks for understanding</small></span></label>
             <label className="option-card"><input name="interactiveWidgets" type="checkbox" /><span><b>Interactive widgets</b><small>Add only matching built-in interactions</small></span></label>
@@ -144,8 +156,9 @@ export default function HomePage() {
           <div className="panel-heading">
             <div><span className="panel-kicker">03</span><h2>Review & create</h2></div>
           </div>
-          <div className="review-row"><span className="review-icon">◈</span><span><b>Your files stay yours</b><small>Nothing is published until you review the result.</small></span></div>
-          <div className="review-row"><span className="review-icon">◌</span><span><b>One careful generation</b><small>We use a cost-conscious model and validate every output.</small></span></div>
+          <div className="review-row"><span className="review-icon">◈</span><span><b>Source files are deleted after generation</b><small>Only the generated draft is kept.</small></span></div>
+          <label className="field-label" htmlFor="accessCode">Access code</label>
+          <input id="accessCode" name="accessCode" type="password" autoComplete="off" required />
           <button className="primary-button" type="submit">Create my playground <span>→</span></button>
           <p className="status" aria-live="polite">{status}</p>
           {jobId ? <button className="secondary-button" type="button" onClick={generate} disabled={generating}>{generating ? "Generating…" : "Generate draft now"}</button> : null}

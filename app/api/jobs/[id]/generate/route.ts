@@ -1,14 +1,15 @@
 import { generateLecture } from "@/lib/gemini";
 import { deleteJobSources, jobKey, readJob, writeJob } from "@/lib/job";
 import { readStorageFile, writeStorageFile } from "@/lib/storage";
+import { generationEnabled } from "@/lib/guard";
 
 export const runtime = "nodejs";
 
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
   if (!/^[0-9a-f-]{36}$/.test(id)) return Response.json({ error: "Invalid job id." }, { status: 400 });
-  if (process.env.PORTAL_ENABLE_GENERATION !== "true") {
-    return Response.json({ error: "Generation is disabled. Set PORTAL_ENABLE_GENERATION=true on the server." }, { status: 503 });
+  if (!generationEnabled(process.env)) {
+    return Response.json({ error: "Generation is disabled on this server." }, { status: 503 });
   }
   const job = await readJob(id);
   if (!job) return Response.json({ error: "Job not found." }, { status: 404 });

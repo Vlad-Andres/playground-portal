@@ -22,3 +22,6 @@ h1 { color:var(--deep); font-size:clamp(2.7rem,6vw,5.3rem); letter-spacing:-.08e
 footer { color:#9aaa9f; font-size:.68rem; padding:28px 3px 0; } footer span { color:var(--orange); margin:0 5px; } footer a { color:var(--green); }
 @media (max-width:760px) { main { padding:20px 17px 40px; }.topbar-note { display:none; }.hero { padding:65px 0 35px; } h1 { font-size:3.1rem; }.builder { grid-template-columns:1fr; }.panel:first-child { grid-row:auto; }.dropzone { min-height:220px; }.stepper { gap:12px; }.step { font-size:.68rem; }.option-grid { grid-template-columns:1fr; } }
 @media (max-width:760px) { .course-header { padding-bottom:10px; }.course-badge { font-size:.62rem; }.course-hero { padding:45px 0 25px; }.concept-grid { grid-template-columns:1fr; }.lecture-section { padding:22px 19px; } }
+
+input[type="password"] { font:inherit; width:100%; border:1px solid var(--line); border-radius:10px; background:#fbfdfb; color:var(--ink); padding:11px 12px; outline:none; margin-bottom:14px; }
+input[type="password"]:focus { border-color:var(--green); }

@@ -1,4 +1,4 @@
-import { del, get, put } from "@vercel/blob";
+import { del, get, list, put } from "@vercel/blob";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -51,4 +51,24 @@ export async function deleteStorageFile(key: string): Promise<void> {
     return;
   }
   await fs.rm(localPath(key), { force: true });
+}
+
+/** Number of stored objects whose key starts with `prefix`. */
+export async function countStorageKeys(prefix: string): Promise<number> {
+  if (blobEnabled()) {
+    let count = 0;
+    let cursor: string | undefined;
+    do {
+      const page = await list({ prefix, cursor, limit: 1000 });
+      count += page.blobs.length;
+      cursor = page.hasMore ? page.cursor : undefined;
+    } while (cursor);
+    return count;
+  }
+  try {
+    const entries = await fs.readdir(localPath(prefix), { recursive: true, withFileTypes: true });
+    return entries.filter((entry) => entry.isFile()).length;
+  } catch {
+    return 0;
+  }
 }

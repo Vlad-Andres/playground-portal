@@ -1,13 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { GoogleGenAI } from "@google/genai";
-import { readdir } from "node:fs/promises";
 import { jobKey } from "@/lib/job";
 import { readStorageFile } from "@/lib/storage";
 
 const model = process.env.GEMINI_MODEL ?? "gemini-3.1-flash-lite";
 const maxOutputBytes = 250 * 1024;
-const maxInputBytes = 10 * 1024 * 1024;
+const maxInputBytes = 4 * 1024 * 1024;
 
 function apiKey(): string {
   const value = process.env.GEMINI_API_KEY;
@@ -26,24 +25,20 @@ export interface GenerationBrief {
 }
 
 export async function generateLecture(id: string, brief: GenerationBrief): Promise<string> {
-  const directory = path.join(process.cwd(), "jobs", id);
-  const files = process.env.BLOB_READ_WRITE_TOKEN
-    ? JSON.parse((await readStorageFile(jobKey(id, "manifest.json"))).toString("utf8")) as string[]
-    : (await readdir(directory)).filter((file) => file.startsWith("source-"));
-  const sourceFiles = process.env.BLOB_READ_WRITE_TOKEN
-    ? (await Promise.all(files.map(async (file) => {
-      try {
-        return { name: file, data: await readStorageFile(jobKey(id, file)) };
-      } catch {
-        return null;
-      }
-    }))).filter((file): file is { name: string; data: Buffer } => file !== null)
-    : await Promise.all(files.map(async (file) => ({ name: file, data: await fs.readFile(path.join(directory, file)) })));
+  // Read through the storage layer in both modes (local files live under jobs/<key>, see lib/storage.ts).
+  const files = JSON.parse((await readStorageFile(jobKey(id, "manifest.json"))).toString("utf8")) as string[];
+  const sourceFiles = (await Promise.all(files.map(async (file) => {
+    try {
+      return { name: file, data: await readStorageFile(jobKey(id, file)) };
+    } catch {
+      return null;
+    }
+  }))).filter((file): file is { name: string; data: Buffer } => file !== null);
   if (sourceFiles.length === 0) throw new Error("No source files were found.");
   const totalBytes = sourceFiles
     .map((file) => file.data.byteLength)
     .reduce((total, size) => total + size, 0);
-  if (totalBytes > maxInputBytes) throw new Error("Materials exceed the 10 MB generation limit.");
+  if (totalBytes > maxInputBytes) throw new Error("Materials exceed the 4 MB limit.");
 
   const ai = new GoogleGenAI({ apiKey: apiKey() });
   const uploaded: { name?: string; uri?: string; mimeType?: string }[] = [];
