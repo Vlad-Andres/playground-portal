@@ -22,3 +22,56 @@ h1 { color:var(--deep); font-size:clamp(2.7rem,6vw,5.3rem); letter-spacing:-.08e
 footer { color:#9aaa9f; font-size:.68rem; padding:28px 3px 0; } footer span { color:var(--orange); margin:0 5px; } footer a { color:var(--green); }
 @media (max-width:760px) { main { padding:20px 17px 40px; }.topbar-note { display:none; }.hero { padding:65px 0 35px; } h1 { font-size:3.1rem; }.builder { grid-template-columns:1fr; }.panel:first-child { grid-row:auto; }.dropzone { min-height:220px; }.stepper { gap:12px; }.step { font-size:.68rem; }.option-grid { grid-template-columns:1fr; } }
 @media (max-width:760px) { .course-header { padding-bottom:10px; }.course-badge { font-size:.62rem; }.course-hero { padding:45px 0 25px; }.concept-grid { grid-template-columns:1fr; }.lecture-section { padding:22px 19px; } }
+
+.text-input { width:100%; border:1px solid var(--line); border-radius:10px; background:#fbfdfb; color:var(--ink); padding:11px 12px; outline:none; font:inherit; }
+.text-input:focus { border-color:var(--green); }
+.field-set { border:0; padding:0; margin:0 0 16px; min-width:0; }
+.field-set legend { color:#52645b; font-size:.74rem; font-weight:800; margin-bottom:9px; }
+.option-grid.three { grid-template-columns:repeat(3, 1fr); }
+.swatches { display:flex; flex-wrap:wrap; gap:9px; }
+.swatch, .swatch-custom { width:30px; height:30px; border:2px solid transparent; border-radius:50%; cursor:pointer; }
+.swatch.selected { border-color:var(--deep); box-shadow:0 0 0 3px var(--paper); }
+.swatch-custom { background:conic-gradient(#f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00); }
+.swatch-custom input { opacity:0; width:100%; height:100%; cursor:pointer; }
+.helper-error, .file-error .file-name small { color:#b45345; }
+.file-error { border-color:#e4b7ae !important; background:#fff8f6 !important; }
+.review-label { color:#94b1a3; text-transform:uppercase; letter-spacing:.12em; font-size:.65rem; font-weight:900; }
+.job-page { max-width:1100px; }
+.job-hero { padding:68px 0 30px; max-width:780px; }
+.job-title { font-size:clamp(2rem,4vw,4rem); margin:17px 0 12px; }
+.job-usage { color:var(--muted); font-size:.75rem; }
+.job-grid { display:grid; grid-template-columns:250px 1fr; gap:16px; align-items:start; }
+.phase-list { list-style:none; display:grid; gap:15px; margin:0; padding:22px; }
+.phase-list li { color:#9aaa9f; display:flex; align-items:center; gap:10px; font-size:.78rem; font-weight:700; }
+.phase-list li.done, .phase-list li.current { color:var(--green); }
+.phase-list li.current { color:var(--deep); }
+.phase-list small { color:var(--muted); font-weight:500; }
+.phase-dot { width:25px; height:25px; display:grid; place-items:center; border:1px solid #c9d8cd; border-radius:50%; font-size:.7rem; flex:0 0 auto; }
+.phase-list li.done .phase-dot, .phase-list li.current .phase-dot { color:#fff; border-color:var(--green); background:var(--green); }
+.job-main { min-height:340px; }
+.outline h2 { color:var(--deep); margin-top:0; }
+.outline-list { list-style:none; display:grid; gap:10px; padding:0; margin:22px 0; }
+.outline-list li { display:flex; gap:11px; align-items:center; border:1px solid var(--line); border-radius:11px; padding:11px; }
+.outline-list li.removed { opacity:.5; }
+.outline-number { color:var(--green); font-size:.75rem; font-weight:900; width:22px; }
+.outline-body { min-width:0; display:grid; gap:6px; flex:1; }
+.outline-body small { color:var(--muted); font-size:.7rem; line-height:1.4; }
+.secondary-button.small { width:auto; margin:0; padding:9px 11px; font-size:.7rem; }
+.working { min-height:260px; display:grid; place-content:center; justify-items:center; gap:16px; text-align:center; color:var(--muted); }
+.spinner { width:34px; height:34px; border:3px solid var(--mint); border-top-color:var(--green); border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.retry, .finished { display:grid; gap:12px; }
+.finished { max-width:520px; }
+.commands { overflow:auto; white-space:pre-wrap; background:var(--deep); color:#e7f4eb; border-radius:10px; padding:14px; font-size:.72rem; line-height:1.55; }
+@media (max-width:760px) {
+  .job-hero { padding:48px 0 24px; }
+  .job-grid { grid-template-columns:1fr; }
+  .phase-list { grid-template-columns:repeat(2, 1fr); gap:11px; padding:16px; }
+  .phase-list li { font-size:.68rem; }
+  .option-grid.three { grid-template-columns:1fr; }
+  .outline-list li { align-items:flex-start; }
+  .outline-list .secondary-button { flex:0 0 auto; }
+}
+
+input[type="password"] { font:inherit; width:100%; border:1px solid var(--line); border-radius:10px; background:#fbfdfb; color:var(--ink); padding:11px 12px; outline:none; margin-bottom:14px; }
+input[type="password"]:focus { border-color:var(--green); }

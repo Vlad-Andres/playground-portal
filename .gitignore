@@ -6,3 +6,6 @@ jobs/*
 .vercel
 *.log
 *.tsbuildinfo
+.data
+public/pdf.worker.min.mjs
+public/pglite/
