@@ -7,3 +7,4 @@ export * from "./lint";
 export * from "./lecture";
 export * from "./finish";
 export * from "./bundle";
+export * from "./fake";
