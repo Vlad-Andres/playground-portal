@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CUSTOM_HTML_MAX } from "./custom";
 
 const identifier = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/);
 const courseId = z.string().regex(/^[a-z0-9][a-z0-9-]*$/);
@@ -192,6 +193,16 @@ const widgetBlockSchema = z
     props: z.record(z.string(), z.unknown()).optional(),
   })
   .strict();
+const customBlockSchema = z
+  .object({
+    kind: z.literal("custom"), source: blockSourceSchema.optional(),
+    id: identifier,
+    title: z.string().min(1).max(120),
+    description: z.string().min(1).max(300),
+    html: z.string().min(1).max(CUSTOM_HTML_MAX),
+    height: z.number().int().min(200).max(900).optional(),
+  })
+  .strict();
 
 export const blockSchema = z.discriminatedUnion("kind", [
   proseBlockSchema,
@@ -208,6 +219,7 @@ export const blockSchema = z.discriminatedUnion("kind", [
   recallBlockSchema,
   practiceBlockSchema,
   widgetBlockSchema,
+  customBlockSchema,
 ]);
 
 const lectureSectionSchema = z

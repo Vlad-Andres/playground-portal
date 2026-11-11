@@ -1,4 +1,5 @@
 import { blockSchema, type Block, type Course, type ExpectedTopic, type LectureFile } from "./schema";
+import { scanCustomHtml } from "./custom";
 import { widgetManifest, type WidgetType } from "./widgets";
 
 export interface Problem {
@@ -107,7 +108,9 @@ function selectAnswerProblems(block: Block): Problem[] {
 export function validateBlock(block: unknown): Problem[] {
   const result = blockSchema.safeParse(block);
   if (!result.success) return schemaProblems("", result.error.issues);
-  return result.data.kind === "widget" ? widgetProblems("", "", result.data) : selectAnswerProblems(result.data);
+  if (result.data.kind === "widget") return widgetProblems("", "", result.data);
+  if (result.data.kind === "custom") return scanCustomHtml(result.data.html);
+  return selectAnswerProblems(result.data);
 }
 
 function duplicateProblem(file: string, valuePath: string, value: string, kind: string): Problem {
@@ -182,6 +185,15 @@ export function checkLectureFile(file: string, data: LectureFile, figures: Reado
         });
       }
       if (block.kind === "widget") problems.push(...widgetProblems(file, blockPath, block));
+      if (block.kind === "custom") {
+        problems.push(
+          ...scanCustomHtml(block.html).map((problem) => ({
+            ...problem,
+            file,
+            path: `${blockPath}.${problem.path}`,
+          })),
+        );
+      }
       if (block.kind === "figure" && !figures.has(block.src)) {
         problems.push({
           code: "E106",

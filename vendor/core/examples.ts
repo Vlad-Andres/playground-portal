@@ -156,4 +156,17 @@ export const blockExamples: { [K in Block["kind"]]: BlockExample & { example: Ex
       source: src,
     },
   },
+  custom: {
+    use: "A self-contained HTML/CSS/JS exercise the widget catalogue does not cover, rendered in a sandboxed frame.",
+    avoid: "Anything that needs the network, storage, another page or the course's own JavaScript.",
+    example: {
+      kind: "custom",
+      id: "counter",
+      title: "Click counter",
+      description: "Press the button three times and watch the counter.",
+      html: "<button id=\"count\">0</button>\n<script>\nconst button = document.getElementById('count');\nlet count = 0;\nbutton.addEventListener('click', () => { count += 1; button.textContent = String(count); });\n</script>",
+      height: 240,
+      source: src,
+    },
+  },
 };
