@@ -1,6 +1,7 @@
 import { cannedModel, type ModelClient } from "@core/generate/index";
 import { geminiClient } from "@/lib/model";
 import { githubPublisher } from "@/lib/publish/github";
+import { portalPublisher } from "@/lib/publish/portal";
 import { defaultStore, type Store } from "./store";
 import type { AdvanceDeps } from "./steps";
 
@@ -17,14 +18,14 @@ function model(env: NodeJS.ProcessEnv): ModelClient {
 }
 
 export function runtimeDeps(env: NodeJS.ProcessEnv = process.env, store: Store = defaultStore()): AdvanceDeps {
-  return { store, model: model(env), now: () => new Date(), publish: publisherFromEnv(env) };
+  return { store, model: model(env), now: () => new Date(), publish: publisherFromEnv(env, store) };
 }
 
-/** The GitHub publisher, when GITHUB_PUBLISH_TOKEN, GITHUB_PUBLISH_OWNER and TEMPLATE_REPO are all set. */
-function publisherFromEnv(env: NodeJS.ProcessEnv): AdvanceDeps["publish"] {
+/** The GitHub publisher when GITHUB_PUBLISH_TOKEN, GITHUB_PUBLISH_OWNER and TEMPLATE_REPO are all set; otherwise the portal hosts the course. */
+function publisherFromEnv(env: NodeJS.ProcessEnv, store: Store): NonNullable<AdvanceDeps["publish"]> {
   const token = env.GITHUB_PUBLISH_TOKEN;
   const owner = env.GITHUB_PUBLISH_OWNER;
   const template = env.TEMPLATE_REPO;
-  if (!token || !owner || !template) return undefined;
+  if (!token || !owner || !template) return portalPublisher(store);
   return githubPublisher({ token, owner, template });
 }

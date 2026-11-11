@@ -18,7 +18,7 @@ import {
 } from "@core/generate/index";
 import { lectureFileSchema, type LectureFile } from "@core/schema";
 import type { Publisher } from "@/lib/publish/types";
-import { repoNameFor } from "@/lib/publish/names";
+import { courseKeyFor } from "@/lib/sites/store";
 import { claimAge, claimKey, claimStep, CLAIM_TTL_SECONDS } from "./claim";
 import { jobKey, lectureNumber, type JobState, type Step } from "./state";
 import type { Store } from "./store";
@@ -163,7 +163,7 @@ async function runStep(state: JobState, deps: AdvanceDeps, model: ModelClient): 
     const bundle = await readJson<{ files: Record<string, string> }>(store, jobKey(state.id, "bundle.json"));
     const plan = await loadPlan(store, state.id);
     if (!bundle) throw new Error("The course bundle is missing.");
-    const published = await deps.publish.start({ repoName: repoNameFor(plan.course.id, state.id), files: bundle.files });
+    const published = await deps.publish.start({ repoName: courseKeyFor(plan.course.id, state.id), files: bundle.files, jobId: state.id });
     await writeJson(store, jobKey(state.id, "publish.json"), published);
     return moveOn({});
   }
