@@ -6,3 +6,4 @@ jobs/*
 .vercel
 *.log
 *.tsbuildinfo
+.data

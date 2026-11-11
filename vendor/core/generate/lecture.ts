@@ -115,7 +115,7 @@ function fallbackMeta(planned: PlannedLecture, plan: CoursePlan, materials: Mate
 }
 
 function forceMeta(value: unknown, planned: PlannedLecture): unknown {
-  return { ...asObject(value), number: planned.number, slug: planned.slug };
+  return { ...asObject(value), number: planned.number, slug: planned.slug, title: planned.title };
 }
 
 async function askJson(model: ModelClient, system: string, user: string, maxOutputTokens: number): Promise<unknown | undefined> {
