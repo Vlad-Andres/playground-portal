@@ -61,7 +61,7 @@ export function blobStore(): Store {
 }
 
 /** Files under ./.data (development only). */
-export function localStore(root = path.join(process.cwd(), ".data")): Store {
+export function localStore(root = path.join(/* turbopackIgnore: true */ process.cwd(), ".data")): Store {
   const file = (key: string) => {
     const target = path.resolve(root, key);
     if (!target.startsWith(path.resolve(root) + path.sep)) throw new Error("Invalid storage key.");
