@@ -19,7 +19,7 @@ const sectionKind = z.enum([
   "summary",
 ]);
 
-const sectionOutlineSchema = z
+export const sectionOutlineSchema = z
   .object({ id: identifier, title: z.string(), kind: sectionKind })
   .strict();
 
@@ -97,7 +97,7 @@ const exerciseSchema = z
   })
   .strict();
 
-const exerciseSheetSchema = z
+export const exerciseSheetSchema = z
   .object({
     id: identifier,
     title: z.string(),
@@ -255,7 +255,7 @@ export const lectureFileSchema = z
 const expectedItemSchema = z
   .object({ id: identifier, title: z.string(), md: z.string() })
   .strict();
-const expectedTopicSchema = z
+export const expectedTopicSchema = z
   .object({
     id: identifier,
     lectures: z.string(),
