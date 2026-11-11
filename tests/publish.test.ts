@@ -154,6 +154,72 @@ describe("githubPublisher", () => {
       expect(refCall!.body).toMatchObject({ sha: COMMIT_SHA });
     });
 
+    it("does not delete a path that the bundle replaces", async () => {
+      let treeBody: { tree: { path: string; sha?: string | null; content?: string }[] } | undefined;
+
+      globalThis.fetch = mockFetch((url, init) => {
+        const method = init?.method ?? "GET";
+        const bodyStr = init?.body as string | undefined;
+
+        if (url.endsWith("/generate") && method === "POST") {
+          return new Response(JSON.stringify({ id: 1, name: REPO_NAME }), { status: 201 });
+        }
+        if (url === `${API}/repos/${OWNER}/${REPO_NAME}` && method === "GET") {
+          return new Response(JSON.stringify({ default_branch: "main" }), { status: 200 });
+        }
+        if (url === `${API}/repos/${OWNER}/${REPO_NAME}/pages` && method === "POST") {
+          return new Response(JSON.stringify({}), { status: 201 });
+        }
+        if (url.includes(`/git/trees/main:content`) && !url.includes("lectures") && method === "GET") {
+          return new Response(
+            JSON.stringify({
+              tree: [
+                { path: "course.json", type: "blob" },
+                { path: "lectures", type: "tree" },
+                { path: "exam.json", type: "blob" },
+                { path: "expected.json", type: "blob" },
+              ],
+            }),
+            { status: 200 },
+          );
+        }
+        if (url.includes(`/git/trees/main:content/lectures`) && method === "GET") {
+          return new Response(JSON.stringify({ tree: [{ path: "01-intro.json", type: "blob" }] }), { status: 200 });
+        }
+        if (url.includes(`/git/ref/heads/main`) && method === "GET") {
+          return new Response(JSON.stringify({ object: { sha: "base000" } }), { status: 200 });
+        }
+        if (url.includes(`/git/commits/base000`) && method === "GET") {
+          return new Response(JSON.stringify({ tree: { sha: "tree000" } }), { status: 200 });
+        }
+        if (url.endsWith(`/git/trees`) && method === "POST") {
+          treeBody = JSON.parse(bodyStr!) as typeof treeBody;
+          return new Response(JSON.stringify({ sha: "newtree" }), { status: 201 });
+        }
+        if (url.endsWith(`/git/commits`) && method === "POST") {
+          return new Response(JSON.stringify({ sha: COMMIT_SHA }), { status: 201 });
+        }
+        if (url.includes(`/git/refs/heads/main`) && method === "PATCH") {
+          return new Response(JSON.stringify({}), { status: 200 });
+        }
+        return new Response(JSON.stringify({ message: "Not found" }), { status: 404 });
+      });
+
+      const publisher = githubPublisher({ token: TOKEN, owner: OWNER, template: TEMPLATE });
+      await publisher.start({
+        repoName: REPO_NAME,
+        files: { ...validFiles, "exam.json": JSON.stringify({ meta: { slug: "exam" } }) },
+      });
+
+      const entries = treeBody!.tree;
+      const paths = entries.map((entry) => entry.path);
+      expect(new Set(paths).size).toBe(paths.length);
+
+      const examEntries = entries.filter((entry) => entry.path === "content/exam.json");
+      expect(examEntries).toHaveLength(1);
+      expect(examEntries[0].content).toBeDefined();
+    });
+
     it("refuses a file path containing ..", async () => {
       globalThis.fetch = mockFetch(() => new Response("{}", { status: 200 }));
       const publisher = githubPublisher({ token: TOKEN, owner: OWNER, template: TEMPLATE });

@@ -57,9 +57,13 @@ interface TreeEntry {
  */
 function treeEntries(files: Record<string, string>, deletePaths: string[]): TreeEntry[] {
   const entries: TreeEntry[] = [];
+  // A path that the bundle replaces must not also appear as a deletion: GitHub's tree API
+  // takes one entry per path, and a delete followed by an add leaves the result undefined.
+  const replaced = new Set(Object.keys(files));
 
   // Delete old content files
   for (const path of deletePaths) {
+    if (replaced.has(path)) continue;
     entries.push({ path: `content/${path}`, mode: "100644", type: "blob", sha: null });
   }
 
