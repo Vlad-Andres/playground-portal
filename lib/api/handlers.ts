@@ -128,18 +128,30 @@ export async function getJobHandler(id: string, store: Store): Promise<Response>
   return json(result);
 }
 
-/** POST /api/jobs/:id/advance */
-export async function advanceHandler(id: string, deps: () => AdvanceDeps, env: NodeJS.ProcessEnv, settings: Settings = DEFAULT_SETTINGS): Promise<Response> {
-  if (!validId(id)) return fail("bad-id");
-  if (!generationEnabled(env, settings)) return fail("generation-off");
+/** Whether the server should keep driving the job on its own after this step finished. */
+export function shouldChain(state: Pick<JobState, "status" | "error">): boolean {
+  // A step that just failed stays idle-with-error so the page's "Try again" decides; everything else waits for the user.
+  return state.status === "idle" && !state.error;
+}
+
+/** POST /api/jobs/:id/advance — like advanceHandler, but also returns the new state (null on an error response). */
+export async function advanceJob(id: string, deps: () => AdvanceDeps, env: NodeJS.ProcessEnv, settings: Settings = DEFAULT_SETTINGS): Promise<{ response: Response; state: JobState | null }> {
+  if (!validId(id)) return { response: fail("bad-id"), state: null };
+  if (!generationEnabled(env, settings)) return { response: fail("generation-off"), state: null };
   let resolved: AdvanceDeps;
   try {
     resolved = deps();
   } catch {
-    return fail("generation-off");
+    return { response: fail("generation-off"), state: null };
   }
-  if (!(await readState(resolved.store, id))) return fail("not-found");
-  return json(publicJob(await advance(id, resolved)));
+  if (!(await readState(resolved.store, id))) return { response: fail("not-found"), state: null };
+  const state = await advance(id, resolved);
+  return { response: json(publicJob(state)), state };
+}
+
+/** POST /api/jobs/:id/advance */
+export async function advanceHandler(id: string, deps: () => AdvanceDeps, env: NodeJS.ProcessEnv, settings: Settings = DEFAULT_SETTINGS): Promise<Response> {
+  return (await advanceJob(id, deps, env, settings)).response;
 }
 
 const outlineSchema = z
