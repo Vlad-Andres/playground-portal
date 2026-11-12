@@ -41,6 +41,7 @@ Copy `.env.example` conceptually into your hosting configuration; do not commit 
 - `GEMINI_MODEL`: generation model, default `gemini-3.1-flash-lite`.
 - `BLOB_READ_WRITE_TOKEN`: private Vercel Blob storage token.
 - `CRON_SECRET`: protects the daily cleanup of finished jobs (published courses are kept).
+- `ADMIN_TOKEN`: password for `/admin`, at least 24 characters. Without it `/admin` answers 404. Set it in Vercel for Production and redeploy; log in with it at `/admin` (the session lasts 8 hours).
 
 ## Deployment
 

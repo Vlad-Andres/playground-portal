@@ -1,0 +1,9 @@
+.page { max-width: 980px; padding-top: 40px; }
+.header { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.title { font-size: 2rem; letter-spacing: -.04em; margin: 0 0 18px; }
+.login { display: grid; gap: 10px; max-width: 360px; }
+.login label { font-weight: 800; font-size: .8rem; color: #52645b; }
+.login input { border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; font: inherit; background: #fbfdfb; }
+.login button, .ghost { border: 0; border-radius: 10px; padding: 11px 15px; font: inherit; font-weight: 800; cursor: pointer; background: var(--green); color: #fff; }
+.ghost { background: transparent; color: var(--green); border: 1px solid var(--line); }
+.error { color: #b45345; margin: 0; font-size: .8rem; }
