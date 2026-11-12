@@ -67,7 +67,7 @@ async function saveState(store: Store, state: JobState, now: Date): Promise<JobS
   return next;
 }
 
-export async function createJob(store: Store, input: { brief: Brief; materials: Material[] }, now: Date): Promise<{ id: string; state: JobState }> {
+export async function createJob(store: Store, input: { brief: Brief; materials: Material[]; codeId?: string }, now: Date): Promise<{ id: string; state: JobState }> {
   const id = randomUUID();
   await writeJson(store, jobKey(id, "brief.json"), input.brief);
   await writeJson(store, jobKey(id, "materials.json"), input.materials);
@@ -78,6 +78,7 @@ export async function createJob(store: Store, input: { brief: Brief; materials: 
     lecturesTotal: 0,
     lecturesDone: 0,
     attempts: 0,
+    ...(input.codeId ? { codeId: input.codeId } : {}),
     usage: { inputTokens: 0, outputTokens: 0, calls: 0 },
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),

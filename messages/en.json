@@ -147,5 +147,52 @@
     "f6": "Works on phones, in light and dark mode",
     "closingTitle": "Ready when your materials are.",
     "footer": "Built for thoughtful studying · No account required for learners"
+  },
+  "manage": {
+    "title": "Edit your site",
+    "lead": "Change the title, the texts and the structure of your site. Changes appear on the live site as soon as you save.",
+    "siteTitle": "Site title",
+    "description": "Description",
+    "accent": "Accent colour",
+    "lecturesTitle": "Lectures",
+    "lectureTitle": "Lecture title",
+    "removeLecture": "Remove this lecture",
+    "removeBlock": "Remove",
+    "markdown": "Text (Markdown)",
+    "save": "Save changes",
+    "saved": "Saved.",
+    "nothingChanged": "Nothing to save.",
+    "openSite": "Open your site",
+    "deleteTitle": "Delete this site",
+    "deleteText": "This removes the site and your private link. It cannot be undone.",
+    "deleteButton": "Delete this site",
+    "deleteConfirm": "Delete this site? This cannot be undone.",
+    "kinds": {
+      "prose": "Text",
+      "info": "Note",
+      "concepts": "Concepts",
+      "formula": "Formula",
+      "code": "Code",
+      "table": "Table",
+      "figure": "Figure",
+      "steps": "Steps",
+      "timeline": "Timeline",
+      "list": "List",
+      "exercises": "Exercises",
+      "recall": "Flashcards",
+      "practice": "Practice",
+      "widget": "Interactive exercise",
+      "custom": "Custom exercise"
+    },
+    "errors": {
+      "unknown-lecture": "That lecture no longer exists. Reload the page.",
+      "unknown-block": "That block no longer exists. Reload the page.",
+      "not-editable": "That block can only be removed, not edited.",
+      "last-lecture": "Keep at least one lecture.",
+      "empty-lecture": "A lecture cannot be left empty. Remove the whole lecture instead.",
+      "invalid": "These changes would make the site invalid, so nothing was saved.",
+      "not-found": "This edit link is no longer valid.",
+      "bad-request": "Something in the changes was not valid. Check the fields and try again."
+    }
   }
 }

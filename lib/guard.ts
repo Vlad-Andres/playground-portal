@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import { DEFAULT_SETTINGS, type Settings } from "./settings";
 
 export const LANGUAGES = ["en", "nl", "de", "fr", "es", "it", "pt", "ro", "pl"] as const;
 export const LEVELS = ["school", "university", "professional"] as const;
@@ -7,9 +8,9 @@ export type Level = (typeof LEVELS)[number];
 
 const MIN_CODE_LENGTH = 12;
 
-/** Generation runs only when the flag is on AND an access code of 12+ characters is configured. */
-export function generationEnabled(env: NodeJS.ProcessEnv): boolean {
-  return env.PORTAL_ENABLE_GENERATION === "true" && (env.PORTAL_ACCESS_CODE ?? "").length >= MIN_CODE_LENGTH;
+/** Generation runs only when the flag is on, an access code of 12+ characters is configured, and the admin has not paused it. */
+export function generationEnabled(env: NodeJS.ProcessEnv, settings: Settings = DEFAULT_SETTINGS): boolean {
+  return env.PORTAL_ENABLE_GENERATION === "true" && (env.PORTAL_ACCESS_CODE ?? "").length >= MIN_CODE_LENGTH && !settings.generationPaused;
 }
 
 function digest(value: string): Buffer {

@@ -1,5 +1,6 @@
 import { cannedModel, type ModelClient } from "@core/generate/index";
 import { geminiClient } from "@/lib/model";
+import { DEFAULT_SETTINGS, type Settings } from "@/lib/settings";
 import { defaultStore, type Store } from "./store";
 import type { AdvanceDeps } from "./steps";
 
@@ -8,14 +9,14 @@ export function useFakeModel(env: NodeJS.ProcessEnv): boolean {
   return env.PORTAL_FAKE_MODEL === "true" && env.NODE_ENV !== "production";
 }
 
-function model(env: NodeJS.ProcessEnv): ModelClient {
+function model(env: NodeJS.ProcessEnv, settings: Settings): ModelClient {
   if (useFakeModel(env)) return cannedModel();
   const apiKey = env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not configured.");
-  return geminiClient({ apiKey, model: env.GEMINI_MODEL ?? "gemini-3.1-flash-lite" });
+  return geminiClient({ apiKey, model: settings.model ?? env.GEMINI_MODEL ?? "gemini-3.1-flash-lite" });
 }
 
-export function runtimeDeps(env: NodeJS.ProcessEnv = process.env, store: Store = defaultStore()): AdvanceDeps {
+export function runtimeDeps(env: NodeJS.ProcessEnv = process.env, store: Store = defaultStore(), settings: Settings = DEFAULT_SETTINGS): AdvanceDeps {
   // Every course is hosted by the portal itself; publishing happens inside the finish step.
-  return { store, model: model(env), now: () => new Date() };
+  return { store, model: model(env, settings), now: () => new Date() };
 }

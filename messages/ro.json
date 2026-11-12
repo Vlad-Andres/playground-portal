@@ -147,5 +147,52 @@
     "f6": "Funcționează pe telefon, în mod luminos și întunecat",
     "closingTitle": "Gata imediat ce ai materialele.",
     "footer": "Făcut pentru învățat cu sens · Fără cont pentru cei care învață"
+  },
+  "manage": {
+    "title": "Editează-ți site-ul",
+    "lead": "Schimbă titlul, textele și structura site-ului tău. Modificările apar pe site imediat ce salvezi.",
+    "siteTitle": "Titlul site-ului",
+    "description": "Descriere",
+    "accent": "Culoare de accent",
+    "lecturesTitle": "Lecții",
+    "lectureTitle": "Titlul lecției",
+    "removeLecture": "Elimină această lecție",
+    "removeBlock": "Elimină",
+    "markdown": "Text (Markdown)",
+    "save": "Salvează modificările",
+    "saved": "Salvat.",
+    "nothingChanged": "Nu ai modificat nimic.",
+    "openSite": "Deschide site-ul",
+    "deleteTitle": "Șterge acest site",
+    "deleteText": "Se șterg site-ul și linkul tău privat. Nu se poate anula.",
+    "deleteButton": "Șterge site-ul",
+    "deleteConfirm": "Ștergi acest site? Nu se poate anula.",
+    "kinds": {
+      "prose": "Text",
+      "info": "Notă",
+      "concepts": "Concepte",
+      "formula": "Formulă",
+      "code": "Cod",
+      "table": "Tabel",
+      "figure": "Figură",
+      "steps": "Pași",
+      "timeline": "Cronologie",
+      "list": "Listă",
+      "exercises": "Exerciții",
+      "recall": "Fișe de memorare",
+      "practice": "Practică",
+      "widget": "Exercițiu interactiv",
+      "custom": "Exercițiu personalizat"
+    },
+    "errors": {
+      "unknown-lecture": "Lecția nu mai există. Reîncarcă pagina.",
+      "unknown-block": "Blocul nu mai există. Reîncarcă pagina.",
+      "not-editable": "Acest bloc poate fi doar eliminat, nu editat.",
+      "last-lecture": "Păstrează cel puțin o lecție.",
+      "empty-lecture": "O lecție nu poate rămâne goală. Elimină lecția întreagă.",
+      "invalid": "Cu aceste modificări site-ul ar deveni invalid, așa că nu s-a salvat nimic.",
+      "not-found": "Acest link de editare nu mai este valid.",
+      "bad-request": "Ceva din modificări nu a fost valid. Verifică câmpurile și încearcă din nou."
+    }
   }
 }
