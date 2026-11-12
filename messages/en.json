@@ -145,6 +145,13 @@
     "f4": "Flashcards and a \"difficult parts\" review",
     "f5": "Exam mode with a timed mock test",
     "f6": "Works on phones, in light and dark mode",
+    "previewLabel": "A course, built from your slides",
+    "previewTitle": "Energy in plants",
+    "previewLine": "Light is stored as glucose, then released again by respiration.",
+    "previewQuiz": "Quiz",
+    "previewQuizQ": "Which process stores light as energy?",
+    "previewRecall": "Flashcard",
+    "previewRecallA": "Photosynthesis",
     "closingTitle": "Ready when your materials are.",
     "footer": "Built for thoughtful studying · No account required for learners"
   },

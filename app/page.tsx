@@ -1,4 +1,4 @@
-import { BookOpen, ListChecks, Puzzle, Layers, Timer, Smartphone, ArrowRight } from "lucide-react";
+import { BookOpen, ListChecks, Puzzle, Layers, Timer, Smartphone, ArrowRight, Sparkles } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { HeroBackground } from "@/components/landing/HeroBackground";
 import { TopBar } from "@/components/TopBar";
@@ -12,6 +12,8 @@ const FEATURES = [
   { key: "f5", Icon: Timer },
   { key: "f6", Icon: Smartphone },
 ] as const;
+
+const SIZES = ["large", "wide", "wide", "small", "small", "small"] as const;
 
 export default async function LandingPage() {
   const t = await getTranslations("landing");
@@ -32,6 +34,22 @@ export default async function LandingPage() {
             <a className={styles.secondary} href="#how">{t("ctaSecondary")}</a>
           </div>
         </div>
+
+        <div className={styles.preview} aria-hidden="true">
+          <div className={styles.previewCard}>
+            <span className={styles.previewTag}><Sparkles size={13} aria-hidden="true" /> {t("previewLabel")}</span>
+            <h3 className={styles.previewTitle}>{t("previewTitle")}</h3>
+            <p className={styles.previewLine}>{t("previewLine")}</p>
+            <div className={styles.previewQuiz}>
+              <span className={styles.previewKicker}>{t("previewQuiz")}</span>
+              <span className={styles.previewQuizQ}>{t("previewQuizQ")}</span>
+            </div>
+            <div className={styles.previewRecall}>
+              <span className={styles.previewKicker}>{t("previewRecall")}</span>
+              <span className={styles.previewRecallA}>{t("previewRecallA")}</span>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section id="how" className={styles.section} aria-labelledby="how-title">
@@ -39,7 +57,7 @@ export default async function LandingPage() {
         <ol className={styles.steps}>
           {([1, 2, 3] as const).map((n) => (
             <li key={n} className={styles.step}>
-              <span className={styles.stepNumber}>{n}</span>
+              <span className={styles.stepNumber} aria-hidden="true">{n}</span>
               <h3>{t(`how${n}Title`)}</h3>
               <p>{t(`how${n}Text`)}</p>
             </li>
@@ -49,11 +67,11 @@ export default async function LandingPage() {
 
       <section className={styles.section} aria-labelledby="features-title">
         <h2 id="features-title" className={styles.heading}>{t("featuresTitle")}</h2>
-        <ul className={styles.features}>
-          {FEATURES.map(({ key, Icon }) => (
-            <li key={key} className={styles.feature}>
+        <ul className={styles.bento}>
+          {FEATURES.map(({ key, Icon }, index) => (
+            <li key={key} className={`${styles.feature} ${styles[SIZES[index]]}`}>
               <span className={styles.icon}><Icon size={20} aria-hidden="true" /></span>
-              <span>{t(key)}</span>
+              <span className={styles.featureText}>{t(key)}</span>
             </li>
           ))}
         </ul>
@@ -64,7 +82,7 @@ export default async function LandingPage() {
         <a className={styles.primary} href="/create">{t("cta")} <ArrowRight size={18} aria-hidden="true" /></a>
       </section>
 
-      <footer>{t("footer")}</footer>
+      <footer className={styles.footer}>{t("footer")}</footer>
     </main>
   );
 }
