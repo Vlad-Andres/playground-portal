@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cannedModel, type Brief } from "@core/generate/index";
 import { siteDataSchema } from "@core/site";
-import { advanceHandler, cleanupHandler, createJobHandler, getJobHandler, MAX_BODY_BYTES, outlineHandler } from "@/lib/api/handlers";
+import { advanceHandler, advanceJob, cleanupHandler, createJobHandler, getJobHandler, MAX_BODY_BYTES, outlineHandler, shouldChain } from "@/lib/api/handlers";
 import { jobKey } from "@/lib/jobs/state";
 import { memoryStore } from "@/lib/jobs/store";
 import { readSite } from "@/lib/sites/store";
@@ -200,5 +200,37 @@ describe("GET /api/cron/cleanup", () => {
     expect(result).toEqual({ deletedJobs: 1, deletedMarkers: 1 });
     expect((await store.list(`jobs/${id}/`)).length).toBe(0);
     expect((await store.list(`jobs/${fresh}/`)).length).toBeGreaterThan(0);
+  });
+});
+
+describe("advanceJob and shouldChain", () => {
+  const unknownId = "00000000-0000-4000-8000-000000000000";
+
+  it("shouldChain is true only for an idle job without an error", () => {
+    expect(shouldChain({ status: "idle" })).toBe(true);
+    expect(shouldChain({ status: "idle", error: "busy" })).toBe(false);
+    for (const status of ["working", "awaiting-review", "done", "failed"] as const) {
+      expect(shouldChain({ status })).toBe(false);
+    }
+  });
+
+  it("advanceJob returns the new state for a normal step", async () => {
+    const store = memoryStore();
+    const deps = () => ({ store, model: cannedModel(), now: () => new Date() });
+    const { id } = await (await createJobHandler(valid(), store, env)).json();
+    const { response, state } = await advanceJob(id, deps, env);
+    expect(response.status).toBe(200);
+    expect(state).toMatchObject({ id, status: "awaiting-review" });
+  });
+
+  it("advanceJob returns a null state for an unknown id and when generation is off", async () => {
+    const store = memoryStore();
+    const deps = () => ({ store, model: cannedModel(), now: () => new Date() });
+    expect((await advanceJob("not-an-id", deps, env)).state).toBeNull();
+    expect((await advanceJob(unknownId, deps, env)).state).toBeNull();
+
+    const { id } = await (await createJobHandler(valid(), store, env)).json();
+    const off = { ...env, PORTAL_ENABLE_GENERATION: "false" } as unknown as NodeJS.ProcessEnv;
+    expect((await advanceJob(id, deps, off)).state).toBeNull();
   });
 });
