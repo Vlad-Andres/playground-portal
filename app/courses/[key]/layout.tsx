@@ -19,7 +19,8 @@ export default async function CourseLayout({ children, params }: CourseParams & 
     <div lang={data.course.language} className="flex min-h-screen flex-col">
       <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript(data.key) }} />
       {accentCss ? <style dangerouslySetInnerHTML={{ __html: accentCss }} /> : null}
-      <SiteShell data={data} base={courseBase(key)}>
+      {/* Many courses share this origin, so none of them registers an offline service worker. */}
+      <SiteShell data={data} base={courseBase(key)} offline={false}>
         {children}
       </SiteShell>
     </div>
