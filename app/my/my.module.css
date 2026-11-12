@@ -1,0 +1,13 @@
+.page { max-width: 900px; }
+.title { font-size: clamp(2rem, 5vw, 3rem); margin: 34px 0 18px; }
+.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.item { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; }
+.item h2 { margin: 0; font-size: 1rem; color: var(--deep); }
+.item small { color: #6b7a72; }
+.links { display: flex; gap: 14px; }
+.links a { color: var(--green); font-weight: 800; font-size: .85rem; }
+.empty { background: #fff; border: 1px dashed var(--line); border-radius: 14px; padding: 26px; display: grid; gap: 12px; justify-items: start; }
+.danger { margin-top: 40px; border: 1px solid #e4b7ae; background: #fff8f6; border-radius: 16px; padding: 20px; display: grid; gap: 10px; }
+.danger h2 { margin: 0; font-size: 1rem; color: #8c3b2d; }
+.danger p { margin: 0; color: #6b5640; font-size: .82rem; }
+.dangerButton { justify-self: start; border: 1px solid #c25e4b; background: #fff; color: #b45345; border-radius: 10px; padding: 10px 14px; font: inherit; font-weight: 800; cursor: pointer; }

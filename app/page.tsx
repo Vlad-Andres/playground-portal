@@ -13,14 +13,17 @@ const FEATURES = [
   { key: "f6", Icon: Smartphone },
 ] as const;
 
-export default async function LandingPage() {
+export default async function LandingPage({ searchParams }: { searchParams: Promise<{ signin?: string }> }) {
   const t = await getTranslations("landing");
+  const errors = await getTranslations("errors");
+  const signinFailed = (await searchParams).signin === "failed";
   return (
     <main className={styles.page}>
       <TopBar>
         <a className={styles.topCta} href="/create">{t("cta")}</a>
       </TopBar>
 
+      {signinFailed ? <p className="helper helper-error" role="alert">{errors("signin-failed")}</p> : null}
       <section className={styles.hero}>
         <HeroBackground />
         <div className={styles.heroInner}>

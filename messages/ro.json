@@ -24,7 +24,17 @@
     "generic": "Ceva nu a mers bine. Încearcă din nou.",
     "network": "Conexiune pierdută. Reîncercăm…",
     "bad-answer": "Răspunde la fiecare întrebare cu una dintre opțiuni.",
-    "bad-design": "Alege o structură și păstrează cel puțin una dintre lecțiile ei."
+    "bad-design": "Alege o structură și păstrează cel puțin una dintre lecțiile ei.",
+    "signin-failed": "Conectarea nu a reușit. Încearcă din nou.",
+    "guest-limit": "Ai creat deja un curs în acest browser. Conectează-te ca să creezi mai multe.",
+    "user-daily-limit": "Ai atins limita de azi. Încearcă din nou mâine.",
+    "sign-in-required": "Conectează-te mai întâi.",
+    "course-busy": "Cursul este în curs de modificare. Încearcă din nou după ce se termină.",
+    "rounds-used": "Ai folosit toate cele trei runde de îmbunătățire pentru acest curs.",
+    "course-full": "Cursul are deja numărul maxim de lecții.",
+    "sources-full": "Fișierele păstrate ar depăși 4 MB sau 12 fișiere.",
+    "sources-missing": "Reorganizarea are nevoie de fișierele originale. Activează mai întâi «Păstrează-mi fișierele» pentru acest curs.",
+    "refine-empty": "Nu am putut transforma nota într-o modificare. Descrie ce să schimbăm și unde."
   },
   "materials": {
     "empty": "Adaugă cel puțin un fișier cu text care poate fi citit.",
@@ -238,6 +248,29 @@
       "invalid": "Cu aceste modificări site-ul ar deveni invalid, așa că nu s-a salvat nimic.",
       "not-found": "Acest link de editare nu mai este valid.",
       "bad-request": "Ceva din modificări nu a fost valid. Verifică câmpurile și încearcă din nou."
-    }
+    },
+    "claimTitle": "Păstrează cursul în contul tău",
+    "claimText": "Conectează-te ca să-l îmbunătățești, să adaugi materiale și să restaurezi versiuni anterioare.",
+    "claimSignIn": "Conectează-te",
+    "claimButton": "Adaugă la cursurile mele",
+    "claimTaken": "Cursul aparține deja altui cont."
+  },
+  "account": {
+    "signIn": "Conectează-te",
+    "account": "Cont",
+    "myCourses": "Cursurile mele",
+    "signOut": "Deconectează-te"
+  },
+  "my": {
+    "title": "Cursurile mele",
+    "empty": "Încă nu ai cursuri.",
+    "create": "Creează un curs",
+    "details": "{lectures, plural, one {# lecție} few {# lecții} other {# de lecții}} · modificat {date}",
+    "open": "Deschide",
+    "manage": "Administrează",
+    "deleteAccountTitle": "Șterge-mi contul",
+    "deleteAccountText": "Se șterg toate cursurile tale, versiunile lor și fișierele păstrate. Nu se poate anula.",
+    "deleteAccountButton": "Șterge-mi contul",
+    "deleteAccountConfirm": "Ștergi contul și toate cursurile? Nu se poate anula."
   }
 }

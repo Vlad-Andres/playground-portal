@@ -87,7 +87,7 @@ async function saveState(store: Store, state: JobState, now: Date): Promise<JobS
  */
 export async function createJob(
   store: Store,
-  input: ({ request: CourseRequest; brief?: undefined } | { brief: Brief; request?: undefined }) & { materials: Material[]; codeId?: string },
+  input: ({ request: CourseRequest; brief?: undefined } | { brief: Brief; request?: undefined }) & { materials: Material[]; codeId?: string; ownerId?: string; keepSources?: boolean },
   now: Date,
 ): Promise<{ id: string; state: JobState }> {
   const id = randomUUID();
@@ -103,6 +103,8 @@ export async function createJob(
     lecturesDone: 0,
     attempts: 0,
     ...(input.codeId ? { codeId: input.codeId } : {}),
+    ...(input.ownerId ? { ownerId: input.ownerId } : {}),
+    ...(input.keepSources ? { keepSources: true } : {}),
     usage: { inputTokens: 0, outputTokens: 0, calls: 0 },
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
@@ -228,6 +230,7 @@ async function runStep(state: JobState, deps: AdvanceDeps, model: ModelClient): 
       jobId: state.id,
       usage: state.usage,
       now: deps.now(),
+      ownerId: state.ownerId,
     });
     await store.delete([jobKey(state.id, "materials.json")]);
     return { ...state, ...published, step: "done", status: "done", attempts: 0, error: undefined };

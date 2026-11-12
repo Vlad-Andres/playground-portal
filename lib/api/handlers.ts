@@ -5,7 +5,11 @@ import {
   dailyJobLimit,
   dayKey,
   dayPrefix,
+  GUEST_COOKIE,
   generationEnabled,
+  hasGuestCookie,
+  USER_DAILY_JOBS,
+  userDayPrefix,
   isLanguage,
   isLevel,
   underDailyLimit,
@@ -13,6 +17,9 @@ import {
 import { advance, answerContext, createJob, loadContext, loadDesign, loadRequest, readState, saveJobState, writeJobFile, type AdvanceDeps } from "@/lib/jobs/steps";
 import { JOB_ID, jobKey, type JobState } from "@/lib/jobs/state";
 import type { Store } from "@/lib/jobs/store";
+import { accountsConfigured } from "@/lib/auth/config";
+import type { User } from "@/lib/auth/session";
+import { logEvent } from "@/lib/log";
 import { DEFAULT_SETTINGS, matchCode, readSettings, type Settings } from "@/lib/settings";
 
 export const MAX_BODY_BYTES = 4 * 1024 * 1024;
@@ -34,6 +41,15 @@ const MESSAGES = {
   "wrong-state": "The outline can only be changed while it waits for review.",
   "bad-outline": "Keep at least one lecture; titles have at most 120 characters.",
   "bad-answer": "Answer every question with one of its options.",
+  "guest-limit": "You already made a course in this browser. Sign in to make more.",
+  "user-daily-limit": "You reached today's limit. Please try again tomorrow.",
+  "sign-in-required": "Sign in first.",
+  "course-busy": "This course is being changed. Try again when that is done.",
+  "rounds-used": "All three refinement rounds of this course are used.",
+  "course-full": "This course already has the most lectures it can have.",
+  "sources-full": "The kept files would be larger than 4 MB or more than 12 files.",
+  "sources-missing": "Reorganising needs the original files, kept for this course.",
+  "refine-empty": "We could not turn that note into a change.",
   "bad-design": "Choose a design and keep at least one of its lectures; titles have at most 120 characters.",
 } as const;
 
@@ -50,6 +66,15 @@ const STATUS: Record<ApiErrorCode, number> = {
   "wrong-state": 409,
   "bad-outline": 400,
   "bad-answer": 400,
+  "guest-limit": 403,
+  "user-daily-limit": 429,
+  "sign-in-required": 401,
+  "course-busy": 409,
+  "rounds-used": 409,
+  "course-full": 409,
+  "sources-full": 413,
+  "sources-missing": 409,
+  "refine-empty": 400,
   "bad-design": 400,
 };
 
@@ -62,7 +87,7 @@ const createBodySchema = z
   .strict();
 
 /** POST /api/jobs */
-export async function createJobHandler(request: Request, store: Store, env: NodeJS.ProcessEnv, now = new Date()): Promise<Response> {
+export async function createJobHandler(request: Request, store: Store, env: NodeJS.ProcessEnv, now = new Date(), user: User | null = null): Promise<Response> {
   const settings = await readSettings(store);
   if (!generationEnabled(env, settings)) return fail("generation-off");
   const declared = Number(request.headers.get("content-length") ?? "0");
@@ -87,6 +112,9 @@ export async function createJobHandler(request: Request, store: Store, env: Node
   if (!(isLanguage(input.language) || (auto && input.language === "auto")) || !(isLevel(input.level) || (auto && input.level === "auto"))) return fail("bad-request");
   const day = dayKey(now);
   const counted = async (prefix: string) => (await store.list(prefix)).length;
+  const accounts = accountsConfigured(env);
+  if (accounts && !user && hasGuestCookie(request.headers.get("cookie"))) return fail("guest-limit");
+  if (user && (await counted(userDayPrefix(user.uid, day))) >= USER_DAILY_JOBS) return fail("user-daily-limit");
   if (!(await underDailyLimit(day, settings.dailyJobLimit ?? dailyJobLimit(env), counted))) {
     return fail("daily-limit");
   }
@@ -101,11 +129,19 @@ export async function createJobHandler(request: Request, store: Store, env: Node
 
   const { id } = await createJob(
     store,
-    courseRequest?.success ? { request: courseRequest.data, materials: materials.data, codeId } : { brief: brief!.data!, materials: materials.data, codeId },
+    courseRequest?.success
+      ? { request: courseRequest.data, materials: materials.data, codeId, ownerId: user?.uid, keepSources: Boolean(user) && (raw as { keepSources?: unknown }).keepSources === true }
+      : { brief: brief!.data!, materials: materials.data, codeId, ownerId: user?.uid },
     now,
   );
   await store.write(`${dayPrefix(day)}${id}`, "1");
-  return json({ id }, 202);
+  if (user) await store.write(`${userDayPrefix(user.uid, day)}${id}`, "1");
+  logEvent("job.created", { jobId: id, kind: "create", signedIn: Boolean(user) });
+  const response = json({ id }, 202);
+  if (accounts && !user) {
+    response.headers.append("Set-Cookie", `${GUEST_COOKIE}=1; Path=/; Max-Age=15552000; HttpOnly; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`);
+  }
+  return response;
 }
 
 /** What a job page may see: progress and the result, never usage, models, invite codes or internal files. */
@@ -298,6 +334,13 @@ export async function cleanupHandler(request: Request, store: Store, env: NodeJS
     }
   }
   const oldMarkers = (await store.list("days/")).filter(({ key }) => Date.parse(key.split("/")[1] ?? "") < cutoff).map(({ key }) => key);
+  // Per-user day markers (users/<uid>/days/<date>/<job>); never the users/<uid>/courses/ markers.
+  oldMarkers.push(
+    ...(await store.list("users/"))
+      .map(({ key }) => ({ key, day: /^users\/[0-9a-f]{32}\/days\/(\d{4}-\d{2}-\d{2})\//.exec(key)?.[1] }))
+      .filter((entry) => entry.day !== undefined && Date.parse(entry.day) < cutoff)
+      .map((entry) => entry.key),
+  );
   await store.delete(oldMarkers);
   return json({ deletedJobs, deletedMarkers: oldMarkers.length });
 }

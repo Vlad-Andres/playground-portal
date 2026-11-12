@@ -24,7 +24,17 @@
     "generic": "Something went wrong. Please try again.",
     "network": "Connection lost. Retrying…",
     "bad-answer": "Answer every question with one of its options.",
-    "bad-design": "Choose a design and keep at least one of its lectures."
+    "bad-design": "Choose a design and keep at least one of its lectures.",
+    "signin-failed": "Sign-in did not work. Please try again.",
+    "guest-limit": "You already made a course in this browser. Sign in to make more.",
+    "user-daily-limit": "You reached today's limit. Please try again tomorrow.",
+    "sign-in-required": "Sign in first.",
+    "course-busy": "This course is being changed. Try again when that is done.",
+    "rounds-used": "All three refinement rounds of this course are used.",
+    "course-full": "This course already has the most lectures it can have.",
+    "sources-full": "The kept files would be larger than 4 MB or more than 12 files.",
+    "sources-missing": "Reorganising needs your original files. Switch on 'Keep my files' for this course first.",
+    "refine-empty": "We could not turn that note into a change. Try describing what to change and where."
   },
   "materials": {
     "empty": "Add at least one file with readable text.",
@@ -238,6 +248,29 @@
       "invalid": "These changes would make the site invalid, so nothing was saved.",
       "not-found": "This edit link is no longer valid.",
       "bad-request": "Something in the changes was not valid. Check the fields and try again."
-    }
+    },
+    "claimTitle": "Keep this course in your account",
+    "claimText": "Sign in to refine it, add material and restore earlier versions.",
+    "claimSignIn": "Sign in",
+    "claimButton": "Add to my courses",
+    "claimTaken": "This course already belongs to another account."
+  },
+  "account": {
+    "signIn": "Sign in",
+    "account": "Account",
+    "myCourses": "My courses",
+    "signOut": "Sign out"
+  },
+  "my": {
+    "title": "My courses",
+    "empty": "No courses yet.",
+    "create": "Create a course",
+    "details": "{lectures, plural, one {# lecture} other {# lectures}} · changed {date}",
+    "open": "Open",
+    "manage": "Manage",
+    "deleteAccountTitle": "Delete my account",
+    "deleteAccountText": "This deletes all your courses, their versions and your kept files. It cannot be undone.",
+    "deleteAccountButton": "Delete my account",
+    "deleteAccountConfirm": "Delete your account and all your courses? This cannot be undone."
   }
 }

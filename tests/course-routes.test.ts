@@ -58,7 +58,7 @@ describe("loadSite", () => {
       title: "Demo course",
       lectures: 1,
       usage: { inputTokens: 0, outputTokens: 0, calls: 0 },
-      ownerHash: "",
+      ownerHash: "", ownerId: "", version: 1, keepSources: false,
     });
     expect((await loadSite(key, store))?.course.title).toBe("Demo course");
     expect(courseTag(key)).toBe("course:demo-12345678");
