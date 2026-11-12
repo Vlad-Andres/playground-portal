@@ -1,0 +1,34 @@
+{
+  "common": {
+    "metaTitle": "playground. · Your course, made interactive",
+    "metaDescription": "Create a beautiful, source-grounded learning playground from your course materials.",
+    "language": "Language"
+  },
+  "errors": {
+    "generation-off": "Course creation is not available right now. Please try again later.",
+    "too-large": "The material is larger than 4 MB of text. Remove a file.",
+    "bad-request": "Something in the request was not valid. Check your options and try again.",
+    "wrong-code": "The access code is not correct.",
+    "daily-limit": "Today's limit has been reached. Please try again tomorrow.",
+    "bad-id": "This link is not valid.",
+    "not-found": "We could not find this page.",
+    "wrong-state": "This can only be changed while the outline waits for review.",
+    "bad-outline": "Keep at least one lecture; titles can have at most 120 characters.",
+    "unauthorized": "Not allowed.",
+    "course-too-big": "This course is too large to finish. Try fewer or shorter files.",
+    "plan-failed": "We could not plan this course. Please try again.",
+    "lecture-failed": "We could not write this lecture. Please try again.",
+    "busy": "The service is busy. Please try again in a minute.",
+    "material-gone": "The uploaded material is no longer available.",
+    "step-failed": "This step failed. Please try again.",
+    "generic": "Something went wrong. Please try again.",
+    "network": "Connection lost. Retrying…"
+  },
+  "materials": {
+    "empty": "Add at least one file with readable text.",
+    "too-many-files": "Use at most {max} files.",
+    "too-many-pages": "Use at most {max} pages in total (you have {count}).",
+    "too-long": "The text is too long: {count} characters, at most {max}.",
+    "scanned": "This material looks scanned — it has almost no readable text."
+  }
+}

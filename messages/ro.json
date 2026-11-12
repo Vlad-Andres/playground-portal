@@ -1,0 +1,34 @@
+{
+  "common": {
+    "metaTitle": "playground. · Cursul tău, interactiv",
+    "metaDescription": "Creează un site de studiu frumos, construit doar din materialele cursului tău.",
+    "language": "Limbă"
+  },
+  "errors": {
+    "generation-off": "Crearea cursurilor nu este disponibilă acum. Încearcă din nou mai târziu.",
+    "too-large": "Materialul depășește 4 MB de text. Elimină un fișier.",
+    "bad-request": "Ceva din cerere nu a fost valid. Verifică opțiunile și încearcă din nou.",
+    "wrong-code": "Codul de acces nu este corect.",
+    "daily-limit": "Limita de azi a fost atinsă. Încearcă din nou mâine.",
+    "bad-id": "Acest link nu este valid.",
+    "not-found": "Nu am găsit această pagină.",
+    "wrong-state": "Se poate modifica doar cât timp cuprinsul așteaptă verificarea.",
+    "bad-outline": "Păstrează cel puțin o lecție; titlurile pot avea cel mult 120 de caractere.",
+    "unauthorized": "Nepermis.",
+    "course-too-big": "Cursul este prea mare ca să fie terminat. Încearcă cu mai puține sau mai scurte fișiere.",
+    "plan-failed": "Nu am putut planifica acest curs. Încearcă din nou.",
+    "lecture-failed": "Nu am putut scrie această lecție. Încearcă din nou.",
+    "busy": "Serviciul este ocupat. Încearcă din nou peste un minut.",
+    "material-gone": "Materialele încărcate nu mai sunt disponibile.",
+    "step-failed": "Acest pas a eșuat. Încearcă din nou.",
+    "generic": "Ceva nu a mers bine. Încearcă din nou.",
+    "network": "Conexiune pierdută. Reîncercăm…"
+  },
+  "materials": {
+    "empty": "Adaugă cel puțin un fișier cu text care poate fi citit.",
+    "too-many-files": "Folosește cel mult {max} fișiere.",
+    "too-many-pages": "Folosește cel mult {max} de pagini în total (ai {count}).",
+    "too-long": "Textul este prea lung: {count} de caractere, cel mult {max}.",
+    "scanned": "Materialul pare scanat — nu are aproape deloc text care poate fi citit."
+  }
+}

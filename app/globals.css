@@ -75,3 +75,8 @@ footer { color:#9aaa9f; font-size:.68rem; padding:28px 3px 0; } footer span { co
 
 input[type="password"] { font:inherit; width:100%; border:1px solid var(--line); border-radius:10px; background:#fbfdfb; color:var(--ink); padding:11px 12px; outline:none; margin-bottom:14px; }
 input[type="password"]:focus { border-color:var(--green); }
+
+.language-switch { display:inline-flex; border:1px solid var(--line); border-radius:99px; overflow:hidden; background:#fff; }
+.language-switch button { border:0; background:transparent; color:var(--muted); font:inherit; font-size:.7rem; font-weight:800; padding:6px 11px; cursor:pointer; }
+.language-switch button[aria-pressed="true"] { background:var(--green); color:#fff; }
+.language-switch button:focus-visible { outline:2px solid var(--orange); outline-offset:-2px; }
