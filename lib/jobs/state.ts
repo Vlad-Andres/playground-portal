@@ -1,4 +1,4 @@
-export type Step = "plan" | "review" | `lecture:${number}` | "finish" | "publish" | "publish-wait" | "done";
+export type Step = "plan" | "review" | `lecture:${number}` | "finish" | "done";
 
 export interface JobState {
   id: string;
@@ -7,9 +7,14 @@ export interface JobState {
   lecturesTotal: number;
   lecturesDone: number;
   attempts: number;
+  /** A stable error code from the API, never a sentence. */
   error?: string;
+  /** "/courses/<key>/" once the course is published. */
   siteUrl?: string;
-  bundleReady: boolean;
+  /** "/manage/<token>", set when the job is done. */
+  manageUrl?: string;
+  /** Which invite code created the job; never sent to the browser. */
+  codeId?: string;
   usage: { inputTokens: number; outputTokens: number; calls: number };
   createdAt: string;
   updatedAt: string;

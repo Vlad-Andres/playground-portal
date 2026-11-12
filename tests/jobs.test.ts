@@ -4,7 +4,7 @@ import { advance, createJob, nextStep, readState, type JobState } from "@/lib/jo
 import { claimStep, CLAIM_TTL_SECONDS } from "@/lib/jobs/claim";
 import { jobKey } from "@/lib/jobs/state";
 import { memoryStore } from "@/lib/jobs/store";
-import type { Publisher } from "@/lib/publish/types";
+import { findCourseByOwnerToken, readMeta } from "@/lib/sites/store";
 
 const brief: Brief = { language: "en", level: "university", depth: "cram", examMode: true, quizzes: true, widgets: true, context: "" };
 const materials: Material[] = [
@@ -26,19 +26,16 @@ async function run(id: string, deps: Parameters<typeof advance>[1], times = 20):
 }
 
 function base(step: JobState["step"], extra: Partial<JobState> = {}): JobState {
-  return { id: "x", step, status: "idle", lecturesTotal: 3, lecturesDone: 0, attempts: 0, bundleReady: false, usage: { inputTokens: 0, outputTokens: 0, calls: 0 }, createdAt: "", updatedAt: "", ...extra };
+  return { id: "x", step, status: "idle", lecturesTotal: 3, lecturesDone: 0, attempts: 0, usage: { inputTokens: 0, outputTokens: 0, calls: 0 }, createdAt: "", updatedAt: "", ...extra };
 }
 
 describe("nextStep", () => {
   it("walks plan → review → lectures → finish → done", () => {
-    expect(nextStep(base("plan"), false)).toBe("review");
-    expect(nextStep(base("review"), false)).toBe("lecture:1");
-    expect(nextStep(base("lecture:2"), false)).toBe("lecture:3");
-    expect(nextStep(base("lecture:3"), false)).toBe("finish");
-    expect(nextStep(base("finish"), false)).toBe("done");
-    expect(nextStep(base("finish"), true)).toBe("publish");
-    expect(nextStep(base("publish"), true)).toBe("publish-wait");
-    expect(nextStep(base("publish-wait"), true)).toBe("done");
+    expect(nextStep(base("plan"))).toBe("review");
+    expect(nextStep(base("review"))).toBe("lecture:1");
+    expect(nextStep(base("lecture:2"))).toBe("lecture:3");
+    expect(nextStep(base("lecture:3"))).toBe("finish");
+    expect(nextStep(base("finish"))).toBe("done");
   });
 });
 
@@ -52,7 +49,7 @@ describe("claimStep", () => {
 });
 
 describe("advance", () => {
-  it("happy path: plan → review → lectures → finish → done, and materials are deleted", async () => {
+  it("happy path: plan → review → lectures → finish → done, published with an owner link", async () => {
     const { store, deps } = setup();
     const { id } = await createJob(store, { brief, materials }, deps.now());
     let state = await advance(id, deps);
@@ -62,10 +59,30 @@ describe("advance", () => {
     state = await advance(id, deps);
     expect(state).toMatchObject({ step: "lecture:2", lecturesDone: 1, status: "idle" });
     state = await run(id, deps);
-    expect(state).toMatchObject({ step: "done", status: "done", bundleReady: true, lecturesDone: 2 });
+    expect(state).toMatchObject({ step: "done", status: "done", lecturesDone: 2 });
     expect(state.usage.calls).toBeGreaterThan(2);
     expect(await store.read(jobKey(id, "materials.json"))).toBeNull();
-    expect(await store.read(jobKey(id, "bundle.json"))).toContain("playground-bundle@1");
+    expect(await store.read(jobKey(id, "bundle.json"))).toBeNull();
+
+    const site = /^\/courses\/([a-z0-9][a-z0-9-]*-[0-9a-f]{8})\/$/.exec(state.siteUrl ?? "");
+    expect(site).not.toBeNull();
+    const key = site![1];
+
+    const owner = /^\/manage\/([A-Za-z0-9_-]{32})$/.exec(state.manageUrl ?? "");
+    expect(owner).not.toBeNull();
+    const token = owner![1];
+    expect(await findCourseByOwnerToken(store, token)).toBe(key);
+
+    // The token lives only in the job state: never in a course file or a storage key.
+    for (const [storedKey, stored] of store.data) {
+      if (storedKey === jobKey(id, "state.json")) continue;
+      expect(storedKey).not.toContain(token);
+      expect(stored.body).not.toContain(token);
+    }
+
+    const meta = await readMeta(store, key);
+    expect(meta).toMatchObject({ formatVersion: 1, lectures: 2 });
+    expect(meta?.usage.calls).toBeGreaterThan(0);
   });
 
   it("does not call the model while a fresh claim exists", async () => {
@@ -117,17 +134,19 @@ describe("advance", () => {
     expect(await advance(id, deps)).toMatchObject({ status: "failed", error: "This course is too large to finish. Try fewer or shorter files." });
   });
 
-  it("publishes and waits for the site when a publisher is configured", async () => {
-    let checks = 0;
-    const publisher: Publisher = {
-      start: async () => ({ repo: "demo-abcd1234", commitSha: "abc" }),
-      check: async () => (++checks < 2 ? { state: "building" } : { state: "live", siteUrl: "/courses/demo-abcd1234/" }),
-    };
+  it("publishes an old publish-wait job when it is advanced", async () => {
     const { store, deps } = setup();
     const { id } = await createJob(store, { brief, materials }, deps.now());
-    const state = await advance(id, { ...deps, publish: publisher });
+    let state = await advance(id, deps);
     await store.write(jobKey(id, "state.json"), JSON.stringify({ ...state, step: "lecture:1", status: "idle" }));
-    const done = await run(id, { ...deps, publish: publisher });
-    expect(done).toMatchObject({ status: "done", siteUrl: "/courses/demo-abcd1234/", bundleReady: true });
+    state = await advance(id, deps);
+    state = await advance(id, deps);
+    expect(state.step).toBe("finish");
+    await store.write(jobKey(id, "state.json"), JSON.stringify({ ...state, step: "publish-wait", status: "idle" }));
+
+    const done = await advance(id, deps);
+    expect(done).toMatchObject({ step: "done", status: "done" });
+    expect(done.siteUrl).toMatch(/^\/courses\/.+\/$/);
+    expect(done.manageUrl).toMatch(/^\/manage\/[A-Za-z0-9_-]{32}$/);
   });
 });

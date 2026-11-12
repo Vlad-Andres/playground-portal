@@ -68,14 +68,18 @@ export async function createJobHandler(request: Request, store: Store, env: Node
   return json({ id }, 202);
 }
 
-/** What a job page may see: progress and the result, never usage, models or internal files. */
+/** What a job page may see: progress and the result, never usage, models, invite codes or internal files. */
 export type PublicJob = Pick<JobState, "id" | "step" | "status" | "lecturesTotal" | "lecturesDone" | "attempts" | "error" | "siteUrl" | "createdAt" | "updatedAt"> & {
+  /** "/manage/<token>", shown only once the job is done. */
+  manageUrl?: string;
   outline?: { slug: string; title: string; summary: string }[];
 };
 
 export function publicJob(state: JobState): PublicJob {
   const { id, step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt } = state;
-  return { id, step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt };
+  const result: PublicJob = { id, step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt };
+  if (status === "done" && state.manageUrl) result.manageUrl = state.manageUrl;
+  return result;
 }
 
 function validId(id: string): boolean {

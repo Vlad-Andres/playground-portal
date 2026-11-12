@@ -6,7 +6,6 @@ import {
   coursePlanSchema,
   DEFAULT_BUDGET,
   finishCourse,
-  makeBundle,
   materialSchema,
   planCourse,
   withBudget,
@@ -17,9 +16,9 @@ import {
   type ModelClient,
 } from "@core/generate/index";
 import { lectureFileSchema, type LectureFile } from "@core/schema";
-import type { Publisher } from "@/lib/publish/types";
+import { publishCourse } from "@/lib/sites/publish";
 import { courseKeyFor } from "@/lib/sites/store";
-import { claimAge, claimKey, claimStep, CLAIM_TTL_SECONDS } from "./claim";
+import { claimAge, claimStep, CLAIM_TTL_SECONDS } from "./claim";
 import { jobKey, lectureNumber, type JobState, type Step } from "./state";
 import type { Store } from "./store";
 
@@ -31,11 +30,10 @@ export interface AdvanceDeps {
   store: Store;
   model: ModelClient;
   now: () => Date;
-  publish?: Publisher;
 }
 
 /** The step after the current one. Pure. */
-export function nextStep(state: JobState, publishConfigured: boolean): Step {
+export function nextStep(state: JobState): Step {
   const lecture = lectureNumber(state.step);
   if (lecture !== null) return lecture < state.lecturesTotal ? `lecture:${lecture + 1}` : "finish";
   switch (state.step) {
@@ -43,10 +41,6 @@ export function nextStep(state: JobState, publishConfigured: boolean): Step {
       return "review";
     case "review":
       return state.lecturesTotal > 0 ? "lecture:1" : "finish";
-    case "finish":
-      return publishConfigured ? "publish" : "done";
-    case "publish":
-      return "publish-wait";
     default:
       return "done";
   }
@@ -83,7 +77,6 @@ export async function createJob(store: Store, input: { brief: Brief; materials: 
     lecturesTotal: 0,
     lecturesDone: 0,
     attempts: 0,
-    bundleReady: false,
     usage: { inputTokens: 0, outputTokens: 0, calls: 0 },
     createdAt: now.toISOString(),
     updatedAt: now.toISOString(),
@@ -125,10 +118,9 @@ function safeMessage(error: unknown): string {
 /** Run exactly one step. Returns the state to save. */
 async function runStep(state: JobState, deps: AdvanceDeps, model: ModelClient): Promise<JobState> {
   const { store } = deps;
-  const publishConfigured = Boolean(deps.publish);
   const moveOn = (next: Partial<JobState>): JobState => {
     const moved = { ...state, ...next, attempts: 0, error: undefined };
-    return { ...moved, step: nextStep({ ...state, ...next }, publishConfigured), status: "idle" };
+    return { ...moved, step: nextStep({ ...state, ...next }), status: "idle" };
   };
 
   if (state.step === "plan") {
@@ -155,39 +147,30 @@ async function runStep(state: JobState, deps: AdvanceDeps, model: ModelClient): 
     }
     const { files, problems } = finishCourse(plan, lectures, brief);
     if (problems.some((problem) => problem.severity === "error")) throw new Error("The finished course did not validate.");
-    await writeJson(store, jobKey(state.id, "bundle.json"), makeBundle(files));
+    const published = await publishCourse(store, {
+      key: courseKeyFor(plan.course.id, state.id),
+      files,
+      jobId: state.id,
+      usage: state.usage,
+      now: deps.now(),
+    });
     await store.delete([jobKey(state.id, "materials.json")]);
-    const finished = moveOn({ bundleReady: true });
-    return finished.step === "done" ? { ...finished, status: "done" } : finished;
-  }
-
-  if (state.step === "publish" && deps.publish) {
-    const bundle = await readJson<{ files: Record<string, string> }>(store, jobKey(state.id, "bundle.json"));
-    const plan = await loadPlan(store, state.id);
-    if (!bundle) throw new Error("The course bundle is missing.");
-    const published = await deps.publish.start({ repoName: courseKeyFor(plan.course.id, state.id), files: bundle.files, jobId: state.id });
-    await writeJson(store, jobKey(state.id, "publish.json"), published);
-    return moveOn({});
-  }
-
-  if (state.step === "publish-wait" && deps.publish) {
-    const published = await readJson<{ repo: string; commitSha: string }>(store, jobKey(state.id, "publish.json"));
-    if (!published) throw new Error("Publishing was not started.");
-    const result = await deps.publish.check(published);
-    if (result.state === "building") return { ...state, status: "idle", error: undefined };
-    if (result.state === "failed") throw new Error("Publishing failed.");
-    return { ...moveOn({ siteUrl: result.siteUrl }), status: "done" };
+    return { ...state, ...published, step: "done", status: "done", attempts: 0, error: undefined };
   }
 
   // review is left by the outline route; done has nothing to do.
   return state;
 }
 
+/** Steps written by older versions of the portal; they now finish in one go. */
+const LEGACY_PUBLISH_STEPS = new Set<string>(["publish", "publish-wait"]);
+
 /** Advance a job by at most one step. Safe to call repeatedly and concurrently. */
 export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> {
   const { store } = deps;
-  const state = await readState(store, id);
-  if (!state) throw new Error("Job not found.");
+  const loaded = await readState(store, id);
+  if (!loaded) throw new Error("Job not found.");
+  const state: JobState = LEGACY_PUBLISH_STEPS.has(loaded.step) ? { ...loaded, step: "finish", attempts: 0 } : loaded;
   if (state.status === "awaiting-review" || state.status === "done" || state.status === "failed" || state.step === "review" || state.step === "done") {
     return state;
   }
@@ -221,8 +204,6 @@ export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> 
   await saveState(store, { ...state, status: "working" }, now);
   try {
     const next = await runStep(state, deps, model);
-    // A step that stays in place (publish-wait while building) releases its claim for the next poll.
-    if (next.step === state.step && next.status === "idle") await store.delete([claimKey(id, state.step, state.attempts)]);
     return saveState(store, addUsage(next), deps.now());
   } catch (error) {
     const message = safeMessage(error);

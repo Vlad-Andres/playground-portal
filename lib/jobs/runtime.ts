@@ -1,6 +1,5 @@
 import { cannedModel, type ModelClient } from "@core/generate/index";
 import { geminiClient } from "@/lib/model";
-import { portalPublisher } from "@/lib/publish/portal";
 import { defaultStore, type Store } from "./store";
 import type { AdvanceDeps } from "./steps";
 
@@ -17,6 +16,6 @@ function model(env: NodeJS.ProcessEnv): ModelClient {
 }
 
 export function runtimeDeps(env: NodeJS.ProcessEnv = process.env, store: Store = defaultStore()): AdvanceDeps {
-  // Every course is hosted by the portal itself; nothing is ever published to GitHub.
-  return { store, model: model(env), now: () => new Date(), publish: portalPublisher(store) };
+  // Every course is hosted by the portal itself; publishing happens inside the finish step.
+  return { store, model: model(env), now: () => new Date() };
 }

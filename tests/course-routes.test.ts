@@ -50,7 +50,16 @@ describe("loadSite", () => {
 
   it("returns a stored course", async () => {
     const store = memoryStore();
-    await writeSite(store, key, site, { jobId: "12345678", publishedAt: "2026-11-11T10:00:00Z" });
+    await writeSite(store, key, site, {
+      formatVersion: 1,
+      jobId: "12345678",
+      publishedAt: "2026-11-11T10:00:00Z",
+      updatedAt: "2026-11-11T10:00:00Z",
+      title: "Demo course",
+      lectures: 1,
+      usage: { inputTokens: 0, outputTokens: 0, calls: 0 },
+      ownerHash: "",
+    });
     expect((await loadSite(key, store))?.course.title).toBe("Demo course");
     expect(courseTag(key)).toBe("course:demo-12345678");
   });
