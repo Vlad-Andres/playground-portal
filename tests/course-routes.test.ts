@@ -82,3 +82,11 @@ describe("next.config", () => {
     expect(config.skipTrailingSlashRedirect).toBe(true);
   });
 });
+
+describe("course layout", () => {
+  it("does not register the template's service worker (the portal serves no /sw.js)", async () => {
+    const fs = await import("node:fs");
+    const source = fs.readFileSync("app/courses/[key]/layout.tsx", "utf8");
+    expect(source).toMatch(/<SiteShell[^>]*offline=\{false\}/);
+  });
+});

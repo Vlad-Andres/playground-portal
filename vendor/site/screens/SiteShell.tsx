@@ -8,15 +8,21 @@ import { buildSearchRecords } from "@site/lib/search";
 import { SiteProvider } from "@site/site/context";
 import { sitePaths } from "@site/site/paths";
 
-/** Header, main content and footer for one site, with its data available to client components. */
+/**
+ * Header, main content and footer for one site, with its data available to client components.
+ * `offline` registers the service worker that makes a standalone site work offline; a host that serves
+ * many sites from one origin (the portal) passes false, since one worker would cover all of them.
+ */
 export function SiteShell({
   data,
   base,
   children,
+  offline = true,
 }: {
   data: SiteData;
   base: string;
   children: ReactNode;
+  offline?: boolean;
 }) {
   const records = buildSearchRecords(data.index, sitePaths(base).lecture);
 
@@ -33,7 +39,7 @@ export function SiteShell({
         {children}
       </main>
       <SiteFooter course={data.course} />
-      <ServiceWorkerRegistration />
+      {offline ? <ServiceWorkerRegistration /> : null}
     </SiteProvider>
   );
 }
