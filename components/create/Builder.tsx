@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { checkMaterials, LIMITS, type CourseRequest, type Material } from "@core/generate/index";
@@ -40,6 +40,15 @@ export function Builder({ announcement }: { announcement?: string }) {
   const [busy, setBusy] = useState(false);
   const [accent, setAccent] = useState(SWATCHES[0]);
   const [context, setContext] = useState("");
+  const [signedIn, setSignedIn] = useState(false);
+  const tc = useTranslations("course");
+
+  useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((response) => response.json() as Promise<{ signedIn?: boolean }>)
+      .then((me) => setSignedIn(me.signedIn === true))
+      .catch(() => undefined);
+  }, []);
 
   const ready = entries.flatMap((entry) => (entry.state === "ready" && entry.material ? [entry.material] : []));
   const reading = entries.some((entry) => entry.state === "reading");
@@ -112,7 +121,7 @@ export function Builder({ announcement }: { announcement?: string }) {
       response = await fetch("/api/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessCode: String(form.get("accessCode") ?? ""), request, materials: ready }),
+        body: JSON.stringify({ accessCode: String(form.get("accessCode") ?? ""), request, materials: ready, ...(signedIn && form.get("keepSources") === "on" ? { keepSources: true } : {}) }),
       });
     } catch {
       setBusy(false);
@@ -192,6 +201,12 @@ export function Builder({ announcement }: { announcement?: string }) {
           {overall && !overall.ok ? <p className="helper helper-error">{materialText(overall.code, ready)}</p> : null}
           {bytes > MAX_TEXT_BYTES ? <p className="helper helper-error">{t("bigText")}</p> : null}
           <p className="helper">{t("autoHint")}</p>
+          {signedIn ? (
+            <label className="option-card" style={{ marginTop: 12 }}>
+              <input name="keepSources" type="checkbox" />
+              <span><b>{tc("keepWhenCreating")}</b><small>{tc("keepHelper")}</small></span>
+            </label>
+          ) : null}
           <p className="helper">{t("privacy")}</p>
         </section>
 

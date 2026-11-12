@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { removeCourse, saveCourse } from "@/app/manage/[token]/actions";
 import styles from "@/app/manage/manage.module.css";
 import type { EditorModel } from "@/lib/sites/editor-model";
 import type { CoursePatch } from "@/lib/sites/edit";
@@ -12,7 +11,15 @@ type BlockState = { remove: boolean; md: string };
 
 const blockId = (slug: string, sectionId: string, index: number) => `${slug}|${sectionId}|${index}`;
 
-export function Editor({ token, model }: { token: string; model: EditorModel }) {
+export function Editor({
+  model,
+  save: savePatch,
+  remove: removeSite,
+}: {
+  model: EditorModel;
+  save: (patch: CoursePatch) => Promise<{ ok: true } | { ok: false; code: string }>;
+  remove: () => Promise<{ ok: boolean }>;
+}) {
   const t = useTranslations("manage");
   const router = useRouter();
   const [title, setTitle] = useState(model.title);
@@ -68,7 +75,7 @@ export function Editor({ token, model }: { token: string; model: EditorModel }) 
     setPending(true);
     setMessage(null);
     try {
-      const result = await saveCourse(token, patch);
+      const result = await savePatch(patch);
       if (result.ok) {
         setMessage({ ok: true, text: t("saved") });
         router.refresh();
@@ -83,7 +90,7 @@ export function Editor({ token, model }: { token: string; model: EditorModel }) 
 
   async function remove() {
     if (!window.confirm(t("deleteConfirm"))) return;
-    const result = await removeCourse(token);
+    const result = await removeSite();
     if (result.ok) window.location.assign("/");
     else setMessage({ ok: false, text: errorText("not-found") });
   }

@@ -272,5 +272,33 @@
     "deleteAccountText": "Se șterg toate cursurile tale, versiunile lor și fișierele păstrate. Nu se poate anula.",
     "deleteAccountButton": "Șterge-mi contul",
     "deleteAccountConfirm": "Ștergi contul și toate cursurile? Nu se poate anula."
+  },
+  "course": {
+    "versionsTitle": "Versiuni anterioare",
+    "lectures": "{count, plural, one {# lecție} few {# lecții} other {# de lecții}}",
+    "restore": "Restaurează",
+    "restoreConfirm": "Restaurezi această versiune? Versiunea actuală se păstrează ca versiune anterioară.",
+    "restoreFailed": "Versiunea nu a putut fi restaurată.",
+    "reason": {
+      "edit": "editat manual",
+      "refine": "îmbunătățit",
+      "append": "materiale adăugate",
+      "rebuild": "reorganizat",
+      "restore": "o restaurare"
+    },
+    "keptTitle": "Fișierele tale",
+    "keepFiles": "Păstrează-mi fișierele",
+    "keepHelper": "Doar tu le poți folosi. Le poți șterge oricând.",
+    "usage": "{files, plural, one {# fișier} few {# fișiere} other {# de fișiere}} · {size} MB din 4 MB",
+    "deleteFiles": "Șterge-mi fișierele",
+    "refineTitle": "Îmbunătățește cursul",
+    "roundsLeft": "Runde rămase: {count} din 3",
+    "refineExamples": "De exemplu: Simplifică lecția 2. Adaugă mai multe exerciții la ultima lecție.",
+    "refine": "Îmbunătățește",
+    "noRounds": "Ai folosit toate cele trei runde. Poți încă edita manual mai jos.",
+    "addTitle": "Adaugă materiale",
+    "addHelper": "Lecțiile noi se adaugă la final. Lecțiile existente nu se schimbă.",
+    "addButton": "Adaugă la acest curs",
+    "keepWhenCreating": "Păstrează-mi fișierele în privat, ca să pot reorganiza cursul mai târziu"
   }
 }

@@ -272,5 +272,33 @@
     "deleteAccountText": "This deletes all your courses, their versions and your kept files. It cannot be undone.",
     "deleteAccountButton": "Delete my account",
     "deleteAccountConfirm": "Delete your account and all your courses? This cannot be undone."
+  },
+  "course": {
+    "versionsTitle": "Earlier versions",
+    "lectures": "{count, plural, one {# lecture} other {# lectures}}",
+    "restore": "Restore",
+    "restoreConfirm": "Restore this version? The current one is saved as an earlier version.",
+    "restoreFailed": "This version could not be restored.",
+    "reason": {
+      "edit": "edited by hand",
+      "refine": "refined",
+      "append": "material added",
+      "rebuild": "reorganised",
+      "restore": "a restore"
+    },
+    "keptTitle": "Your files",
+    "keepFiles": "Keep my files",
+    "keepHelper": "Only you can use them. You can delete them at any time.",
+    "usage": "{files, plural, one {# file} other {# files}} · {size} MB of 4 MB",
+    "deleteFiles": "Delete my files",
+    "refineTitle": "Refine this course",
+    "roundsLeft": "Rounds left: {count} of 3",
+    "refineExamples": "For example: Make lecture 2 simpler. Add more practice to the last lecture.",
+    "refine": "Refine",
+    "noRounds": "All three refinement rounds are used. You can still edit by hand below.",
+    "addTitle": "Add material",
+    "addHelper": "New lectures are added at the end. Existing lectures are not changed.",
+    "addButton": "Add to this course",
+    "keepWhenCreating": "Keep my files privately so I can reorganise this course later"
   }
 }

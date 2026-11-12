@@ -14,7 +14,10 @@ import {
   isLevel,
   underDailyLimit,
 } from "@/lib/guard";
-import { advance, answerContext, createJob, loadContext, loadDesign, loadRequest, readState, saveJobState, writeJobFile, type AdvanceDeps } from "@/lib/jobs/steps";
+import { advance, answerContext, createCourseJob, createJob, defaultContextFor, loadContext, loadDesign, loadJobMaterials, loadRequest, readState, saveJobState, writeJobFile, type AdvanceDeps } from "@/lib/jobs/steps";
+import { addSources, claimBusy, claimRound, mergeSources, readBrief, readSources, releaseBusy, resolveAccess, SOURCE_LIMIT_BYTES, SOURCE_LIMIT_FILES } from "@/lib/sites/library";
+import { readMeta, readSite } from "@/lib/sites/store";
+import { LIMITS } from "@core/generate/index";
 import { JOB_ID, jobKey, type JobState } from "@/lib/jobs/state";
 import type { Store } from "@/lib/jobs/store";
 import { accountsConfigured } from "@/lib/auth/config";
@@ -169,6 +172,7 @@ export function publicJob(state: JobState): PublicJob {
   const { id, step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt } = state;
   const result: PublicJob = { id, kind: state.kind ?? "create", step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt };
   if (status === "awaiting-review") result.waiting = waitingOf(state);
+  if (status === "done" && state.summary) result.summary = state.summary;
   if (status === "done" && state.manageUrl) result.manageUrl = state.manageUrl;
   return result;
 }
@@ -191,6 +195,16 @@ export async function getJobHandler(id: string, store: Store): Promise<Response>
   const result: PublicJob = publicJob(state);
   const waiting = waitingOf(state);
   if (waiting === "answers") result.questions = (await loadContext(store, id)).questions;
+  if (waiting === "choice" && state.courseKey) {
+    const [append, site, meta] = await Promise.all([store.read(jobKey(id, "append.json")), readSite(store, state.courseKey), readMeta(store, state.courseKey)]);
+    const proposal = append ? (JSON.parse(append) as { restructure?: { affected: string[]; reason: string } | null }).restructure : null;
+    const kept = meta?.keepSources ? (await readSources(store, state.courseKey)).length > 0 : false;
+    result.choice = {
+      reason: proposal?.reason ?? "",
+      affected: (proposal?.affected ?? []).map((slug) => ({ slug, title: site?.lectures.find((lecture) => lecture.meta.slug === slug)?.meta.title ?? slug })),
+      canReorganize: kept,
+    };
+  }
   if (waiting === "design") {
     const [design, context] = await Promise.all([loadDesign(store, id), loadContext(store, id)]);
     const plan = design.recommended;
@@ -302,6 +316,106 @@ export async function designHandler(id: string, request: Request, store: Store, 
   await writeJobFile(store, id, "outline.json", chosen);
   return json(publicJob(await saveJobState(store, { ...base, step: "expand", lecturesTotal: chosen.lectures.length }, now)));
 }
+
+const courseJobSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("refine"), note: z.string() }).strict(),
+  z.object({ kind: z.literal("append"), materials: z.array(z.unknown()).max(50) }).strict(),
+]);
+
+/** POST /api/courses/:key/jobs — an owner refines a course or adds material to it. */
+export async function courseJobHandler(key: string, request: Request, store: Store, env: NodeJS.ProcessEnv, user: User | null, now = new Date()): Promise<Response> {
+  if (!user) return fail("sign-in-required");
+  const access = await resolveAccess(store, { uid: user.uid, key }).catch(() => null);
+  if (!access) return fail("not-found");
+  const settings = await readSettings(store);
+  if (!generationEnabled(env, settings)) return fail("generation-off");
+  const text = await request.text();
+  if (Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES) return fail("too-large");
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return fail("bad-request");
+  }
+  const body = courseJobSchema.safeParse(raw);
+  if (!body.success) return fail("bad-request");
+
+  let materials: z.infer<typeof materialSchema>[] = [];
+  if (body.data.kind === "refine") {
+    const note = body.data.note.trim();
+    if (!note || note.length > LIMITS.refineNote) return fail("bad-request");
+  } else {
+    const parsed = z.array(materialSchema).safeParse(body.data.materials);
+    if (!parsed.success) return fail("bad-request");
+    materials = parsed.data;
+    const check = checkMaterials(materials);
+    if (!check.ok) return json({ error: check.message, code: check.code }, 400);
+    const site = await readSite(store, access.key);
+    if (site && site.lectures.length >= LIMITS.courseLectures) return fail("course-full");
+    if (access.meta.keepSources) {
+      const merged = mergeSources(await readSources(store, access.key), materials);
+      const bytes = merged.reduce((sum, material) => sum + Buffer.byteLength(JSON.stringify(material), "utf8"), 0);
+      if (merged.length > SOURCE_LIMIT_FILES || bytes > SOURCE_LIMIT_BYTES) return fail("sources-full");
+    }
+  }
+
+  const day = dayKey(now);
+  const counted = async (prefix: string) => (await store.list(prefix)).length;
+  if ((await counted(userDayPrefix(user.uid, day))) >= USER_DAILY_JOBS) return fail("user-daily-limit");
+  if (!(await underDailyLimit(day, settings.dailyJobLimit ?? dailyJobLimit(env), counted))) return fail("daily-limit");
+
+  const id = crypto.randomUUID();
+  if (!(await claimBusy(store, access.key, id, now))) return fail("course-busy");
+  let round: number | undefined;
+  if (body.data.kind === "refine") {
+    const claimed = await claimRound(store, access.key, id, now);
+    if (claimed === null) {
+      await releaseBusy(store, access.key, id);
+      return fail("rounds-used");
+    }
+    round = claimed;
+  }
+  await createCourseJob(
+    store,
+    { kind: body.data.kind, courseKey: access.key, ownerId: user.uid, round, ...(body.data.kind === "refine" ? { note: body.data.note.trim() } : { materials }) },
+    now,
+    id,
+  );
+  await store.write(`${dayPrefix(day)}${id}`, "1");
+  await store.write(`${userDayPrefix(user.uid, day)}${id}`, "1");
+  logEvent("job.created", { jobId: id, kind: body.data.kind, signedIn: true });
+  return json({ id }, 202);
+}
+
+const choiceSchema = z.object({ choice: z.enum(["append", "reorganize"]) }).strict();
+
+/** PUT /api/jobs/:id/choice — after added material overlaps: add as new lectures, or reorganise everything. */
+export async function choiceHandler(id: string, request: Request, store: Store, now = new Date()): Promise<Response> {
+  if (!validId(id)) return fail("bad-id");
+  const state = await readState(store, id);
+  if (!state || !state.courseKey) return fail("not-found");
+  if (waitingOf(state) !== "choice") return fail("wrong-state");
+  const body = choiceSchema.safeParse(await readBody(request));
+  if (!body.success) return fail("bad-request");
+  const base = { ...state, status: "idle" as const, waiting: undefined, attempts: 0, error: undefined, lecturesDone: 0 };
+  if (body.data.choice === "append") return json(publicJob(await saveJobState(store, { ...base, step: "lecture:1" }, now)));
+
+  const meta = await readMeta(store, state.courseKey);
+  const stored = meta?.keepSources ? await readSources(store, state.courseKey) : [];
+  if (stored.length === 0) return fail("sources-missing");
+  const merged = mergeSources(stored, await loadJobMaterials(store, id));
+  const check = checkMaterials(merged);
+  if (!check.ok) return json({ error: check.message, code: check.code }, 400);
+  const site = await readSite(store, state.courseKey);
+  if (!site) return fail("not-found");
+  const brief = await readBrief(store, state.courseKey, site);
+  await writeJobFile(store, id, "materials.json", merged);
+  await writeJobFile(store, id, "brief.json", brief);
+  await writeJobFile(store, id, "context.json", defaultContextFor(brief, site.course.title));
+  return json(publicJob(await saveJobState(store, { ...base, kind: "rebuild", step: "design" }, now)));
+}
+
+export { addSources };
 
 function secretMatches(header: string | null, secret: string | undefined): boolean {
   if (!secret || secret.length < 16 || !header) return false;

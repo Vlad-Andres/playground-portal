@@ -1,4 +1,6 @@
+import { revalidateTag } from "next/cache";
 import { after } from "next/server";
+import { courseTag } from "@/lib/sites/load";
 import { advanceJob, shouldChain } from "@/lib/api/handlers";
 import { runtimeDeps } from "@/lib/jobs/runtime";
 import { defaultStore } from "@/lib/jobs/store";
@@ -13,7 +15,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const store = defaultStore();
   // Settings are read on every request, so a pause or a model change applies at once.
   const settings = await readSettings(store);
-  const { response, state } = await advanceJob(id, () => runtimeDeps(process.env, store, settings), process.env, settings);
+  const { response, state } = await advanceJob(id, () => ({ ...runtimeDeps(process.env, store, settings), onCourseChanged: (key: string) => revalidateTag(courseTag(key), "max") }), process.env, settings);
   // A step that finished cleanly starts the next one from the server, so a closed tab cannot stop the job.
   if (state && shouldChain(state)) {
     after(() => {
