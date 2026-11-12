@@ -4,8 +4,19 @@ import { buildSiteData, siteDataSchema } from "@core/site";
 import { cleanupHandler } from "@/lib/api/handlers";
 import { advance, createJob, type JobState } from "@/lib/jobs/steps";
 import { memoryStore } from "@/lib/jobs/store";
-import { portalPublisher } from "@/lib/publish/portal";
-import { COURSE_KEY, courseKeyFor, deleteSite, readSite, siteKey, writeSite } from "@/lib/sites/store";
+import { siteFromFiles } from "@/lib/sites/publish";
+import {
+  COURSE_KEY,
+  courseKeyFor,
+  deleteSite,
+  findCourseByOwnerToken,
+  ownerHash,
+  readMeta,
+  readSite,
+  siteKey,
+  writeSite,
+  type SiteMeta,
+} from "@/lib/sites/store";
 import { fixtureCourse, fixtureLecture } from "./fixtures/site";
 
 const brief: Brief = { language: "en", level: "university", depth: "cram", examMode: true, quizzes: true, widgets: true, context: "" };
@@ -14,11 +25,14 @@ const materials: Material[] = [
   { name: "b.txt", pages: [{ n: 1, text: "Kinetic energy is half m v squared. ".repeat(20) }] },
 ];
 
+/** Any 32-character token of the owner-link shape. */
+const TOKEN = "AbCdEfGhIjKlMnOpQrStUvWxYz012345";
+
 function setup(start = new Date("2026-11-11T10:00:00Z")) {
   let clock = start.getTime();
   const now = () => new Date(clock);
   const store = memoryStore(now);
-  const deps = { store, model: cannedModel(), now, publish: portalPublisher(store, now) };
+  const deps = { store, model: cannedModel(), now };
   return { store, deps, now, tick: (days: number) => (clock += days * 86_400_000) };
 }
 
@@ -52,7 +66,7 @@ describe("course keys", () => {
   });
 });
 
-describe("portal publishing", () => {
+describe("publishing a job", () => {
   it("a fake-model job ends done with a /courses/<key>/ URL and a valid stored site", async () => {
     const ctx = setup();
     const state = await runJob(ctx);
@@ -90,25 +104,91 @@ describe("portal publishing", () => {
     expect(await readSite(ctx.store, key)).not.toBeNull();
   });
 
-  it("check reports failed for a course that is not stored", async () => {
+  it("refuses a bundle with a path outside the allow-list", () => {
+    const files = { "course.json": JSON.stringify(fixtureCourse), "../evil.json": "{}" };
+    expect(() => siteFromFiles("demo-abcd1234", files)).toThrow(/Not allowed/);
+  });
+});
+
+describe("site metadata and owner links", () => {
+  const key = "demo-12345678";
+  const site = buildSiteData({ key, course: fixtureCourse, lectures: [fixtureLecture], exam: null, expected: [] });
+
+  function meta(extra: Partial<SiteMeta> = {}): SiteMeta {
+    return {
+      formatVersion: 1,
+      jobId: "12345678",
+      publishedAt: "2026-11-11T10:00:00Z",
+      updatedAt: "2026-11-11T10:00:00Z",
+      title: "Demo course",
+      lectures: 1,
+      usage: { inputTokens: 1000, outputTokens: 2000, calls: 3 },
+      ownerHash: "b".repeat(64),
+      ...extra,
+    };
+  }
+
+  it("readMeta returns the stored metadata", async () => {
     const { store } = setup();
-    expect(await portalPublisher(store).check({ repo: "nothing-abcd1234", commitSha: "" })).toEqual({ state: "failed" });
+    await writeSite(store, key, site, meta());
+    expect(await readMeta(store, key)).toEqual(meta());
   });
 
-  it("refuses a bundle with a path outside the allow-list", async () => {
+  it("readMeta fills defaults for an old meta file", async () => {
     const { store } = setup();
-    const files = { "course.json": JSON.stringify(fixtureCourse), "../evil.json": "{}" };
-    await expect(portalPublisher(store).start({ repoName: "demo-abcd1234", files })).rejects.toThrow(/Not allowed/);
+    await store.write(`courses/${key}/meta.json`, JSON.stringify({ jobId: "x", publishedAt: "2026-11-11T10:00:00Z" }));
+    expect(await readMeta(store, key)).toEqual({
+      formatVersion: 1,
+      jobId: "x",
+      publishedAt: "2026-11-11T10:00:00Z",
+      updatedAt: "2026-11-11T10:00:00Z",
+      title: "",
+      lectures: 0,
+      usage: { inputTokens: 0, outputTokens: 0, calls: 0 },
+      ownerHash: "",
+    });
+  });
+
+  it("readMeta returns null for a missing or unreadable file", async () => {
+    const { store } = setup();
+    expect(await readMeta(store, key)).toBeNull();
+    await store.write(`courses/${key}/meta.json`, "{nope");
+    expect(await readMeta(store, key)).toBeNull();
+  });
+
+  it("findCourseByOwnerToken finds the course, and null for every other case", async () => {
+    const { store } = setup();
+    await writeSite(store, key, site, meta());
+    expect(await findCourseByOwnerToken(store, TOKEN)).toBeNull(); // the meta hash belongs to another token
+    const own = meta({ ownerHash: ownerHash(TOKEN) });
+    await writeSite(store, key, site, own);
+    expect(await findCourseByOwnerToken(store, TOKEN)).toBe(key);
+
+    expect(await findCourseByOwnerToken(store, "too-short")).toBeNull();
+    expect(await findCourseByOwnerToken(store, "d".repeat(32))).toBeNull(); // unknown token
+    // An owners/ file that points at a course with a different hash proves nothing.
+    await store.write(`owners/${"d".repeat(64)}.json`, JSON.stringify({ key }));
+    expect(await findCourseByOwnerToken(store, "d".repeat(32))).toBeNull();
   });
 });
 
 describe("readSite, writeSite, deleteSite", () => {
   const key = "demo-12345678";
   const site = buildSiteData({ key, course: fixtureCourse, lectures: [fixtureLecture], exam: null, expected: [] });
+  const meta: SiteMeta = {
+    formatVersion: 1,
+    jobId: "12345678",
+    publishedAt: "2026-11-11T10:00:00Z",
+    updatedAt: "2026-11-11T10:00:00Z",
+    title: "Demo course",
+    lectures: 1,
+    usage: { inputTokens: 0, outputTokens: 0, calls: 0 },
+    ownerHash: "e".repeat(64),
+  };
 
   it.each([["../x"], ["ABC-1234abcd"], ["demo-1234"], [""], ["unknown-abcd1234"]])("returns null for %j", async (bad) => {
     const { store } = setup();
-    await writeSite(store, key, site, { jobId: "12345678", publishedAt: "2026-11-11T10:00:00Z" });
+    await writeSite(store, key, site, meta);
     expect(await readSite(store, bad)).toBeNull();
   });
 
@@ -124,16 +204,18 @@ describe("readSite, writeSite, deleteSite", () => {
 
   it("refuses to write a site under another key", async () => {
     const { store } = setup();
-    await expect(writeSite(store, "other-12345678", site, { jobId: "x", publishedAt: "" })).rejects.toThrow();
-    await expect(writeSite(store, "../x", site, { jobId: "x", publishedAt: "" })).rejects.toThrow();
+    await expect(writeSite(store, "other-12345678", site, meta)).rejects.toThrow();
+    await expect(writeSite(store, "../x", site, meta)).rejects.toThrow();
   });
 
-  it("deleteSite removes both files", async () => {
+  it("deleteSite removes site.json, meta.json and the owner file", async () => {
     const { store } = setup();
-    await writeSite(store, key, site, { jobId: "12345678", publishedAt: "2026-11-11T10:00:00Z" });
+    await writeSite(store, key, site, meta);
     expect(await store.list(`courses/${key}/`)).toHaveLength(2);
+    expect(await store.list("owners/")).toHaveLength(1);
     expect(await deleteSite(store, key)).toBe(true);
     expect(await store.list(`courses/${key}/`)).toEqual([]);
+    expect(await store.list("owners/")).toEqual([]);
     expect(await deleteSite(store, key)).toBe(false);
     expect(await deleteSite(store, "../x")).toBe(false);
   });

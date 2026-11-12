@@ -9,7 +9,8 @@ export async function extractPdf(file: File): Promise<Material> {
   if (file.size > MAX_FILE_BYTES) throw new Error("This PDF is larger than 50 MB.");
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-  const document = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), disableFontFace: true, verbosity: 0 }).promise;
+  const task = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), disableFontFace: true, verbosity: 0 });
+  const document = await task.promise;
   const pages = [];
   try {
     for (let n = 1; n <= document.numPages; n += 1) {
@@ -18,7 +19,8 @@ export async function extractPdf(file: File): Promise<Material> {
       page.cleanup();
     }
   } finally {
-    await document.destroy();
+    // pdf.js 6 removes PDFDocumentProxy.destroy(); the loading task owns the worker teardown.
+    await task.destroy();
   }
   return { name: file.name, pages };
 }

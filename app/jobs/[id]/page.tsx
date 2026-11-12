@@ -6,14 +6,13 @@ import type { PublicJob } from "@/lib/api/handlers";
 
 const POLL_MS = 3000;
 
-type Phase = "plan" | "review" | "lectures" | "finish" | "publish" | "done";
+type Phase = "plan" | "review" | "lectures" | "finish" | "done";
 
 function phaseOf(job: PublicJob): Phase {
   if (job.step === "plan") return "plan";
   if (job.step === "review") return "review";
   if (job.step.startsWith("lecture:")) return "lectures";
   if (job.step === "finish") return "finish";
-  if (job.step === "publish" || job.step === "publish-wait") return "publish";
   return "done";
 }
 
@@ -22,7 +21,6 @@ const PHASES: { id: Phase; label: string }[] = [
   { id: "review", label: "Review the outline" },
   { id: "lectures", label: "Write the lectures" },
   { id: "finish", label: "Check and package" },
-  { id: "publish", label: "Publish the site" },
   { id: "done", label: "Done" },
 ];
 
@@ -33,7 +31,6 @@ function currentLabel(job: PublicJob): string {
   if (phase === "review") return "Your outline is ready. Rename or remove lectures, then build.";
   if (phase === "lectures") return `Writing lecture ${Math.min(job.lecturesDone + 1, job.lecturesTotal)} of ${job.lecturesTotal}…`;
   if (phase === "finish") return "Checking every block and packaging the course…";
-  if (phase === "publish") return "Publishing your site on GitHub Pages…";
   return "Your course is ready.";
 }
 

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { bundleSchema, cannedModel, type Brief } from "@core/generate/index";
-import { courseSchema, lectureFileSchema } from "@core/schema";
-import { validateCourseData } from "@core/validate";
+import { cannedModel, type Brief } from "@core/generate/index";
+import { siteDataSchema } from "@core/site";
 import { advanceHandler, cleanupHandler, createJobHandler, getJobHandler, MAX_BODY_BYTES, outlineHandler } from "@/lib/api/handlers";
 import { jobKey } from "@/lib/jobs/state";
 import { memoryStore } from "@/lib/jobs/store";
+import { readSite } from "@/lib/sites/store";
 
 const CODE = "correct-horse-battery";
 const env = { PORTAL_ENABLE_GENERATION: "true", PORTAL_ACCESS_CODE: CODE, PORTAL_DAILY_JOB_LIMIT: "2", CRON_SECRET: "0123456789abcdef0123" } as unknown as NodeJS.ProcessEnv;
@@ -74,25 +74,21 @@ describe("job routes", () => {
 
     for (let i = 0; i < 10 && state.status !== "done"; i += 1) state = await (await advanceHandler(id, deps, env)).json();
     expect(state).toMatchObject({ status: "done", lecturesDone: 1 });
-    // Learners and authors never see usage, models or internal files.
+    // Learners and authors never see usage, models, invite codes or internal files.
     for (const body of [state, await (await getJobHandler(id, store)).json()]) {
       expect(Object.keys(body)).not.toContain("usage");
-      expect(Object.keys(body)).not.toContain("bundleReady");
+      expect(Object.keys(body)).not.toContain("codeId");
       expect(JSON.stringify(body)).not.toMatch(/token|model|gemini/i);
     }
 
-    const bundle = bundleSchema.parse(JSON.parse((await store.read(jobKey(id, "bundle.json"))) ?? "null"));
-    const lectures = Object.entries(bundle.files).filter(([path]) => path.startsWith("lectures/"));
-    expect(lectures).toHaveLength(1);
-    const problems = validateCourseData({
-      course: courseSchema.parse(JSON.parse(bundle.files["course.json"])),
-      lectures: lectures.map(([file, text]) => ({ file, data: lectureFileSchema.parse(JSON.parse(text)) })),
-      exam: bundle.files["exam.json"] ? lectureFileSchema.parse(JSON.parse(bundle.files["exam.json"])) : null,
-      expected: [],
-      figures: new Set(),
-    });
-    expect(problems.filter((problem) => problem.severity === "error")).toEqual([]);
-    expect(JSON.parse(lectures[0][1]).meta.title).toBe("Renamed");
+    const match = /^\/courses\/([^/]+)\/$/.exec(state.siteUrl ?? "");
+    expect(match).not.toBeNull();
+    const site = await readSite(store, match![1]);
+    expect(site).not.toBeNull();
+    expect(siteDataSchema.safeParse(site).success).toBe(true);
+    expect(site?.lectures).toHaveLength(1);
+    expect(site?.lectures[0]?.meta.title).toBe("Renamed");
+    expect(await store.read(jobKey(id, "bundle.json"))).toBeNull();
   });
 
   it("400 for a malformed id, 404 for an unknown job, 503 when advancing while disabled", async () => {
