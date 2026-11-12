@@ -25,7 +25,9 @@ export function DesignPreview({
   onBuild: (input: { choice: string; keep: string[]; titles: Record<string, string> }) => void;
 }) {
   const t = useTranslations("job");
+  const tc = useTranslations("create");
   const locale = useLocale();
+  const LEVEL_KEYS: Record<string, string> = { school: "levelSchool", university: "levelUniversity", professional: "levelProfessional" };
   const [choice, setChoice] = useState(design.options[0]?.id ?? "recommended");
   const [titles, setTitles] = useState<Record<string, string>>({});
   const [removed, setRemoved] = useState<Set<string>>(new Set());
@@ -42,7 +44,7 @@ export function DesignPreview({
   return (
     <div className={styles.block}>
       <h2>{t("designTitle")}</h2>
-      <p className={styles.summary}>{[design.subject, languageName, design.level].filter(Boolean).join(" · ")}</p>
+      <p className={styles.summary}>{[design.subject, languageName, LEVEL_KEYS[design.level] ? tc(LEVEL_KEYS[design.level]) : design.level].filter(Boolean).join(" · ")}</p>
       {design.goals.length ? (
         <div>
           <p className={styles.label}>{t("goalsTitle")}</p>
