@@ -102,18 +102,15 @@ export async function loadPlan(store: Store, id: string): Promise<CoursePlan> {
   return plan.data;
 }
 
-/** Short, user-safe text for an error (never a provider body or a key). */
-function safeMessage(error: unknown): string {
-  // Users never see providers, models or token counts; details stay in the server logs.
-  if (error instanceof BudgetExceeded) return "This course is too large to finish. Try fewer or shorter files.";
+/** A stable code for a failed step. Users never see providers, models or token counts; details stay in the logs. */
+export function errorCode(error: unknown): string {
+  if (error instanceof BudgetExceeded) return "course-too-big";
   const message = error instanceof Error ? error.message : "";
-  if (/^The course plan was invalid twice/.test(message)) return "We could not plan this course. Please try again.";
-  if (message === "lecture produced no valid content" || /^The lecture reply was not JSON/.test(message)) {
-    return "We could not write this lecture. Please try again.";
-  }
-  if (/^(Gemini|Model) request failed( \(HTTP \d+\))?\.$/.test(message)) return "The service is busy. Please try again in a minute.";
-  if (message === "The uploaded material is no longer available.") return message;
-  return "This step failed. Please try again.";
+  if (/^The course plan was invalid twice/.test(message)) return "plan-failed";
+  if (message === "lecture produced no valid content" || /^The lecture reply was not JSON/.test(message)) return "lecture-failed";
+  if (/^(Gemini|Model) request failed( \(HTTP \d+\))?\.$/.test(message)) return "busy";
+  if (message === "The uploaded material is no longer available.") return "material-gone";
+  return "step-failed";
 }
 
 /** Run exactly one step. Returns the state to save. */
@@ -182,7 +179,7 @@ export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> 
     if (age !== null && age < CLAIM_TTL_SECONDS) return { ...state, status: "working" };
     const attempts = state.attempts + 1;
     if (attempts >= MAX_ATTEMPTS) {
-      const failed: JobState = { ...state, attempts, status: "failed", error: "This step failed three times." };
+      const failed: JobState = { ...state, attempts, status: "failed", error: "step-failed" };
       logEvent("job.failed", { jobId: id, step: state.step, code: failed.error });
       return saveState(store, failed, now);
     }
@@ -217,10 +214,10 @@ export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> 
     logEvent("job.step", { ...stepFields(), ok: true, ms: Date.now() - started });
     return saveState(store, addUsage(next), deps.now());
   } catch (error) {
-    const message = safeMessage(error);
+    const code = errorCode(error);
     logEvent("job.step", { ...stepFields(), ok: false, ms: Date.now() - started, error: logMessage(error) });
     if (error instanceof BudgetExceeded) {
-      const failed: JobState = { ...state, status: "failed", error: message };
+      const failed: JobState = { ...state, status: "failed", error: code };
       logEvent("job.failed", { jobId: id, step: state.step, code: failed.error });
       return saveState(store, addUsage(failed), deps.now());
     }
@@ -230,7 +227,7 @@ export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> 
       ...state,
       attempts,
       status: gaveUp ? "failed" : "idle",
-      error: gaveUp ? `${message} It failed three times.` : message,
+      error: code,
     };
     if (gaveUp) logEvent("job.failed", { jobId: id, step: state.step, code: next.error });
     return saveState(store, addUsage(next), deps.now());

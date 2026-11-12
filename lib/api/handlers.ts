@@ -22,8 +22,35 @@ function json(body: unknown, status = 200): Response {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 
-function error(message: string, status: number): Response {
-  return json({ error: message }, status);
+/** Every API error has a stable code; the English sentence is for logs and API users, the browser translates the code. */
+const MESSAGES = {
+  "generation-off": "Generation is disabled on this server.",
+  "too-large": "The material is larger than 4 MB of text.",
+  "bad-request": "The request is not valid.",
+  "wrong-code": "The access code is not correct.",
+  "daily-limit": "Today's job limit has been reached. Please try again tomorrow.",
+  "bad-id": "Invalid job id.",
+  "not-found": "Job not found.",
+  "wrong-state": "The outline can only be changed while it waits for review.",
+  "bad-outline": "Keep at least one lecture; titles have at most 120 characters.",
+} as const;
+
+export type ApiErrorCode = keyof typeof MESSAGES;
+
+const STATUS: Record<ApiErrorCode, number> = {
+  "generation-off": 503,
+  "too-large": 413,
+  "bad-request": 400,
+  "wrong-code": 401,
+  "daily-limit": 429,
+  "bad-id": 400,
+  "not-found": 404,
+  "wrong-state": 409,
+  "bad-outline": 400,
+};
+
+function fail(code: ApiErrorCode): Response {
+  return json({ error: MESSAGES[code], code }, STATUS[code]);
 }
 
 const createBodySchema = z
@@ -32,34 +59,34 @@ const createBodySchema = z
 
 /** POST /api/jobs */
 export async function createJobHandler(request: Request, store: Store, env: NodeJS.ProcessEnv, now = new Date()): Promise<Response> {
-  if (!generationEnabled(env)) return error("Generation is disabled on this server.", 503);
+  if (!generationEnabled(env)) return fail("generation-off");
   const declared = Number(request.headers.get("content-length") ?? "0");
-  if (declared > MAX_BODY_BYTES) return error("The material is larger than 4 MB of text.", 413);
+  if (declared > MAX_BODY_BYTES) return fail("too-large");
   const text = await request.text();
-  if (Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES) return error("The material is larger than 4 MB of text.", 413);
+  if (Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES) return fail("too-large");
 
   let raw: unknown;
   try {
     raw = JSON.parse(text);
   } catch {
-    return error("The request is not valid JSON.", 400);
+    return fail("bad-request");
   }
   const body = createBodySchema.safeParse(raw);
-  if (!body.success) return error("The request is not in the expected shape.", 400);
-  if (!accessCodeMatches(body.data.accessCode, env)) return error("The access code is not correct.", 401);
+  if (!body.success) return fail("bad-request");
+  if (!accessCodeMatches(body.data.accessCode, env)) return fail("wrong-code");
 
   const briefInput = (body.data.brief ?? {}) as Record<string, unknown>;
-  if (!isLanguage(briefInput.language) || !isLevel(briefInput.level)) return error("Unknown language or level.", 400);
+  if (!isLanguage(briefInput.language) || !isLevel(briefInput.level)) return fail("bad-request");
   const day = dayKey(now);
   const counted = async (prefix: string) => (await store.list(prefix)).length;
   if (!(await underDailyLimit(day, dailyJobLimit(env), counted))) {
-    return error("Today's job limit has been reached. Please try again tomorrow.", 429);
+    return fail("daily-limit");
   }
 
   const brief = briefSchema.safeParse(body.data.brief);
-  if (!brief.success) return error(`The options are not valid: ${brief.error.issues[0]?.path.join(".")}`, 400);
+  if (!brief.success) return fail("bad-request");
   const materials = z.array(materialSchema).safeParse(body.data.materials);
-  if (!materials.success) return error("The material is not in the expected shape.", 400);
+  if (!materials.success) return fail("bad-request");
   const check = checkMaterials(materials.data);
   if (!check.ok) return json({ error: check.message, code: check.code }, 400);
 
@@ -88,9 +115,9 @@ function validId(id: string): boolean {
 
 /** GET /api/jobs/:id — state, plus the outline while waiting for review. Never materials or brief context. */
 export async function getJobHandler(id: string, store: Store): Promise<Response> {
-  if (!validId(id)) return error("Invalid job id.", 400);
+  if (!validId(id)) return fail("bad-id");
   const state = await readState(store, id);
-  if (!state) return error("Job not found.", 404);
+  if (!state) return fail("not-found");
   const result: PublicJob = publicJob(state);
   if (state.status === "awaiting-review") {
     const plan = await loadPlan(store, id);
@@ -101,15 +128,15 @@ export async function getJobHandler(id: string, store: Store): Promise<Response>
 
 /** POST /api/jobs/:id/advance */
 export async function advanceHandler(id: string, deps: () => AdvanceDeps, env: NodeJS.ProcessEnv): Promise<Response> {
-  if (!validId(id)) return error("Invalid job id.", 400);
-  if (!generationEnabled(env)) return error("Generation is disabled on this server.", 503);
+  if (!validId(id)) return fail("bad-id");
+  if (!generationEnabled(env)) return fail("generation-off");
   let resolved: AdvanceDeps;
   try {
     resolved = deps();
   } catch {
-    return error("Course creation is not available right now.", 503);
+    return fail("generation-off");
   }
-  if (!(await readState(resolved.store, id))) return error("Job not found.", 404);
+  if (!(await readState(resolved.store, id))) return fail("not-found");
   return json(publicJob(await advance(id, resolved)));
 }
 
@@ -119,21 +146,21 @@ const outlineSchema = z
 
 /** PUT /api/jobs/:id/outline */
 export async function outlineHandler(id: string, request: Request, store: Store, now = new Date()): Promise<Response> {
-  if (!validId(id)) return error("Invalid job id.", 400);
+  if (!validId(id)) return fail("bad-id");
   const state = await readState(store, id);
-  if (!state) return error("Job not found.", 404);
-  if (state.status !== "awaiting-review") return error("The outline can only be changed while it waits for review.", 409);
+  if (!state) return fail("not-found");
+  if (state.status !== "awaiting-review") return fail("wrong-state");
   let raw: unknown;
   try {
     raw = await request.json();
   } catch {
-    return error("The request is not valid JSON.", 400);
+    return fail("bad-request");
   }
   const body = outlineSchema.safeParse(raw);
-  if (!body.success) return error("Keep at least one lecture; titles have at most 120 characters.", 400);
+  if (!body.success) return fail("bad-outline");
   const plan = await loadPlan(store, id);
   const slugs = new Set(plan.lectures.map((lecture) => lecture.slug));
-  if (body.data.keep.some((slug) => !slugs.has(slug))) return error("Unknown lecture in the outline.", 400);
+  if (body.data.keep.some((slug) => !slugs.has(slug))) return fail("bad-outline");
   const keep = new Set(body.data.keep);
   const lectures = plan.lectures
     .filter((lecture) => keep.has(lecture.slug))
@@ -154,7 +181,7 @@ function secretMatches(header: string | null, secret: string | undefined): boole
 
 /** GET /api/cron/cleanup — deletes jobs (and day markers) older than RETENTION_DAYS. */
 export async function cleanupHandler(request: Request, store: Store, env: NodeJS.ProcessEnv, now = new Date()): Promise<Response> {
-  if (!secretMatches(request.headers.get("authorization"), env.CRON_SECRET)) return error("Unauthorized.", 401);
+  if (!secretMatches(request.headers.get("authorization"), env.CRON_SECRET)) return json({ error: "Unauthorized.", code: "unauthorized" }, 401);
   const cutoff = now.getTime() - RETENTION_DAYS * 86_400_000;
   const byJob = new Map<string, { keys: string[]; oldest: number }>();
   for (const { key, uploadedAt } of await store.list("jobs/")) {

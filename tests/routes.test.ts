@@ -101,6 +101,91 @@ describe("job routes", () => {
   });
 });
 
+describe("error codes", () => {
+  const unknownId = "00000000-0000-4000-8000-000000000000";
+
+  async function read(response: Response): Promise<{ error: string; code: string }> {
+    return (await response.json()) as { error: string; code: string };
+  }
+
+  it("generation-off → 503", async () => {
+    const response = await createJobHandler(valid(), memoryStore(), { ...env, PORTAL_ENABLE_GENERATION: "false" });
+    expect(response.status).toBe(503);
+    expect(await read(response)).toMatchObject({ code: "generation-off" });
+  });
+
+  it("too-large → 413", async () => {
+    const big = post({ accessCode: CODE, brief, materials: [{ name: "a.txt", pages: [{ n: 1, text: "x".repeat(MAX_BODY_BYTES) }] }] });
+    const response = await createJobHandler(big, memoryStore(), env);
+    expect(response.status).toBe(413);
+    expect(await read(response)).toMatchObject({ code: "too-large" });
+  });
+
+  it("bad-request → 400 for not JSON, wrong shape, unknown language and invalid options", async () => {
+    expect(await read(await createJobHandler(post("{not json"), memoryStore(), env))).toMatchObject({ code: "bad-request" });
+    expect(await read(await createJobHandler(post({}), memoryStore(), env))).toMatchObject({ code: "bad-request" });
+    expect(await read(await createJobHandler(post({ accessCode: CODE, brief: { ...brief, language: "xx" }, materials }), memoryStore(), env))).toMatchObject({ code: "bad-request" });
+    expect(await read(await createJobHandler(post({ accessCode: CODE, brief: { ...brief, depth: "nope" }, materials }), memoryStore(), env))).toMatchObject({ code: "bad-request" });
+  });
+
+  it("wrong-code → 401", async () => {
+    const response = await createJobHandler(post({ accessCode: "nope", brief, materials }), memoryStore(), env);
+    expect(response.status).toBe(401);
+    expect(await read(response)).toMatchObject({ code: "wrong-code" });
+  });
+
+  it("daily-limit → 429", async () => {
+    const store = memoryStore();
+    await createJobHandler(valid(), store, env);
+    await createJobHandler(valid(), store, env);
+    const response = await createJobHandler(valid(), store, env);
+    expect(response.status).toBe(429);
+    expect(await read(response)).toMatchObject({ code: "daily-limit" });
+  });
+
+  it("material codes → 400 (empty, too-many-files, too-many-pages, too-long, scanned)", async () => {
+    const empty = post({ accessCode: CODE, brief, materials: [] });
+    expect(await read(await createJobHandler(empty, memoryStore(), env))).toMatchObject({ code: "empty" });
+
+    const manyFiles = Array.from({ length: 13 }, (_, i) => ({ name: `f${i}.txt`, pages: [{ n: 1, text: "word ".repeat(20) }] }));
+    expect(await read(await createJobHandler(post({ accessCode: CODE, brief, materials: manyFiles }), memoryStore(), env))).toMatchObject({ code: "too-many-files" });
+
+    const manyPages = Array.from({ length: 3 }, (_, i) => ({ name: `p${i}.txt`, pages: Array.from({ length: 150 }, (_, j) => ({ n: j + 1, text: "word ".repeat(10) })) }));
+    expect(await read(await createJobHandler(post({ accessCode: CODE, brief, materials: manyPages }), memoryStore(), env))).toMatchObject({ code: "too-many-pages" });
+
+    const tooLong = [{ name: "a.txt", pages: [{ n: 1, text: "x".repeat(600_001) }] }];
+    expect(await read(await createJobHandler(post({ accessCode: CODE, brief, materials: tooLong }), memoryStore(), env))).toMatchObject({ code: "too-long" });
+
+    const scanned = [{ name: "s.pdf", pages: [{ n: 1, text: "1" }, { n: 2, text: "" }] }];
+    expect(await read(await createJobHandler(post({ accessCode: CODE, brief, materials: scanned }), memoryStore(), env))).toMatchObject({ code: "scanned" });
+  });
+
+  it("bad-id → 400 and not-found → 404", async () => {
+    expect(await read(await getJobHandler("../x", memoryStore()))).toMatchObject({ code: "bad-id" });
+    expect((await getJobHandler("../x", memoryStore())).status).toBe(400);
+    expect(await read(await getJobHandler(unknownId, memoryStore()))).toMatchObject({ code: "not-found" });
+    expect((await getJobHandler(unknownId, memoryStore())).status).toBe(404);
+  });
+
+  it("wrong-state → 409", async () => {
+    const store = memoryStore();
+    const { id } = await (await createJobHandler(valid(), store, env)).json();
+    const response = await outlineHandler(id, new Request("http://x", { method: "PUT", body: "{}" }), store);
+    expect(response.status).toBe(409);
+    expect(await read(response)).toMatchObject({ code: "wrong-state" });
+  });
+
+  it("bad-outline → 400 for no lecture kept, unknown slug and a long title", async () => {
+    const store = memoryStore();
+    const { id } = await (await createJobHandler(valid(), store, env)).json();
+    await advanceHandler(id, () => ({ store, model: cannedModel(), now: () => new Date() }), env);
+    const put = (body: unknown) => outlineHandler(id, new Request("http://x", { method: "PUT", body: JSON.stringify(body) }), store);
+    expect(await read(await put({ keep: [], titles: {} }))).toMatchObject({ code: "bad-outline" });
+    expect(await read(await put({ keep: ["nope"], titles: {} }))).toMatchObject({ code: "bad-outline" });
+    expect(await read(await put({ keep: ["nope"], titles: { nope: "x".repeat(121) } }))).toMatchObject({ code: "bad-outline" });
+  });
+});
+
 describe("GET /api/cron/cleanup", () => {
   it("needs the bearer secret and deletes jobs older than 7 days", async () => {
     let now = new Date("2026-11-01T00:00:00Z");
