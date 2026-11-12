@@ -124,5 +124,28 @@
     "copy": "Copy",
     "copied": "Copied",
     "copyAria": "Copy the edit link"
+  },
+  "landing": {
+    "eyebrow": "Your course, made interactive",
+    "title": "Turn your lecture notes into a <em>study website.</em>",
+    "lead": "Upload slides or notes. In a few minutes you get a site with clear explanations, quizzes, practice and interactive exercises — built only from your material.",
+    "cta": "Create your site",
+    "ctaSecondary": "See how it works",
+    "howTitle": "How it works",
+    "how1Title": "Add your materials",
+    "how1Text": "PDF, text or Markdown. Files are read in your browser; only their text is sent.",
+    "how2Title": "Review the outline",
+    "how2Text": "Rename or remove lectures before anything is written.",
+    "how3Title": "Share the link",
+    "how3Text": "Your site is online right away. No account needed to study.",
+    "featuresTitle": "What your site includes",
+    "f1": "Lectures with explanations, tables and worked examples",
+    "f2": "A quiz after every lecture",
+    "f3": "Interactive exercises: ordering, matching, sorting, charts",
+    "f4": "Flashcards and a \"difficult parts\" review",
+    "f5": "Exam mode with a timed mock test",
+    "f6": "Works on phones, in light and dark mode",
+    "closingTitle": "Ready when your materials are.",
+    "footer": "Built for thoughtful studying · No account required for learners"
   }
 }

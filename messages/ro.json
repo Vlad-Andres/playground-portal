@@ -124,5 +124,28 @@
     "copy": "Copiază",
     "copied": "Copiat",
     "copyAria": "Copiază linkul de editare"
+  },
+  "landing": {
+    "eyebrow": "Cursul tău, interactiv",
+    "title": "Transformă-ți notițele de curs într-un <em>site de studiu.</em>",
+    "lead": "Încarcă slide-uri sau notițe. În câteva minute primești un site cu explicații clare, teste, exerciții și activități interactive — construit doar din materialul tău.",
+    "cta": "Creează-ți site-ul",
+    "ctaSecondary": "Vezi cum funcționează",
+    "howTitle": "Cum funcționează",
+    "how1Title": "Adaugă materialele",
+    "how1Text": "PDF, text sau Markdown. Fișierele sunt citite în browserul tău; se trimite doar textul.",
+    "how2Title": "Verifică cuprinsul",
+    "how2Text": "Redenumește sau elimină lecții înainte să fie scrise.",
+    "how3Title": "Trimite linkul",
+    "how3Text": "Site-ul tău este online imediat. Nu e nevoie de cont pentru a învăța.",
+    "featuresTitle": "Ce include site-ul tău",
+    "f1": "Lecții cu explicații, tabele și exemple rezolvate",
+    "f2": "Un test după fiecare lecție",
+    "f3": "Exerciții interactive: ordonare, potrivire, sortare, grafice",
+    "f4": "Fișe de memorare și recapitularea părților dificile",
+    "f5": "Mod examen cu un test cronometrat",
+    "f6": "Funcționează pe telefon, în mod luminos și întunecat",
+    "closingTitle": "Gata imediat ce ai materialele.",
+    "footer": "Făcut pentru învățat cu sens · Fără cont pentru cei care învață"
   }
 }

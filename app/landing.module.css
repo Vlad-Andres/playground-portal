@@ -1,0 +1,47 @@
+.page { max-width: 1100px; }
+
+.topCta { background: var(--green); color: #fff; text-decoration: none; font-weight: 800; font-size: .76rem; padding: 9px 15px; border-radius: 10px; }
+.topCta:hover { background: var(--deep); }
+.topCta:focus-visible, .primary:focus-visible, .secondary:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+
+.hero { position: relative; margin-top: 18px; border-radius: 28px; overflow: hidden; isolation: isolate; }
+.background { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(135deg, #cfe9da 0%, #eaf3ee 45%, #d9efe6 100%); }
+.shader { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; }
+/* A light layer keeps the text above 4.5:1 contrast on top of the green parts of the gradient. */
+.veil { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(248, 251, 248, .86) 0%, rgba(248, 251, 248, .62) 55%, rgba(248, 251, 248, .2) 100%); }
+.heroInner { padding: 86px 44px 78px; max-width: 760px; }
+.title { margin: 18px 0 22px; }
+.lead { color: #3f4f47; line-height: 1.7; max-width: 560px; font-size: 1.05rem; margin: 0 0 30px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+.primary { display: inline-flex; align-items: center; gap: 9px; background: var(--orange); color: #332418; text-decoration: none; font-weight: 800; padding: 14px 20px; border-radius: 12px; }
+.primary:hover { filter: brightness(.96); }
+.secondary { color: var(--deep); font-weight: 800; text-decoration: none; padding: 14px 8px; }
+.secondary:hover { text-decoration: underline; }
+
+.section { padding: 70px 4px 6px; }
+.heading { color: var(--deep); font-size: 1.7rem; letter-spacing: -.04em; margin: 0 0 24px; }
+.steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.step { background: rgba(255, 255, 255, .86); border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
+.step h3 { color: var(--deep); margin: 14px 0 8px; font-size: 1.05rem; letter-spacing: -.02em; }
+.step p { color: #52645b; margin: 0; line-height: 1.6; font-size: .86rem; }
+.stepNumber { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--green); color: #fff; font-weight: 800; font-size: .8rem; }
+
+.features { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.feature { display: flex; gap: 13px; align-items: flex-start; background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; color: #3f4f47; line-height: 1.5; font-size: .86rem; }
+.icon { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--mint); color: var(--green); }
+
+.closing { margin: 70px 0 10px; text-align: center; background: var(--deep); border-radius: 24px; padding: 54px 24px; display: grid; justify-items: center; gap: 22px; }
+.closing h2 { color: #fff; margin: 0; font-size: clamp(1.6rem, 4vw, 2.4rem); letter-spacing: -.04em; }
+
+@media (max-width: 760px) {
+  .heroInner { padding: 52px 22px 46px; }
+  .steps, .features { grid-template-columns: 1fr; }
+  .section { padding-top: 48px; }
+  .veil { background: rgba(248, 251, 248, .7); }
+}
+
+/* The hero already has the same button; on a phone the top bar keeps only the brand and the language. */
+@media (max-width: 560px) {
+  .topCta { display: none; }
+}

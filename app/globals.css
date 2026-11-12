@@ -88,3 +88,5 @@ input[type="password"]:focus { border-color:var(--green); }
 .edit-link-row input { flex:1; min-width:0; }
 .edit-link-row button { border:1px solid var(--line); border-radius:10px; background:#fbfdfb; color:var(--green); font:inherit; font-weight:800; font-size:.74rem; padding:0 14px; cursor:pointer; }
 @media (max-width:760px) { .topbar-right { gap:8px; } }
+html { scroll-behavior:smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
