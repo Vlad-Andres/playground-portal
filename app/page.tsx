@@ -20,12 +20,13 @@ export default async function LandingPage() {
   const t = await getTranslations("landing");
   return (
     <main className={styles.page}>
+      <style dangerouslySetInnerHTML={{ __html: "body { background: #060b14; color: #f0f4f8; }" }} />
       <LavaBackground />
       <TopBar>
         <a className={styles.topCta} href="/create">{t("cta")}</a>
       </TopBar>
 
-      <section className={styles.hero}>
+      <section className={`${styles.hero} ${styles.glass}`}>
         <div className={styles.heroInner}>
           <div className="eyebrow"><span className="eyebrow-line" /> {t("eyebrow")}</div>
           <h1 className={styles.title}>{t.rich("title", { em: (chunks) => <em>{chunks}</em> })}</h1>
@@ -37,7 +38,7 @@ export default async function LandingPage() {
         </div>
 
         <div className={styles.preview} aria-hidden="true">
-          <div className={styles.previewCard}>
+          <div className={`${styles.previewCard} ${styles.glass}`}>
             <span className={styles.previewTag}><Sparkles size={13} aria-hidden="true" /> {t("previewLabel")}</span>
             <h3 className={styles.previewTitle}>{t("previewTitle")}</h3>
             <p className={styles.previewLine}>{t("previewLine")}</p>
@@ -62,7 +63,7 @@ export default async function LandingPage() {
         <h2 id="features-title" className={styles.heading}>{t("featuresTitle")}</h2>
         <ul className={styles.bento}>
           {FEATURES.map(({ key, Icon }, index) => (
-            <li key={key} className={`${styles.feature} ${styles[SIZES[index]]}`}>
+            <li key={key} className={`${styles.feature} ${styles.glass} ${styles[SIZES[index]]}`}>
               <span className={styles.icon}><Icon size={20} aria-hidden="true" /></span>
               <span className={styles.featureText}>{t(key)}</span>
             </li>
@@ -70,7 +71,7 @@ export default async function LandingPage() {
         </ul>
       </section>
 
-      <section className={styles.closing}>
+      <section className={`${styles.closing} ${styles.glass}`}>
         <h2>{t("closingTitle")}</h2>
         <a className={styles.primary} href="/create">{t("cta")} <ArrowRight size={18} aria-hidden="true" /></a>
       </section>
