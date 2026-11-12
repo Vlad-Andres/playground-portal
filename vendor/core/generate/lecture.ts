@@ -18,7 +18,7 @@ import { renderMaterials } from "./ingest";
 import { lintLecture } from "./lint";
 import { extractJson, type ModelClient } from "./model";
 import type { CoursePlan, PlannedLecture } from "./plan";
-import { improvePrompt, lecturePrompt, repairPrompt } from "./prompts";
+import { DEPTH_TARGETS, improvePrompt, lecturePrompt, refineLecturePrompt, repairPrompt } from "./prompts";
 import type { Brief, Material } from "./types";
 
 export const LECTURE_MAX_OUTPUT_TOKENS = 24_000;
@@ -75,17 +75,27 @@ function quizProblems(value: unknown): Problem[] {
   return problems;
 }
 
-function blockProblems(value: unknown, brief: Brief): Problem[] {
+/** How many model-written custom exercises this lecture may keep: only where the plan asked for one. */
+export function customLimit(brief: Brief, planned: PlannedLecture): number {
+  if (!brief.widgets) return 0;
+  if (!planned.sections.some((section) => section.blocks.includes("custom"))) return 0;
+  return DEPTH_TARGETS[brief.depth].custom;
+}
+
+const NOT_PLANNED: Problem = { code: "W309", severity: "error", file: "", path: "kind", message: "A custom exercise is not planned here.", fix: "Use a catalogue widget or another block kind." };
+
+function blockProblems(value: unknown, brief: Brief, allowCustom = 0): Problem[] {
   const problems = validateBlock(value);
   if (problems.length) return problems;
   const block = value as Block;
+  if (block.kind === "custom" && allowCustom <= 0) return [NOT_PLANNED];
   if (block.kind === "widget" && (!brief.widgets || !(generatorWidgetTypes as string[]).includes(block.type) || block.type === "mock-exam")) {
     return [{ code: "E104", severity: "error", file: "", path: "type", message: `Widget "${block.type}" is not available here.`, fix: `Use one of: ${generatorWidgetTypes.filter((type) => type !== "mock-exam").join(", ")}, or another block kind.` }];
   }
   return [];
 }
 
-function check(item: Omit<Item, "problems">, brief: Brief): Item {
+function check(item: Omit<Item, "problems">, brief: Brief, allowCustom = 0): Item {
   const problems =
     item.kind === "meta"
       ? zodProblems(lectureMetaSchema, item.value)
@@ -93,7 +103,7 @@ function check(item: Omit<Item, "problems">, brief: Brief): Item {
         ? zodProblems(conceptSchema, item.value)
         : item.kind === "quiz"
           ? quizProblems(item.value)
-          : blockProblems(item.value, brief);
+          : blockProblems(item.value, brief, allowCustom);
   return { ...item, problems };
 }
 
@@ -139,47 +149,38 @@ function dropProblem(item: Item): Problem {
   };
 }
 
-export async function writeLecture(
-  plan: CoursePlan,
-  index: number,
-  materials: Material[],
-  brief: Brief,
-  model: ModelClient,
-): Promise<{ lecture: LectureFile; dropped: Problem[] }> {
-  const planned = plan.lectures[index];
-  if (!planned) throw new Error(`The plan has no lecture ${index + 1}.`);
-  const pagesText = renderMaterials(materials, planned.pages);
-  const pageCount = (pagesText.match(/^=== .+ — page \d+ ===$/gm) ?? []).length;
-  const prompt = lecturePrompt({ brief, lecturePlan: planned, courseTitle: plan.course.title, pagesText, pageCount });
+interface ReplyContext {
+  brief: Brief;
+  model: ModelClient;
+  allowCustom: number;
+  /** Titles and kinds to fall back on, per section index. */
+  sectionHints: { title?: string; kind?: SectionKind }[];
+  forceMeta: (value: unknown) => unknown;
+  fallbackMeta: () => LectureMeta;
+}
 
-  // 1. One main call, one retry when the reply is not JSON.
-  let raw = await askJson(model, prompt.system, prompt.user, LECTURE_MAX_OUTPUT_TOKENS);
-  if (raw === undefined) {
-    raw = await askJson(model, prompt.system, `${prompt.user}\n\nYour previous reply was not valid JSON. Reply with the JSON object only.`, LECTURE_MAX_OUTPUT_TOKENS);
-  }
-  if (raw === undefined) throw new Error("The lecture reply was not JSON twice.");
-  const reply = asObject(raw);
-
+/** Validate every part of a lecture reply, send the invalid ones to one repair call, drop what still fails, assemble. */
+async function validateReply(reply: Record<string, unknown>, ctx: ReplyContext): Promise<{ lecture: LectureFile; dropped: Problem[] }> {
   // 2. Validate every part separately.
   const sections: WorkingSection[] = asArray(reply.sections).map((value, sectionIndex) => {
     const section = asObject(value);
     const kind = sectionKindSchema.safeParse(section.kind);
     return {
       id: sectionId(section.id, `section-${sectionIndex + 1}`),
-      title: typeof section.title === "string" && section.title.trim() ? section.title.trim() : planned.sections[sectionIndex]?.title ?? `Section ${sectionIndex + 1}`,
-      kind: kind.success ? kind.data : (planned.sections[sectionIndex]?.kind ?? "concepts"),
+      title: typeof section.title === "string" && section.title.trim() ? section.title.trim() : ctx.sectionHints[sectionIndex]?.title ?? `Section ${sectionIndex + 1}`,
+      kind: kind.success ? kind.data : (ctx.sectionHints[sectionIndex]?.kind ?? "concepts"),
       blocks: asArray(section.blocks)
         .map((block, blockIndex) => ({ path: `sections[${sectionIndex}].blocks[${blockIndex}]`, value: block }))
-        .filter(({ value: block }) => brief.widgets || asObject(block).kind !== "widget"),
+        .filter(({ value: block }) => ctx.brief.widgets || asObject(block).kind !== "widget"),
     };
   });
 
   const items: Item[] = [
-    check({ kind: "meta", path: "meta", label: "lecture meta", value: forceMeta(reply.meta, planned) }, brief),
-    ...asArray(reply.concepts).map((value, i) => check({ kind: "concept", path: `concepts[${i}]`, label: "concept", value }, brief)),
-    ...(brief.quizzes ? asArray(reply.quiz) : []).map((value, i) => check({ kind: "quiz", path: `quiz[${i}]`, label: "quiz question", value }, brief)),
+    check({ kind: "meta", path: "meta", label: "lecture meta", value: ctx.forceMeta(reply.meta) }, ctx.brief),
+    ...asArray(reply.concepts).map((value, i) => check({ kind: "concept", path: `concepts[${i}]`, label: "concept", value }, ctx.brief)),
+    ...(ctx.brief.quizzes ? asArray(reply.quiz) : []).map((value, i) => check({ kind: "quiz", path: `quiz[${i}]`, label: "quiz question", value }, ctx.brief)),
     ...sections.flatMap((section) =>
-      section.blocks.map(({ path, value }) => check({ kind: "block", path, label: `block in section "${section.id}"`, value }, brief)),
+      section.blocks.map(({ path, value }) => check({ kind: "block", path, label: `block in section "${section.id}"`, value }, ctx.brief, ctx.allowCustom)),
     ),
   ];
 
@@ -188,13 +189,13 @@ export async function writeLecture(
   if (invalid.length > 0) {
     const repair = repairPrompt(
       invalid.map((item) => ({ label: item.label, value: item.value, problems: item.problems.map((problem) => formatProblem(problem).trim()) })),
-      brief.widgets,
+      ctx.brief.widgets,
     );
-    const repaired = asArray(asObject(await askJson(model, repair.system, repair.user, REPAIR_MAX_OUTPUT_TOKENS)).items);
+    const repaired = asArray(asObject(await askJson(ctx.model, repair.system, repair.user, REPAIR_MAX_OUTPUT_TOKENS)).items);
     invalid.forEach((item, i) => {
       const value = repaired[i];
       if (value === null || value === undefined) return;
-      const next = check({ ...item, value: item.kind === "meta" ? forceMeta(value, planned) : value }, brief);
+      const next = check({ ...item, value: item.kind === "meta" ? ctx.forceMeta(value) : value }, ctx.brief, ctx.allowCustom);
       if (next.problems.length === 0) {
         item.value = next.value;
         item.problems = [];
@@ -216,7 +217,7 @@ export async function writeLecture(
     });
 
   const metaItem = items[0];
-  const meta = metaItem.problems.length === 0 ? (metaItem.value as LectureMeta) : fallbackMeta(planned, plan, materials);
+  const meta = metaItem.problems.length === 0 ? (metaItem.value as LectureMeta) : ctx.fallbackMeta();
   if (metaItem.problems.length > 0) dropped.push(dropProblem({ ...metaItem, label: "lecture meta (replaced from the plan)" }));
 
   const concepts: Concept[] = [];
@@ -231,10 +232,50 @@ export async function writeLecture(
     if (quiz.some((existing) => existing.id === question.id)) dropped.push(dropProblem({ ...item, problems: [{ code: "E101", severity: "error", file: "", path: "id", message: `Duplicate quiz id "${question.id}".`, fix: "" }] }));
     else quiz.push(question);
   }
-  const validBlocks = new Map(valid("block").map((item) => [item.path, item.value as Block]));
+  // Keep at most `allowCustom` custom exercises; any beyond that are dropped, never published.
+  let customKept = 0;
+  const blockItems = valid("block").filter((item) => {
+    if ((item.value as Block).kind !== "custom") return true;
+    customKept += 1;
+    if (customKept <= ctx.allowCustom) return true;
+    dropped.push(dropProblem({ ...item, problems: [{ ...NOT_PLANNED, message: `More than ${ctx.allowCustom} custom exercise(s) in this lecture.` }] }));
+    return false;
+  });
+  const validBlocks = new Map(blockItems.map((item) => [item.path, item.value as Block]));
 
   // 4. Clean up references and empty sections.
-  const lecture = assemble(meta, concepts, quiz, sections.map((section) => ({ ...section, blocks: section.blocks.flatMap(({ path }) => (validBlocks.has(path) ? [validBlocks.get(path) as Block] : [])) })));
+  return { dropped, lecture: assemble(meta, concepts, quiz, sections.map((section) => ({ ...section, blocks: section.blocks.flatMap(({ path }) => (validBlocks.has(path) ? [validBlocks.get(path) as Block] : [])) }))) };
+}
+
+export async function writeLecture(
+  plan: CoursePlan,
+  index: number,
+  materials: Material[],
+  brief: Brief,
+  model: ModelClient,
+): Promise<{ lecture: LectureFile; dropped: Problem[] }> {
+  const planned = plan.lectures[index];
+  if (!planned) throw new Error(`The plan has no lecture ${index + 1}.`);
+  const pagesText = renderMaterials(materials, planned.pages);
+  const pageCount = (pagesText.match(/^=== .+ — page \d+ ===$/gm) ?? []).length;
+  const allowCustom = customLimit(brief, planned);
+  const prompt = lecturePrompt({ brief, lecturePlan: planned, courseTitle: plan.course.title, pagesText, pageCount, customLimit: allowCustom });
+
+  // 1. One main call, one retry when the reply is not JSON.
+  let raw = await askJson(model, prompt.system, prompt.user, LECTURE_MAX_OUTPUT_TOKENS);
+  if (raw === undefined) {
+    raw = await askJson(model, prompt.system, `${prompt.user}\n\nYour previous reply was not valid JSON. Reply with the JSON object only.`, LECTURE_MAX_OUTPUT_TOKENS);
+  }
+  if (raw === undefined) throw new Error("The lecture reply was not JSON twice.");
+
+  const { lecture, dropped } = await validateReply(asObject(raw), {
+    brief,
+    model,
+    allowCustom,
+    sectionHints: planned.sections,
+    forceMeta: (value) => forceMeta(value, planned),
+    fallbackMeta: () => fallbackMeta(planned, plan, materials),
+  });
 
   // 5. One improvement call when the lecture misses its targets.
   const warnings = lintLecture(lecture, brief, pageCount);
@@ -298,4 +339,39 @@ function applyAdditions(lecture: LectureFile, additions: Record<string, unknown>
     target.blocks.push(entry.block as Block);
   }
   return assemble(lecture.meta, concepts, quiz, sections);
+}
+
+/**
+ * Rewrite one existing lecture following one instruction. Number and slug never change. A reply that is not
+ * JSON twice, or leaves nothing valid, returns the lecture unchanged instead of failing.
+ */
+export async function rewriteLecture(
+  existing: LectureFile,
+  instruction: string,
+  pagesText: string | null,
+  brief: Brief,
+  model: ModelClient,
+): Promise<{ lecture: LectureFile; changed: boolean }> {
+  const prompt = refineLecturePrompt({ brief, lecture: existing, instruction, pagesText });
+  let raw = await askJson(model, prompt.system, prompt.user, LECTURE_MAX_OUTPUT_TOKENS);
+  if (raw === undefined) {
+    raw = await askJson(model, prompt.system, `${prompt.user}\n\nYour previous reply was not valid JSON. Reply with the JSON object only.`, LECTURE_MAX_OUTPUT_TOKENS);
+  }
+  if (raw === undefined) return { lecture: existing, changed: false };
+  const keep = (value: unknown) => ({ ...asObject(value), number: existing.meta.number, slug: existing.meta.slug });
+  // Custom exercises already in the lecture may stay; the rewrite may not add more.
+  const allowCustom = existing.sections.flatMap((section) => section.blocks).filter((block) => block.kind === "custom").length;
+  try {
+    const { lecture } = await validateReply(asObject(raw), {
+      brief,
+      model,
+      allowCustom,
+      sectionHints: existing.sections,
+      forceMeta: keep,
+      fallbackMeta: () => existing.meta,
+    });
+    return { lecture, changed: JSON.stringify(lecture) !== JSON.stringify(existing) };
+  } catch {
+    return { lecture: existing, changed: false };
+  }
 }

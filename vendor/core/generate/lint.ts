@@ -9,8 +9,6 @@ function warning(code: string, path: string, message: string, fix: string): Prob
   return { code, severity: "warning", file: "", path, message, fix };
 }
 
-const MIN_KINDS = 5;
-
 /** Quality warnings for a generated lecture (no model call). `pageCount` enables the size check W307. */
 export function lintLecture(lecture: LectureFile, brief: Brief, pageCount = 0): Problem[] {
   const target = DEPTH_TARGETS[brief.depth];
@@ -37,10 +35,6 @@ export function lintLecture(lecture: LectureFile, brief: Brief, pageCount = 0): 
   const wanted = Math.ceil(blockTarget(pageCount, brief.depth) * 0.7);
   if (pageCount > 0 && blocks.length < wanted) {
     problems.push(warning("W307", "sections", `Only ${blocks.length} blocks for ${pageCount} pages; expected at least ${wanted}.`, `Add ${wanted - blocks.length} more blocks covering pages that are not covered yet.`));
-  }
-  const kinds = new Set(blocks.map(({ block }) => block.kind));
-  if (kinds.size < MIN_KINDS) {
-    problems.push(warning("W308", "sections", `Only ${kinds.size} block kinds (${[...kinds].join(", ")}).`, `Use at least ${MIN_KINDS} different kinds, e.g. table, steps, timeline, info, recall, practice or a widget.`));
   }
   for (const { block, path } of blocks) {
     if (!block.source) problems.push(warning("W306", path, `A ${block.kind} block has no source.`, "Add the source pages this block came from."));

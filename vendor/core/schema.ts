@@ -241,6 +241,14 @@ export const courseSchema = z
     level: z.enum(["school", "university", "professional"]).optional(),
     domains: z.array(z.enum(["core", "math", "cs", "memorise", "humanities"])).optional(),
     examDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    home: z
+      .object({
+        intro: z.string().max(1200).optional(),
+        highlights: z.array(z.object({ title: z.string().max(80), md: z.string().max(400) }).strict()).max(4).optional(),
+        studyPath: z.array(z.string().max(160)).max(6).optional(),
+      })
+      .strict()
+      .optional(),
     theme: z
       .object({
         accent: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),

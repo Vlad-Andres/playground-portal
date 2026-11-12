@@ -5,6 +5,7 @@ import { ArrowRight, Gamepad2, GraduationCap, Layers, Sparkles, Target } from "l
 import type { SiteData } from "@core/site";
 import { ContinueStudying } from "@site/components/home/ContinueStudying";
 import { CourseOverview } from "@site/components/home/CourseOverview";
+import { CourseWelcome } from "@site/components/home/CourseWelcome";
 import { ExamCountdown } from "@site/components/home/ExamCountdown";
 import { LectureCard } from "@site/components/home/LectureCard";
 import { ProgressSummary } from "@site/components/home/ProgressSummary";
@@ -72,6 +73,8 @@ export function HomeScreen({ data }: { data: SiteData }) {
         </span>
         <ArrowRight size={18} className="text-brand transition-transform group-hover:translate-x-0.5" aria-hidden />
       </Link>
+
+      {data.course.home ? <CourseWelcome home={data.course.home} /> : null}
 
       <section id="lectures" className="grid scroll-mt-24 gap-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
