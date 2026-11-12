@@ -5,7 +5,7 @@ export const CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' https://generativelanguage.googleapis.com",
+  "connect-src 'self' https://generativelanguage.googleapis.com https://vitals.vercel-insights.com",
   // Custom components are inline `srcdoc` documents; they never navigate the page.
   "frame-src 'self' blob: data:",
   "object-src 'none'",

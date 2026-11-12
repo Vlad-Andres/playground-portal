@@ -3,11 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Flag, Flame, Gamepad2, Layers, ListTodo, Sparkles, Trophy } from "lucide-react";
-import { LectureAssistant } from "@site/components/assistant/LectureAssistant";
 import { DifficultItemCard } from "@site/components/difficult/DifficultItemCard";
 import { MatchGame } from "@site/components/difficult/MatchGame";
 import { ReviewSession } from "@site/components/difficult/ReviewSession";
-import { plainText, resolveItem, type ResolvedItem } from "@site/components/difficult/kit";
+import { resolveItem, type ResolvedItem } from "@site/components/difficult/kit";
 import { ProgressBar } from "@site/components/ui/ProgressBar";
 import { ProgressRing } from "@site/components/ui/ProgressRing";
 import { useDifficult } from "@site/hooks/useDifficult";
@@ -92,23 +91,6 @@ export function DifficultHub() {
     const pool = lectures.flatMap((lecture) => lecture.concepts);
     return pool.length >= 6 ? pool : data.lectures.flatMap((lecture) => lecture.concepts);
   }, [data, items]);
-
-  const assistantContext = useMemo(
-    () =>
-      [
-        "# Difficult parts",
-        "These are the parts of the course the student marked as difficult. Help them understand and memorise these: offer simpler explanations, analogies, mnemonics and small examples.",
-        ...resolved.map(
-          (entry) =>
-            `## ${entry.lecture.number > 0 ? `Lecture ${entry.lecture.number} — ` : ""}${entry.lecture.title}: ${entry.sectionTitle}\n\n${plainText(entry.text)}`,
-        ),
-      ].join("\n\n"),
-    [resolved],
-  );
-  const sectionTitles = useMemo(
-    () => Object.fromEntries(resolved.map((entry) => [entry.item.key, entry.sectionTitle])),
-    [resolved],
-  );
 
   const stats = [
     {
@@ -227,12 +209,10 @@ export function DifficultHub() {
               ) : null}
 
               {tab === "focus" ? (
-                <div data-assistant-scope>
-                  <div className="grid gap-6">
-                    {resolved.map((entry) => (
-                      <DifficultItemCard key={entry.item.key} resolved={entry} now={now} onRemove={() => remove(entry.item.key)} />
-                    ))}
-                  </div>
+                <div className="grid gap-6">
+                  {resolved.map((entry) => (
+                    <DifficultItemCard key={entry.item.key} resolved={entry} now={now} onRemove={() => remove(entry.item.key)} />
+                  ))}
                 </div>
               ) : null}
               {tab === "review" ? <ReviewSession key={sessionId} due={due} now={now} nextDue={nextDue} /> : null}
@@ -242,9 +222,6 @@ export function DifficultHub() {
         </>
       )}
 
-      {data && resolved.length > 0 ? (
-        <LectureAssistant slug="difficult-parts" label="Your difficult parts" context={assistantContext} sectionTitles={sectionTitles} />
-      ) : null}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import "./globals.css";
@@ -14,6 +15,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html lang={locale}>
       <body>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <Analytics />
       </body>
     </html>
   );

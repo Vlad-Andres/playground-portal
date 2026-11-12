@@ -11,7 +11,7 @@ interface FigureImageProps {
 export function FigureImage({ src, alt, width, height, caption }: FigureImageProps) {
   return (
     <figure className="grid gap-2">
-      <div className="overflow-hidden rounded-xl border border-line bg-white p-3">
+      <div className="overflow-hidden rounded-xl border border-line bg-surface p-3">
         <Image
           src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/figures/${src}`}
           alt={alt}
