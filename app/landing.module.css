@@ -138,6 +138,45 @@
 .featureItem p { margin: 0; color: var(--lp-muted); font-size: .9rem; line-height: 1.55; }
 .featureIcon { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: rgba(232, 93, 78, .1); color: var(--lp-accent); flex: 0 0 auto; }
 
+/* ---- Interactive widgets showcase ---------------------------------------- */
+.widgetIntro { max-width: 52ch; }
+.widgetIntro p { color: var(--lp-muted); font-size: 1.05rem; line-height: 1.65; margin: 14px 0 0; }
+.widgetGrid { list-style: none; padding: 0; margin: 42px 0 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.widgetCard { background: var(--lp-card); border: 1px solid var(--lp-line); border-radius: 22px; padding: 22px; box-shadow: 0 16px 40px -24px rgba(30, 27, 24, .12); }
+.widgetVisual { height: 130px; margin-bottom: 18px; display: grid; place-items: center; background: var(--lp-paper); border: 1px solid var(--lp-line); border-radius: 16px; overflow: hidden; }
+.widgetCard h3 { margin: 0 0 6px; font-size: .98rem; color: var(--lp-ink); }
+.widgetCard p { margin: 0; color: var(--lp-muted); font-size: .82rem; line-height: 1.55; }
+
+/* Chart widget */
+.barChart { display: flex; align-items: flex-end; gap: 10px; height: 80px; padding: 0 8px; }
+.bar { width: 22px; border-radius: 5px 5px 0 0; background: linear-gradient(to top, var(--lp-accent), #fbbf24); }
+
+/* Memory widget */
+.memoryGrid { display: grid; grid-template-columns: repeat(2, 40px); gap: 8px; }
+.memoryCard { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; font-weight: 800; font-size: .8rem; background: var(--lp-accent); color: #fff; box-shadow: 0 4px 10px -4px rgba(232, 93, 78, .4); }
+.memoryHidden { background: var(--lp-card); color: var(--lp-accent); border: 1.5px dashed var(--lp-accent); }
+
+/* Exam widget */
+.examCard { display: grid; gap: 8px; width: 150px; }
+.examHeader { display: flex; align-items: center; justify-content: space-between; }
+.examTimer { font-weight: 900; color: var(--lp-accent); font-size: .85rem; }
+.examProgress { height: 6px; background: var(--lp-line); border-radius: 99px; overflow: hidden; }
+.examProgress > div { height: 100%; width: 60%; background: var(--lp-accent); border-radius: 99px; }
+.examOption { border: 1px solid var(--lp-line); border-radius: 8px; padding: 7px 10px; font-size: .68rem; color: var(--lp-muted); background: #fff; }
+.examCounter { font-size: .6rem; color: var(--lp-muted); font-weight: 700; }
+
+/* Ordering widget */
+.orderBlocks { display: flex; gap: 8px; }
+.orderBlock { width: 42px; height: 42px; border-radius: 10px; display: grid; place-items: center; background: #fff; border: 1px solid var(--lp-line); color: var(--lp-ink); font-weight: 800; font-size: .85rem; box-shadow: 0 4px 10px -4px rgba(30, 27, 24, .12); }
+.orderBlock:first-child { background: var(--lp-accent); color: #fff; border-color: var(--lp-accent); }
+
+@media (max-width: 960px) {
+  .widgetGrid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .widgetGrid { grid-template-columns: 1fr; }
+}
+
 .closing { margin: 100px 0 10px; text-align: center; background: var(--lp-accent); border-radius: 28px; padding: 74px 28px; display: grid; justify-items: center; gap: 22px; }
 .closing h2 { color: #fff; margin: 0; font-family: var(--font-display), ui-serif, Georgia, serif; font-weight: 600; font-size: clamp(1.8rem, 4vw, 2.8rem); letter-spacing: -.03em; }
 .closing .primary { background: #fff; color: var(--lp-accent); box-shadow: 0 12px 28px -12px rgba(0,0,0,.25); }

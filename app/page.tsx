@@ -98,6 +98,68 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      <section className={styles.section} aria-labelledby="widgets-title">
+        <div className={styles.widgetIntro}>
+          <h2 id="widgets-title" className={styles.heading}>{t("widgetsTitle")}</h2>
+          <p>{t("widgetsSubtitle")}</p>
+        </div>
+        <ul className={styles.widgetGrid}>
+          <li className={styles.widgetCard}>
+            <div className={styles.widgetVisual} aria-hidden="true">
+              <div className={styles.barChart}>
+                {[42, 72, 55, 88].map((h, i) => (
+                  <div key={i} className={styles.bar} style={{ height: `${h}%` }} />
+                ))}
+              </div>
+            </div>
+            <h3>{t("widget1Title")}</h3>
+            <p>{t("widget1Text")}</p>
+          </li>
+
+          <li className={styles.widgetCard}>
+            <div className={styles.widgetVisual} aria-hidden="true">
+              <div className={styles.memoryGrid}>
+                <div className={styles.memoryCard}>ATP</div>
+                <div className={`${styles.memoryCard} ${styles.memoryHidden}`}>?</div>
+                <div className={`${styles.memoryCard} ${styles.memoryHidden}`}>?</div>
+                <div className={styles.memoryCard}>Glucose</div>
+              </div>
+            </div>
+            <h3>{t("widget2Title")}</h3>
+            <p>{t("widget2Text")}</p>
+          </li>
+
+          <li className={styles.widgetCard}>
+            <div className={styles.widgetVisual} aria-hidden="true">
+              <div className={styles.examCard}>
+                <div className={styles.examHeader}>
+                  <span className={styles.examTimer}>12:00</span>
+                  <span className={styles.examCounter}>3/10</span>
+                </div>
+                <div className={styles.examProgress}><div /></div>
+                <div className={styles.examOption}>Photosynthesis</div>
+                <div className={styles.examOption}>Respiration</div>
+                <div className={styles.examOption}>Osmosis</div>
+              </div>
+            </div>
+            <h3>{t("widget3Title")}</h3>
+            <p>{t("widget3Text")}</p>
+          </li>
+
+          <li className={styles.widgetCard}>
+            <div className={styles.widgetVisual} aria-hidden="true">
+              <div className={styles.orderBlocks}>
+                {['1', '3', '2', '4'].map((n, i) => (
+                  <div key={i} className={styles.orderBlock}>{n}</div>
+                ))}
+              </div>
+            </div>
+            <h3>{t("widget4Title")}</h3>
+            <p>{t("widget4Text")}</p>
+          </li>
+        </ul>
+      </section>
+
       <section className={styles.closing}>
         <h2>{t("closingTitle")}</h2>
         <a className={styles.primary} href="/create">{t("cta")} <ArrowRight size={18} aria-hidden="true" /></a>
