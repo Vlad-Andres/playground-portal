@@ -2,7 +2,6 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { briefSchema, checkMaterials, materialSchema, type CoursePlan } from "@core/generate/index";
 import {
-  accessCodeMatches,
   dailyJobLimit,
   dayKey,
   dayPrefix,
@@ -14,6 +13,7 @@ import {
 import { createJob, loadPlan, readState, advance, type AdvanceDeps } from "@/lib/jobs/steps";
 import { JOB_ID, jobKey, type JobState } from "@/lib/jobs/state";
 import type { Store } from "@/lib/jobs/store";
+import { DEFAULT_SETTINGS, matchCode, readSettings, type Settings } from "@/lib/settings";
 
 export const MAX_BODY_BYTES = 4 * 1024 * 1024;
 export const RETENTION_DAYS = 7;
@@ -59,7 +59,8 @@ const createBodySchema = z
 
 /** POST /api/jobs */
 export async function createJobHandler(request: Request, store: Store, env: NodeJS.ProcessEnv, now = new Date()): Promise<Response> {
-  if (!generationEnabled(env)) return fail("generation-off");
+  const settings = await readSettings(store);
+  if (!generationEnabled(env, settings)) return fail("generation-off");
   const declared = Number(request.headers.get("content-length") ?? "0");
   if (declared > MAX_BODY_BYTES) return fail("too-large");
   const text = await request.text();
@@ -73,13 +74,14 @@ export async function createJobHandler(request: Request, store: Store, env: Node
   }
   const body = createBodySchema.safeParse(raw);
   if (!body.success) return fail("bad-request");
-  if (!accessCodeMatches(body.data.accessCode, env)) return fail("wrong-code");
+  const codeId = matchCode(body.data.accessCode, env, settings);
+  if (codeId === null) return fail("wrong-code");
 
   const briefInput = (body.data.brief ?? {}) as Record<string, unknown>;
   if (!isLanguage(briefInput.language) || !isLevel(briefInput.level)) return fail("bad-request");
   const day = dayKey(now);
   const counted = async (prefix: string) => (await store.list(prefix)).length;
-  if (!(await underDailyLimit(day, dailyJobLimit(env), counted))) {
+  if (!(await underDailyLimit(day, settings.dailyJobLimit ?? dailyJobLimit(env), counted))) {
     return fail("daily-limit");
   }
 
@@ -90,7 +92,7 @@ export async function createJobHandler(request: Request, store: Store, env: Node
   const check = checkMaterials(materials.data);
   if (!check.ok) return json({ error: check.message, code: check.code }, 400);
 
-  const { id } = await createJob(store, { brief: brief.data, materials: materials.data }, now);
+  const { id } = await createJob(store, { brief: brief.data, materials: materials.data, codeId }, now);
   await store.write(`${dayPrefix(day)}${id}`, "1");
   return json({ id }, 202);
 }
@@ -127,9 +129,9 @@ export async function getJobHandler(id: string, store: Store): Promise<Response>
 }
 
 /** POST /api/jobs/:id/advance */
-export async function advanceHandler(id: string, deps: () => AdvanceDeps, env: NodeJS.ProcessEnv): Promise<Response> {
+export async function advanceHandler(id: string, deps: () => AdvanceDeps, env: NodeJS.ProcessEnv, settings: Settings = DEFAULT_SETTINGS): Promise<Response> {
   if (!validId(id)) return fail("bad-id");
-  if (!generationEnabled(env)) return fail("generation-off");
+  if (!generationEnabled(env, settings)) return fail("generation-off");
   let resolved: AdvanceDeps;
   try {
     resolved = deps();

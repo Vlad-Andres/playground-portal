@@ -1,6 +1,9 @@
 import { sealData } from "iron-session";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("next/cache", () => ({ revalidatePath: () => undefined, updateTag: () => undefined }));
+vi.mock("next/navigation", () => ({ redirect: () => undefined, notFound: () => undefined }));
+
 const jar = new Map<string, string>();
 vi.mock("next/headers", () => ({
   cookies: async () => ({
@@ -10,7 +13,7 @@ vi.mock("next/headers", () => ({
 }));
 
 import { adminConfigured, ADMIN_COOKIE, requireAdmin, sessionPassword, tokenMatches } from "@/lib/admin/session";
-import { login } from "@/app/admin/actions";
+import { createCode, deleteCode, login, logout, saveSettings, setCodeActive } from "@/app/admin/actions";
 
 const TOKEN = "local-admin-token-0123456789";
 const env = { ADMIN_TOKEN: TOKEN } as unknown as NodeJS.ProcessEnv;
@@ -83,5 +86,14 @@ describe("admin session", () => {
     const form = new FormData();
     form.set("token", TOKEN);
     await expect(login(form)).rejects.toThrow();
+  });
+
+  it("every admin action rejects without a session", async () => {
+    const form = new FormData();
+    await expect(saveSettings(form)).rejects.toThrow("Not authorised.");
+    await expect(createCode("x")).rejects.toThrow("Not authorised.");
+    await expect(setCodeActive("00000000", true)).rejects.toThrow("Not authorised.");
+    await expect(deleteCode("00000000")).rejects.toThrow("Not authorised.");
+    await expect(logout()).rejects.toThrow("Not authorised.");
   });
 });

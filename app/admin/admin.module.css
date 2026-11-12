@@ -7,3 +7,20 @@
 .login button, .ghost { border: 0; border-radius: 10px; padding: 11px 15px; font: inherit; font-weight: 800; cursor: pointer; background: var(--green); color: #fff; }
 .ghost { background: transparent; color: var(--green); border: 1px solid var(--line); }
 .error { color: #b45345; margin: 0; font-size: .8rem; }
+.section { margin: 34px 0 10px; font-size: 1.1rem; letter-spacing: -.02em; color: var(--deep); }
+.card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 14px; }
+.field { display: grid; gap: 6px; font-weight: 800; font-size: .8rem; color: #52645b; }
+.field small { font-weight: 500; color: #8a998f; }
+.field input, .field textarea, .row input { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; background: #fbfdfb; min-width: 0; }
+.check { display: flex; gap: 9px; align-items: center; font-weight: 800; font-size: .85rem; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.row button, .actions button { border: 0; border-radius: 10px; padding: 10px 14px; font: inherit; font-weight: 800; font-size: .8rem; cursor: pointer; background: var(--green); color: #fff; }
+.actions button { background: transparent; color: var(--green); border: 1px solid var(--line); margin-right: 6px; }
+.ok { color: var(--green); font-size: .8rem; font-weight: 800; }
+.fresh { background: #fff7ea; border: 1px solid var(--orange); border-radius: 12px; padding: 14px 16px; }
+.fresh code { font-size: 1.1rem; font-weight: 800; word-break: break-all; }
+.fresh p { margin: 8px 0 0; font-size: .8rem; color: #6b5640; }
+.table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.table th, .table td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.table th { color: #8a998f; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; }
+.scroll { overflow-x: auto; }
