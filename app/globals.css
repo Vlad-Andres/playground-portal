@@ -75,3 +75,18 @@ footer { color:#9aaa9f; font-size:.68rem; padding:28px 3px 0; } footer span { co
 
 input[type="password"] { font:inherit; width:100%; border:1px solid var(--line); border-radius:10px; background:#fbfdfb; color:var(--ink); padding:11px 12px; outline:none; margin-bottom:14px; }
 input[type="password"]:focus { border-color:var(--green); }
+
+.language-switch { display:inline-flex; border:1px solid var(--line); border-radius:99px; overflow:hidden; background:#fff; }
+.language-switch button { border:0; background:transparent; color:var(--muted); font:inherit; font-size:.7rem; font-weight:800; padding:6px 11px; cursor:pointer; }
+.language-switch button[aria-pressed="true"] { background:var(--green); color:#fff; }
+.language-switch button:focus-visible { outline:2px solid var(--orange); outline-offset:-2px; }
+.topbar-right { display:flex; align-items:center; gap:14px; }
+.edit-link { border:1px solid var(--line); border-radius:14px; padding:16px 18px; background:#fff; display:grid; gap:10px; }
+.edit-link h3 { margin:0; font-size:.9rem; color:var(--deep); }
+.edit-link p { margin:0; color:var(--muted); font-size:.74rem; line-height:1.55; }
+.edit-link-row { display:flex; gap:8px; }
+.edit-link-row input { flex:1; min-width:0; }
+.edit-link-row button { border:1px solid var(--line); border-radius:10px; background:#fbfdfb; color:var(--green); font:inherit; font-weight:800; font-size:.74rem; padding:0 14px; cursor:pointer; }
+@media (max-width:760px) { .topbar-right { gap:8px; } }
+html { scroll-behavior:smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }

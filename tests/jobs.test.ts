@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cannedModel, fakeModel, type Brief, type Material, type ModelClient } from "@core/generate/index";
-import { advance, createJob, nextStep, readState, type JobState } from "@/lib/jobs/steps";
+import { BudgetExceeded } from "@core/generate/index";
+import { advance, createJob, errorCode, nextStep, readState, type JobState } from "@/lib/jobs/steps";
 import { claimStep, CLAIM_TTL_SECONDS } from "@/lib/jobs/claim";
 import { jobKey } from "@/lib/jobs/state";
 import { memoryStore } from "@/lib/jobs/store";
@@ -111,7 +112,7 @@ describe("advance", () => {
     await claimStep(store, id, "plan", 2, deps.now());
     tick(CLAIM_TTL_SECONDS + 1);
     const state = await advance(id, deps);
-    expect(state).toMatchObject({ status: "failed", error: "This step failed three times." });
+    expect(state).toMatchObject({ status: "failed", error: "step-failed" });
   });
 
   it("three thrown errors fail the job with a short safe message", async () => {
@@ -119,7 +120,7 @@ describe("advance", () => {
     const { store, deps } = setup(model);
     const { id } = await createJob(store, { brief, materials }, deps.now());
     let state = await advance(id, deps);
-    expect(state).toMatchObject({ status: "idle", attempts: 1 });
+    expect(state).toMatchObject({ status: "idle", attempts: 1, error: "step-failed" });
     expect(state.error).not.toContain("SECRET");
     state = await advance(id, deps);
     state = await advance(id, deps);
@@ -131,7 +132,7 @@ describe("advance", () => {
     const { id } = await createJob(store, { brief, materials }, deps.now());
     const state = await readState(store, id);
     await store.write(jobKey(id, "state.json"), JSON.stringify({ ...state, usage: { inputTokens: 600_000, outputTokens: 0, calls: 99 } }));
-    expect(await advance(id, deps)).toMatchObject({ status: "failed", error: "This course is too large to finish. Try fewer or shorter files." });
+    expect(await advance(id, deps)).toMatchObject({ status: "failed", error: "course-too-big" });
   });
 
   it("publishes an old publish-wait job when it is advanced", async () => {
@@ -148,5 +149,29 @@ describe("advance", () => {
     expect(done).toMatchObject({ step: "done", status: "done" });
     expect(done.siteUrl).toMatch(/^\/courses\/.+\/$/);
     expect(done.manageUrl).toMatch(/^\/manage\/[A-Za-z0-9_-]{32}$/);
+  });
+});
+
+describe("errorCode", () => {
+  it("maps every known failure to a stable code", () => {
+    expect(errorCode(new BudgetExceeded())).toBe("course-too-big");
+    expect(errorCode(new Error("The course plan was invalid twice: course.title: Required"))).toBe("plan-failed");
+    expect(errorCode(new Error("lecture produced no valid content"))).toBe("lecture-failed");
+    expect(errorCode(new Error("The lecture reply was not JSON twice."))).toBe("lecture-failed");
+    expect(errorCode(new Error("Gemini request failed (HTTP 503)."))).toBe("busy");
+    expect(errorCode(new Error("Model request failed."))).toBe("busy");
+    expect(errorCode(new Error("The uploaded material is no longer available."))).toBe("material-gone");
+    expect(errorCode(new Error("anything else"))).toBe("step-failed");
+    expect(errorCode("not an error")).toBe("step-failed");
+  });
+
+  it("a job whose material is gone fails with material-gone and no sentence", async () => {
+    const { store, deps } = setup();
+    const { id } = await createJob(store, { brief, materials }, deps.now());
+    await store.delete([jobKey(id, "materials.json")]);
+    const state = await advance(id, deps);
+    expect(state).toMatchObject({ status: "idle", attempts: 1, error: "material-gone" });
+    await advance(id, deps);
+    expect(await advance(id, deps)).toMatchObject({ status: "failed", error: "material-gone" });
   });
 });

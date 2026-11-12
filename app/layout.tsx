@@ -1,11 +1,20 @@
 import type { ReactNode } from "react";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getTranslations } from "next-intl/server";
 import "./globals.css";
 
-export const metadata = {
-  title: "playground. · Your course, made interactive",
-  description: "Create a beautiful, source-grounded learning playground from your course materials.",
-};
+export async function generateMetadata() {
+  const t = await getTranslations("common");
+  return { title: t("metaTitle"), description: t("metaDescription") };
+}
 
-export default function RootLayout({ children }: { children: ReactNode }) {
-  return <html lang="en"><body>{children}</body></html>;
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const locale = await getLocale();
+  return (
+    <html lang={locale}>
+      <body>
+        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+      </body>
+    </html>
+  );
 }
