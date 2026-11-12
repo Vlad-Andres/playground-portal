@@ -62,6 +62,7 @@ export default async function AdminPage() {
     <main className={styles.page}>
       <header className={styles.header}>
         <h1 className={styles.title}>Admin</h1>
+        <a className={styles.backLink} href="/admin/translations">Edit translations →</a>
         <form action={logout}>
           <button type="submit" className={styles.ghost}>Log out</button>
         </form>

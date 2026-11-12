@@ -8,6 +8,7 @@ import { defaultStore } from "@/lib/jobs/store";
 import { logEvent } from "@/lib/log";
 import { newInviteCode, readSettings, writeSettings } from "@/lib/settings";
 import { courseTag } from "@/lib/sites/load";
+import { MESSAGES_TAG, updateOverrides, type TranslationChange } from "@/lib/translations";
 
 const WRONG_TOKEN_DELAY_MS = 500;
 
@@ -106,4 +107,17 @@ export async function deleteCourse(key: string): Promise<ActionResult> {
   updateTag(courseTag(String(key)));
   revalidatePath("/admin");
   return { ok: true };
+}
+
+/** Saves text overrides from /admin/translations; invalid ones are returned, not stored. */
+export async function saveTranslations(changes: TranslationChange[]): Promise<{ saved: number; errors: { locale: string; key: string; message: string }[] }> {
+  await requireAdmin();
+  if (!Array.isArray(changes) || changes.length > 500) return { saved: 0, errors: [{ locale: "", key: "", message: "Too many changes at once." }] };
+  const clean = changes.map((change) => ({ locale: change.locale, key: String(change.key), value: change.value === null ? null : String(change.value) }));
+  const result = await updateOverrides(defaultStore(), clean);
+  if (result.saved > 0) {
+    updateTag(MESSAGES_TAG);
+    logEvent("admin.settings", { action: "translations", changed: result.saved });
+  }
+  return result;
 }

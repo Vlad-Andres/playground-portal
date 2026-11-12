@@ -63,6 +63,7 @@ Key ideas:
 
 **For the owner** (`/admin`, English only; needs `ADMIN_TOKEN`)
 - Pause generation, set the daily job limit, override the model, post an announcement (EN/RO).
+- Edit any portal text in English and Romanian at `/admin/translations` (search, see the default, reset).
 - Invite codes: create (shown once, stored only as a hash), disable, enable, delete.
 - Overview: jobs today, all courses, tokens and an **estimated** cost, recent jobs with the invite code used.
 - Take a course down: the page and its owner link return 404 immediately.
@@ -80,6 +81,7 @@ server logs and on `/admin`.
 | `/courses/<key>/…` | The published course (own CSP, Tailwind-styled template UI) |
 | `/manage/<token>` | Owner editor (404 for any wrong token) |
 | `/admin` | Owner dashboard (404 until `ADMIN_TOKEN` is set) |
+| `/admin/translations` | Edit the portal's English and Romanian texts |
 | `POST /api/jobs` | Create a job |
 | `GET /api/jobs/<id>` | Public job state (progress, outline, result; no internals) |
 | `POST /api/jobs/<id>/advance` | Run the next step |
@@ -91,6 +93,15 @@ Every API error is `{ "error": "<English sentence>", "code": "<code>" }`; the br
 `wrong-state`, `bad-outline`, plus material codes `empty`, `too-many-files`, `too-many-pages`, `too-long`,
 `scanned`). A failed job carries `course-too-big`, `plan-failed`, `lecture-failed`, `busy`, `material-gone`
 or `step-failed`.
+
+## Translations
+
+Portal texts (not the course pages, which use the template's own UI) come from `messages/en.json` and
+`messages/ro.json`, shipped with each deploy and loaded by `next-intl` (`i18n/request.ts`). The language is
+a cookie, defaulting to the browser's language. On top of the shipped texts, the owner's overrides from
+`/admin/translations` are applied on every request (cached, refreshed at once when saved). An override must
+keep the same placeholders (`{max}`, plural forms) and tags (`<em>…</em>`) as the default, or it is refused.
+A test fails when a key exists in one language but not the other. New texts still need a code change.
 
 ## Storage
 
@@ -104,6 +115,7 @@ One `Store` interface (`lib/jobs/store.ts`) with three adapters: Vercel Blob (pr
 | `courses/<key>/site.json`, `meta.json` | the course and its metadata (title, usage, owner hash) | kept until deleted |
 | `owners/<sha256>.json` | owner-token lookup (only the hash of the token is stored) | with the course |
 | `config/settings.json` | admin settings and hashed invite codes | kept |
+| `config/messages.json` | text overrides from `/admin/translations` | kept |
 
 A course key is `<slug>-<first 8 hex of the job id>`.
 
