@@ -135,6 +135,19 @@ describe("advance", () => {
     expect(await advance(id, deps)).toMatchObject({ status: "failed", error: "course-too-big" });
   });
 
+  it("resumes a working job whose claim is stale, then runs on the next call", async () => {
+    const { store, deps, tick } = setup();
+    const { id } = await createJob(store, { brief, materials }, deps.now());
+    // A request that was stopped after it saved "working" and claimed the step.
+    await store.write(jobKey(id, "state.json"), JSON.stringify({ ...(await readState(store, id)), status: "working" }));
+    await claimStep(store, id, "plan", 0, deps.now());
+    tick(CLAIM_TTL_SECONDS + 1);
+
+    const resumed = await advance(id, deps);
+    expect(resumed).toMatchObject({ status: "idle", attempts: 1 });
+    expect(await advance(id, deps)).toMatchObject({ status: "awaiting-review", step: "review" });
+  });
+
   it("publishes an old publish-wait job when it is advanced", async () => {
     const { store, deps } = setup();
     const { id } = await createJob(store, { brief, materials }, deps.now());

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { TopBar } from "@/components/TopBar";
 import { useErrorText } from "@/components/useErrorText";
 import type { PublicJob } from "@/lib/api/handlers";
+import { shouldAdvance } from "@/lib/jobs/poll";
 
 const POLL_MS = 3000;
 
@@ -79,7 +80,7 @@ export default function JobPage() {
     async function tick() {
       const current = await load();
       if (stopped || !current) return;
-      if (current.status === "idle" && !paused) await step();
+      if (shouldAdvance(current, Date.now()) && !paused) await step();
     }
     void tick();
     const timer = window.setInterval(() => void tick(), POLL_MS);
