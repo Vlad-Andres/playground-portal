@@ -3,6 +3,7 @@ import { courseSchema, lectureFileSchema, type LectureFile } from "@core/schema"
 import { buildSiteData, type SiteData } from "@core/site";
 import type { JobState } from "@/lib/jobs/state";
 import type { Store } from "@/lib/jobs/store";
+import { logEvent } from "@/lib/log";
 import { COURSE_KEY, newOwnerToken, ownerHash, writeSite } from "./store";
 
 function parseFile<T>(files: Record<string, string>, path: string, parse: (value: unknown) => T): T {
@@ -48,5 +49,6 @@ export async function publishCourse(
     usage: input.usage,
     ownerHash: ownerHash(token),
   });
+  logEvent("course.published", { key: input.key, jobId: input.jobId, lectures: site.lectures.length });
   return { siteUrl: `/courses/${input.key}/`, manageUrl: `/manage/${token}` };
 }

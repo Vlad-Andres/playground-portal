@@ -16,6 +16,7 @@ import {
   type ModelClient,
 } from "@core/generate/index";
 import { lectureFileSchema, type LectureFile } from "@core/schema";
+import { logEvent, logMessage } from "@/lib/log";
 import { publishCourse } from "@/lib/sites/publish";
 import { courseKeyFor } from "@/lib/sites/store";
 import { claimAge, claimStep, CLAIM_TTL_SECONDS } from "./claim";
@@ -180,11 +181,12 @@ export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> 
     const age = await claimAge(store, id, state.step, state.attempts, now);
     if (age !== null && age < CLAIM_TTL_SECONDS) return { ...state, status: "working" };
     const attempts = state.attempts + 1;
-    return saveState(
-      store,
-      attempts >= MAX_ATTEMPTS ? { ...state, attempts, status: "failed", error: "This step failed three times." } : { ...state, attempts, status: "idle" },
-      now,
-    );
+    if (attempts >= MAX_ATTEMPTS) {
+      const failed: JobState = { ...state, attempts, status: "failed", error: "This step failed three times." };
+      logEvent("job.failed", { jobId: id, step: state.step, code: failed.error });
+      return saveState(store, failed, now);
+    }
+    return saveState(store, { ...state, attempts, status: "idle" }, now);
   }
 
   const budget = new Budget({
@@ -200,19 +202,37 @@ export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> 
       calls: state.usage.calls + budget.used.calls,
     },
   });
+  const stepFields = () => ({
+    jobId: id,
+    step: state.step,
+    calls: budget.used.calls,
+    inputTokens: budget.used.inputTokens,
+    outputTokens: budget.used.outputTokens,
+  });
 
+  const started = Date.now();
   await saveState(store, { ...state, status: "working" }, now);
   try {
     const next = await runStep(state, deps, model);
+    logEvent("job.step", { ...stepFields(), ok: true, ms: Date.now() - started });
     return saveState(store, addUsage(next), deps.now());
   } catch (error) {
     const message = safeMessage(error);
-    if (error instanceof BudgetExceeded) return saveState(store, addUsage({ ...state, status: "failed", error: message }), deps.now());
+    logEvent("job.step", { ...stepFields(), ok: false, ms: Date.now() - started, error: logMessage(error) });
+    if (error instanceof BudgetExceeded) {
+      const failed: JobState = { ...state, status: "failed", error: message };
+      logEvent("job.failed", { jobId: id, step: state.step, code: failed.error });
+      return saveState(store, addUsage(failed), deps.now());
+    }
     const attempts = state.attempts + 1;
-    return saveState(
-      store,
-      addUsage({ ...state, attempts, status: attempts >= MAX_ATTEMPTS ? "failed" : "idle", error: attempts >= MAX_ATTEMPTS ? `${message} It failed three times.` : message }),
-      deps.now(),
-    );
+    const gaveUp = attempts >= MAX_ATTEMPTS;
+    const next: JobState = {
+      ...state,
+      attempts,
+      status: gaveUp ? "failed" : "idle",
+      error: gaveUp ? `${message} It failed three times.` : message,
+    };
+    if (gaveUp) logEvent("job.failed", { jobId: id, step: state.step, code: next.error });
+    return saveState(store, addUsage(next), deps.now());
   }
 }

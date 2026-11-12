@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { slugify } from "@core/generate/plan";
 import { siteDataSchema, type SiteData } from "@core/site";
 import type { Store } from "@/lib/jobs/store";
+import { logEvent } from "@/lib/log";
 
 /** `<course-slug>-<first 8 hex of the job id>`: safe in a URL and in a storage key. */
 export const COURSE_KEY = /^[a-z0-9][a-z0-9-]{0,60}-[0-9a-f]{8}$/;
@@ -130,7 +131,15 @@ export async function readSite(store: Store, key: string): Promise<SiteData | nu
     return null;
   }
   const parsed = siteDataSchema.safeParse(value);
-  return parsed.success && parsed.data.key === key ? parsed.data : null;
+  if (!parsed.success) {
+    logEvent("site.invalid", { key, issue: parsed.error.issues[0]?.path.join(".") ?? "" });
+    return null;
+  }
+  if (parsed.data.key !== key) {
+    logEvent("site.invalid", { key, issue: "key" });
+    return null;
+  }
+  return parsed.data;
 }
 
 /** Remove a course and its owner lookup. Returns false when there was nothing to delete. */
