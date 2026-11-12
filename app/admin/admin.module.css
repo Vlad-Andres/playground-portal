@@ -29,3 +29,9 @@
 .table th, .table td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 .table th { color: #8a998f; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; }
 .scroll { overflow-x: auto; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.stats div { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 4px; }
+.stats b { font-size: 1.35rem; letter-spacing: -.03em; color: var(--deep); }
+.stats span { font-size: .72rem; color: #8a998f; }
+.actions a { color: var(--green); font-weight: 800; margin-right: 10px; font-size: .8rem; }
+@media (max-width: 760px) { .stats { grid-template-columns: repeat(2, 1fr); } }
