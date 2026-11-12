@@ -32,7 +32,7 @@ export function courseContentSecurityPolicy(development: boolean): string {
     "connect-src 'self' https://generativelanguage.googleapis.com",
     "frame-src 'self' blob: data:",
     "object-src 'none'",
-    "frame-ancestors 'none'",
+    "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'none'",
   ].join("; ");

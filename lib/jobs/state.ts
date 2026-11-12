@@ -1,8 +1,17 @@
-export type Step = "plan" | "review" | `lecture:${number}` | "finish" | "done";
+export type JobKind = "create" | "refine" | "append" | "rebuild";
+export type Step =
+  | "context" | "ask" | "design" | "review" | "expand" | `lecture:${number}` | "finish" | "done"
+  | "refine-plan" | `refine:${number}` | "append-plan" | "choice"
+  /** Written by older versions; handled as "design". */
+  | "plan";
 
 export interface JobState {
   id: string;
+  /** A stored state without kind is a "create" job. */
+  kind?: JobKind;
   step: Step;
+  /** Set exactly while status is "awaiting-review": what the job waits for. */
+  waiting?: "answers" | "design" | "choice";
   status: "idle" | "working" | "awaiting-review" | "done" | "failed";
   lecturesTotal: number;
   lecturesDone: number;

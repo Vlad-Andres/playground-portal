@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { briefSchema, checkMaterials, materialSchema, type CoursePlan } from "@core/generate/index";
+import { briefSchema, checkMaterials, materialSchema, requestSchema, type ContextQuestion, type CoursePlan, type DesignOutline } from "@core/generate/index";
 import {
   dailyJobLimit,
   dayKey,
@@ -10,7 +10,7 @@ import {
   isLevel,
   underDailyLimit,
 } from "@/lib/guard";
-import { createJob, loadPlan, readState, advance, type AdvanceDeps } from "@/lib/jobs/steps";
+import { advance, answerContext, createJob, loadContext, loadDesign, loadRequest, readState, saveJobState, writeJobFile, type AdvanceDeps } from "@/lib/jobs/steps";
 import { JOB_ID, jobKey, type JobState } from "@/lib/jobs/state";
 import type { Store } from "@/lib/jobs/store";
 import { DEFAULT_SETTINGS, matchCode, readSettings, type Settings } from "@/lib/settings";
@@ -33,6 +33,8 @@ const MESSAGES = {
   "not-found": "Job not found.",
   "wrong-state": "The outline can only be changed while it waits for review.",
   "bad-outline": "Keep at least one lecture; titles have at most 120 characters.",
+  "bad-answer": "Answer every question with one of its options.",
+  "bad-design": "Choose a design and keep at least one of its lectures; titles have at most 120 characters.",
 } as const;
 
 export type ApiErrorCode = keyof typeof MESSAGES;
@@ -47,6 +49,8 @@ const STATUS: Record<ApiErrorCode, number> = {
   "not-found": 404,
   "wrong-state": 409,
   "bad-outline": 400,
+  "bad-answer": 400,
+  "bad-design": 400,
 };
 
 function fail(code: ApiErrorCode): Response {
@@ -54,7 +58,7 @@ function fail(code: ApiErrorCode): Response {
 }
 
 const createBodySchema = z
-  .object({ accessCode: z.string().max(200), brief: z.unknown(), materials: z.array(z.unknown()).max(50) })
+  .object({ accessCode: z.string().max(200), request: z.unknown().optional(), brief: z.unknown().optional(), materials: z.array(z.unknown()).max(50) })
   .strict();
 
 /** POST /api/jobs */
@@ -77,38 +81,66 @@ export async function createJobHandler(request: Request, store: Store, env: Node
   const codeId = matchCode(body.data.accessCode, env, settings);
   if (codeId === null) return fail("wrong-code");
 
-  const briefInput = (body.data.brief ?? {}) as Record<string, unknown>;
-  if (!isLanguage(briefInput.language) || !isLevel(briefInput.level)) return fail("bad-request");
+  // New clients send a request ("auto" allowed); older ones a decided brief.
+  const input = ((body.data.request ?? body.data.brief) ?? {}) as Record<string, unknown>;
+  const auto = body.data.request !== undefined;
+  if (!(isLanguage(input.language) || (auto && input.language === "auto")) || !(isLevel(input.level) || (auto && input.level === "auto"))) return fail("bad-request");
   const day = dayKey(now);
   const counted = async (prefix: string) => (await store.list(prefix)).length;
   if (!(await underDailyLimit(day, settings.dailyJobLimit ?? dailyJobLimit(env), counted))) {
     return fail("daily-limit");
   }
 
-  const brief = briefSchema.safeParse(body.data.brief);
-  if (!brief.success) return fail("bad-request");
+  const courseRequest = auto ? requestSchema.safeParse(body.data.request) : null;
+  const brief = auto ? null : briefSchema.safeParse(body.data.brief);
+  if ((courseRequest && !courseRequest.success) || (brief && !brief.success)) return fail("bad-request");
   const materials = z.array(materialSchema).safeParse(body.data.materials);
   if (!materials.success) return fail("bad-request");
   const check = checkMaterials(materials.data);
   if (!check.ok) return json({ error: check.message, code: check.code }, 400);
 
-  const { id } = await createJob(store, { brief: brief.data, materials: materials.data, codeId }, now);
+  const { id } = await createJob(
+    store,
+    courseRequest?.success ? { request: courseRequest.data, materials: materials.data, codeId } : { brief: brief!.data!, materials: materials.data, codeId },
+    now,
+  );
   await store.write(`${dayPrefix(day)}${id}`, "1");
   return json({ id }, 202);
 }
 
 /** What a job page may see: progress and the result, never usage, models, invite codes or internal files. */
-export type PublicJob = Pick<JobState, "id" | "step" | "status" | "lecturesTotal" | "lecturesDone" | "attempts" | "error" | "siteUrl" | "createdAt" | "updatedAt"> & {
+export interface PublicDesignOption {
+  id: "recommended" | "alt-1" | "alt-2";
+  approach: string;
+  why: string;
+  lectures: { slug: string; title: string; summary: string; forms: string[] }[];
+}
+
+export type PublicJob = Pick<JobState, "id" | "kind" | "step" | "status" | "waiting" | "lecturesTotal" | "lecturesDone" | "attempts" | "error" | "siteUrl" | "createdAt" | "updatedAt"> & {
   /** "/manage/<token>", shown only once the job is done. */
   manageUrl?: string;
-  outline?: { slug: string; title: string; summary: string }[];
+  /** Only while waiting for answers. */
+  questions?: ContextQuestion[];
+  /** Only while waiting for the design choice. */
+  design?: { language: string; level: string; subject: string; goals: string[]; assumptions: string[]; options: PublicDesignOption[] };
+  /** Package D: what a refinement changed. */
+  summary?: string;
+  /** Package D: the reorganisation offer while waiting for a choice. */
+  choice?: { reason: string; affected: { slug: string; title: string }[]; canReorganize: boolean };
 };
 
 export function publicJob(state: JobState): PublicJob {
   const { id, step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt } = state;
-  const result: PublicJob = { id, step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt };
+  const result: PublicJob = { id, kind: state.kind ?? "create", step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt };
+  if (status === "awaiting-review") result.waiting = waitingOf(state);
   if (status === "done" && state.manageUrl) result.manageUrl = state.manageUrl;
   return result;
+}
+
+/** Older jobs paused at "review" without a waiting field are waiting for the design. */
+function waitingOf(state: JobState): JobState["waiting"] {
+  if (state.status !== "awaiting-review") return undefined;
+  return state.waiting ?? (state.step === "review" ? "design" : undefined);
 }
 
 function validId(id: string): boolean {
@@ -121,9 +153,27 @@ export async function getJobHandler(id: string, store: Store): Promise<Response>
   const state = await readState(store, id);
   if (!state) return fail("not-found");
   const result: PublicJob = publicJob(state);
-  if (state.status === "awaiting-review") {
-    const plan = await loadPlan(store, id);
-    result.outline = plan.lectures.map(({ slug, title, summary }) => ({ slug, title, summary }));
+  const waiting = waitingOf(state);
+  if (waiting === "answers") result.questions = (await loadContext(store, id)).questions;
+  if (waiting === "design") {
+    const [design, context] = await Promise.all([loadDesign(store, id), loadContext(store, id)]);
+    const plan = design.recommended;
+    result.design = {
+      language: plan.course.language,
+      level: plan.course.level ?? context.level,
+      subject: context.subject || plan.course.title,
+      goals: context.goals,
+      assumptions: context.assumptions,
+      options: [
+        {
+          id: "recommended",
+          approach: plan.approach,
+          why: plan.why,
+          lectures: plan.lectures.map(({ slug, title, summary, sections }) => ({ slug, title, summary, forms: [...new Set(sections.flatMap((section) => section.blocks))].slice(0, 4) })),
+        },
+        ...design.alternatives.map((alt: DesignOutline) => ({ id: alt.id, approach: alt.approach, why: alt.why, lectures: alt.lectures.map(({ slug, title, summary }) => ({ slug, title, summary, forms: [] as string[] })) })),
+      ],
+    };
   }
   return json(result);
 }
@@ -154,38 +204,68 @@ export async function advanceHandler(id: string, deps: () => AdvanceDeps, env: N
   return (await advanceJob(id, deps, env, settings)).response;
 }
 
-const outlineSchema = z
-  .object({ keep: z.array(z.string().max(80)).min(1).max(12), titles: z.record(z.string(), z.string().trim().min(1).max(120)) })
-  .strict();
+async function readBody(request: Request): Promise<unknown> {
+  try {
+    return await request.json();
+  } catch {
+    return undefined;
+  }
+}
 
-/** PUT /api/jobs/:id/outline */
-export async function outlineHandler(id: string, request: Request, store: Store, now = new Date()): Promise<Response> {
+const answersSchema = z.object({ answers: z.record(z.string(), z.string().max(40)) }).strict();
+
+/** PUT /api/jobs/:id/answers — the language and/or focus questions. */
+export async function answersHandler(id: string, request: Request, store: Store, now = new Date()): Promise<Response> {
   if (!validId(id)) return fail("bad-id");
   const state = await readState(store, id);
   if (!state) return fail("not-found");
-  if (state.status !== "awaiting-review") return fail("wrong-state");
-  let raw: unknown;
-  try {
-    raw = await request.json();
-  } catch {
-    return fail("bad-request");
-  }
-  const body = outlineSchema.safeParse(raw);
-  if (!body.success) return fail("bad-outline");
-  const plan = await loadPlan(store, id);
-  const slugs = new Set(plan.lectures.map((lecture) => lecture.slug));
-  if (body.data.keep.some((slug) => !slugs.has(slug))) return fail("bad-outline");
-  const keep = new Set(body.data.keep);
-  const lectures = plan.lectures
-    .filter((lecture) => keep.has(lecture.slug))
-    .map((lecture, index) => ({ ...lecture, number: index + 1, title: body.data.titles[lecture.slug] ?? lecture.title }));
-  const next: CoursePlan = { ...plan, lectures };
-  await store.write(jobKey(id, "plan.json"), `${JSON.stringify(next)}\n`);
-  const updated: JobState = { ...state, step: "lecture:1", status: "idle", lecturesTotal: lectures.length, lecturesDone: 0, attempts: 0, updatedAt: now.toISOString() };
-  await store.write(jobKey(id, "state.json"), `${JSON.stringify(updated)}\n`);
+  if (waitingOf(state) !== "answers") return fail("wrong-state");
+  const body = answersSchema.safeParse(await readBody(request));
+  if (!body.success || Object.keys(body.data.answers).length > 4) return fail("bad-answer");
+  const [context, courseRequest] = await Promise.all([loadContext(store, id), loadRequest(store, id)]);
+  const answered = answerContext(context, courseRequest, body.data.answers);
+  if (!answered.ok) return fail("bad-answer");
+  await writeJobFile(store, id, "context.json", answered.context);
+  await writeJobFile(store, id, "brief.json", answered.brief);
+  const updated = await saveJobState(store, { ...state, step: "design", status: "idle", waiting: undefined, attempts: 0, error: undefined }, now);
   return json(publicJob(updated));
 }
 
+const designSchema = z
+  .object({
+    choice: z.enum(["recommended", "alt-1", "alt-2"]).default("recommended"),
+    keep: z.array(z.string().max(80)).min(1).max(12),
+    titles: z.record(z.string(), z.string().trim().min(1).max(120)),
+  })
+  .strict();
+
+/** PUT /api/jobs/:id/design — pick the recommendation or an alternative, rename or remove lectures. */
+export async function designHandler(id: string, request: Request, store: Store, now = new Date()): Promise<Response> {
+  if (!validId(id)) return fail("bad-id");
+  const state = await readState(store, id);
+  if (!state) return fail("not-found");
+  if (waitingOf(state) !== "design") return fail("wrong-state");
+  const body = designSchema.safeParse(await readBody(request));
+  if (!body.success) return fail("bad-design");
+  const design = await loadDesign(store, id);
+  const keep = new Set(body.data.keep);
+  const titled = <T extends { slug: string; title: string }>(lectures: T[]) =>
+    lectures.filter((lecture) => keep.has(lecture.slug)).map((lecture, index) => ({ ...lecture, number: index + 1, title: body.data.titles[lecture.slug] ?? lecture.title }));
+  const base = { ...state, status: "idle" as const, waiting: undefined, lecturesDone: 0, attempts: 0, error: undefined };
+
+  if (body.data.choice === "recommended") {
+    const plan = design.recommended;
+    if (body.data.keep.some((slug) => !plan.lectures.some((lecture) => lecture.slug === slug))) return fail("bad-design");
+    const next: CoursePlan = { ...plan, lectures: titled(plan.lectures) };
+    await writeJobFile(store, id, "plan.json", next);
+    return json(publicJob(await saveJobState(store, { ...base, step: "lecture:1", lecturesTotal: next.lectures.length }, now)));
+  }
+  const outline = design.alternatives.find((alt) => alt.id === body.data.choice);
+  if (!outline || body.data.keep.some((slug) => !outline.lectures.some((lecture) => lecture.slug === slug))) return fail("bad-design");
+  const chosen: DesignOutline = { ...outline, lectures: titled(outline.lectures).map(({ number: _number, ...lecture }) => lecture) };
+  await writeJobFile(store, id, "outline.json", chosen);
+  return json(publicJob(await saveJobState(store, { ...base, step: "expand", lecturesTotal: chosen.lectures.length }, now)));
+}
 
 function secretMatches(header: string | null, secret: string | undefined): boolean {
   if (!secret || secret.length < 16 || !header) return false;

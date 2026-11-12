@@ -18,7 +18,7 @@ describe("course security headers", () => {
   it("use the template's CSP with framing forbidden", () => {
     const policy = csp(courseSecurityHeaders(false));
     expect(policy).toContain("'wasm-unsafe-eval'");
-    expect(policy).toContain("frame-ancestors 'none'");
+    expect(policy).toContain("frame-ancestors 'self'");
     expect(policy).toContain("frame-src 'self' blob: data:");
     expect(policy).toContain("connect-src 'self' https://generativelanguage.googleapis.com");
     expect(policy).toContain("form-action 'none'");

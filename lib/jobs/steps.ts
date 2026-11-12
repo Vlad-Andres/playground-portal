@@ -4,14 +4,27 @@ import {
   BudgetExceeded,
   briefSchema,
   coursePlanSchema,
+  answerContext,
+  courseContextSchema,
+  courseDesignSchema,
   DEFAULT_BUDGET,
+  defaultContext,
+  designCourse,
+  designOutlineSchema,
+  expandOutline,
   finishCourse,
+  inferContext,
+  requestSchema,
+  resolveBrief,
   materialSchema,
-  planCourse,
   withBudget,
   writeLecture,
   type Brief,
+  type CourseContext,
+  type CourseDesign,
   type CoursePlan,
+  type CourseRequest,
+  type DesignOutline,
   type Material,
   type ModelClient,
 } from "@core/generate/index";
@@ -39,6 +52,7 @@ export function nextStep(state: JobState): Step {
   if (lecture !== null) return lecture < state.lecturesTotal ? `lecture:${lecture + 1}` : "finish";
   switch (state.step) {
     case "plan":
+    case "design":
       return "review";
     case "review":
       return state.lecturesTotal > 0 ? "lecture:1" : "finish";
@@ -67,13 +81,23 @@ async function saveState(store: Store, state: JobState, now: Date): Promise<JobS
   return next;
 }
 
-export async function createJob(store: Store, input: { brief: Brief; materials: Material[]; codeId?: string }, now: Date): Promise<{ id: string; state: JobState }> {
+/**
+ * A new create job. With a `request` it starts by inferring the context; with an already decided `brief`
+ * (tests, older callers) it goes straight to the design.
+ */
+export async function createJob(
+  store: Store,
+  input: ({ request: CourseRequest; brief?: undefined } | { brief: Brief; request?: undefined }) & { materials: Material[]; codeId?: string },
+  now: Date,
+): Promise<{ id: string; state: JobState }> {
   const id = randomUUID();
-  await writeJson(store, jobKey(id, "brief.json"), input.brief);
+  if (input.request) await writeJson(store, jobKey(id, "request.json"), input.request);
+  else await writeJson(store, jobKey(id, "brief.json"), input.brief);
   await writeJson(store, jobKey(id, "materials.json"), input.materials);
   const state: JobState = {
     id,
-    step: "plan",
+    kind: "create",
+    step: input.request ? "context" : "design",
     status: "idle",
     lecturesTotal: 0,
     lecturesDone: 0,
@@ -96,6 +120,39 @@ async function loadMaterials(store: Store, id: string): Promise<Material[]> {
   if (!raw) throw new Error("The uploaded material is no longer available.");
   return raw.map((material) => materialSchema.parse(material));
 }
+
+export async function loadRequest(store: Store, id: string): Promise<CourseRequest> {
+  return requestSchema.parse(await readJson(store, jobKey(id, "request.json")));
+}
+
+/** The inferred context, or a neutral one built from the brief for jobs that have none. */
+export async function loadContext(store: Store, id: string, brief?: Brief): Promise<CourseContext> {
+  const parsed = courseContextSchema.safeParse(await readJson(store, jobKey(id, "context.json")));
+  if (parsed.success) return parsed.data;
+  const fallback = brief ?? (await loadBrief(store, id));
+  return defaultContext(fallback, fallback.title ?? "");
+}
+
+/** The design, or the plan alone as the recommendation for jobs designed before alternatives existed. */
+export async function loadDesign(store: Store, id: string): Promise<CourseDesign> {
+  const parsed = courseDesignSchema.safeParse(await readJson(store, jobKey(id, "design.json")));
+  if (parsed.success) return parsed.data;
+  return { recommended: await loadPlan(store, id), alternatives: [] };
+}
+
+export async function loadOutline(store: Store, id: string): Promise<DesignOutline> {
+  return designOutlineSchema.parse(await readJson(store, jobKey(id, "outline.json")));
+}
+
+export async function writeJobFile(store: Store, id: string, file: string, value: unknown): Promise<void> {
+  await writeJson(store, jobKey(id, file), value);
+}
+
+export async function saveJobState(store: Store, state: JobState, now: Date): Promise<JobState> {
+  return saveState(store, state, now);
+}
+
+export { answerContext, resolveBrief };
 
 export async function loadPlan(store: Store, id: string): Promise<CoursePlan> {
   const plan = coursePlanSchema.safeParse(await readJson(store, jobKey(id, "plan.json")));
@@ -122,11 +179,30 @@ async function runStep(state: JobState, deps: AdvanceDeps, model: ModelClient): 
     return { ...moved, step: nextStep({ ...state, ...next }), status: "idle" };
   };
 
-  if (state.step === "plan") {
+  if (state.step === "context") {
+    const [request, materials] = await Promise.all([loadRequest(store, state.id), loadMaterials(store, state.id)]);
+    const context = await inferContext(materials, request, model);
+    await writeJson(store, jobKey(state.id, "context.json"), context);
+    if (context.questions.length > 0) return { ...state, step: "ask", status: "awaiting-review", waiting: "answers", attempts: 0, error: undefined };
+    await writeJson(store, jobKey(state.id, "brief.json"), resolveBrief(request, context));
+    return { ...state, step: "design", status: "idle", attempts: 0, error: undefined };
+  }
+
+  if (state.step === "design" || state.step === "plan") {
     const [brief, materials] = await Promise.all([loadBrief(store, state.id), loadMaterials(store, state.id)]);
-    const plan = await planCourse(materials, brief, model);
+    const context = await loadContext(store, state.id, brief);
+    const design = await designCourse(materials, brief, context, model);
+    await writeJson(store, jobKey(state.id, "design.json"), design);
+    await writeJson(store, jobKey(state.id, "plan.json"), design.recommended);
+    return { ...state, step: "review", status: "awaiting-review", waiting: "design", lecturesTotal: design.recommended.lectures.length, attempts: 0, error: undefined };
+  }
+
+  if (state.step === "expand") {
+    const [brief, materials, outline] = await Promise.all([loadBrief(store, state.id), loadMaterials(store, state.id), loadOutline(store, state.id)]);
+    const context = await loadContext(store, state.id, brief);
+    const plan = await expandOutline(materials, brief, context, outline, model);
     await writeJson(store, jobKey(state.id, "plan.json"), plan);
-    return { ...moveOn({ lecturesTotal: plan.lectures.length }), status: "awaiting-review" };
+    return { ...state, step: "lecture:1", status: "idle", lecturesTotal: plan.lectures.length, lecturesDone: 0, attempts: 0, error: undefined };
   }
 
   const lecture = lectureNumber(state.step);
@@ -170,7 +246,8 @@ export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> 
   const loaded = await readState(store, id);
   if (!loaded) throw new Error("Job not found.");
   const state: JobState = LEGACY_PUBLISH_STEPS.has(loaded.step) ? { ...loaded, step: "finish", attempts: 0 } : loaded;
-  if (state.status === "awaiting-review" || state.status === "done" || state.status === "failed" || state.step === "review" || state.step === "done") {
+  const waits = state.step === "review" || state.step === "ask" || state.step === "choice" || state.step === "done";
+  if (state.status === "awaiting-review" || state.status === "done" || state.status === "failed" || waits) {
     return state;
   }
   const now = deps.now();

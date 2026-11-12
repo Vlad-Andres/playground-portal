@@ -90,3 +90,6 @@ input[type="password"]:focus { border-color:var(--green); }
 @media (max-width:760px) { .topbar-right { gap:8px; } }
 html { scroll-behavior:smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+.advanced { border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-top:14px; }
+.advanced summary { cursor:pointer; font-weight:800; font-size:.8rem; color:#52645b; }
+.advanced[open] summary { margin-bottom:12px; }
