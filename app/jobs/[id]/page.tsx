@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { TopBar } from "@/components/TopBar";
+import { useErrorText } from "@/components/useErrorText";
 import type { PublicJob } from "@/lib/api/handlers";
 
 const POLL_MS = 3000;
@@ -16,26 +19,17 @@ function phaseOf(job: PublicJob): Phase {
   return "done";
 }
 
-const PHASES: { id: Phase; label: string }[] = [
-  { id: "plan", label: "Plan the lectures" },
-  { id: "review", label: "Review the outline" },
-  { id: "lectures", label: "Write the lectures" },
-  { id: "finish", label: "Check and package" },
-  { id: "done", label: "Done" },
-];
-
-function currentLabel(job: PublicJob): string {
-  const phase = phaseOf(job);
-  if (job.status === "failed") return "Something went wrong.";
-  if (phase === "plan") return "Reading your material and planning the lectures…";
-  if (phase === "review") return "Your outline is ready. Rename or remove lectures, then build.";
-  if (phase === "lectures") return `Writing lecture ${Math.min(job.lecturesDone + 1, job.lecturesTotal)} of ${job.lecturesTotal}…`;
-  if (phase === "finish") return "Checking every block and packaging the course…";
-  return "Your course is ready.";
-}
+const PHASES: Phase[] = ["plan", "review", "lectures", "finish", "done"];
+const PHASE_KEYS = { plan: "phasePlan", review: "phaseReview", lectures: "phaseLectures", finish: "phaseFinish", done: "phaseDone" } as const;
 
 export default function JobPage() {
   const { id } = useParams<{ id: string }>();
+  const t = useTranslations("job");
+  const errorText = useErrorText();
+  // Kept in a ref so the polling callbacks below do not change when the translations do.
+  const errorRef = useRef(errorText);
+  errorRef.current = errorText;
+  const [copied, setCopied] = useState(false);
   const [job, setJob] = useState<PublicJob | null>(null);
   const [problem, setProblem] = useState("");
   const [paused, setPaused] = useState(false);
@@ -47,16 +41,16 @@ export default function JobPage() {
   const load = useCallback(async () => {
     try {
       const response = await fetch(`/api/jobs/${id}`, { cache: "no-store" });
-      const body = (await response.json()) as PublicJob & { error?: string };
+      const body = (await response.json()) as PublicJob & { code?: string };
       if (!response.ok) {
-        setProblem(body.error ?? `Could not load this job (status ${response.status}).`);
+        setProblem(errorRef.current(body.code));
         return null;
       }
       setProblem("");
       setJob(body);
       return body;
     } catch {
-      setProblem("Connection lost. Retrying…");
+      setProblem(errorRef.current("network"));
       return null;
     }
   }, [id]);
@@ -66,15 +60,15 @@ export default function JobPage() {
     advancing.current = true;
     try {
       const response = await fetch(`/api/jobs/${id}/advance`, { method: "POST" });
-      const body = (await response.json().catch(() => ({}))) as PublicJob & { error?: string };
+      const body = (await response.json().catch(() => ({}))) as PublicJob & { code?: string };
       if (!response.ok) {
-        setProblem(body.error ?? `The server stopped this step (status ${response.status}). It will be retried.`);
+        setProblem(errorRef.current(body.code));
         return;
       }
       if (body.error && body.status === "idle") setPaused(true);
       await load();
     } catch {
-      setProblem("Connection lost. Retrying…");
+      setProblem(errorRef.current("network"));
     } finally {
       advancing.current = false;
     }
@@ -99,7 +93,7 @@ export default function JobPage() {
     if (!job?.outline) return;
     const keep = job.outline.map((lecture) => lecture.slug).filter((slug) => !removed.has(slug));
     if (keep.length === 0) {
-      setProblem("Keep at least one lecture.");
+      setProblem(errorText("bad-outline"));
       return;
     }
     setSaving(true);
@@ -111,39 +105,53 @@ export default function JobPage() {
     });
     setSaving(false);
     if (!response.ok) {
-      const body = (await response.json().catch(() => ({}))) as { error?: string };
-      setProblem(body.error ?? "The outline could not be saved.");
+      const body = (await response.json().catch(() => ({}))) as { code?: string };
+      setProblem(errorRef.current(body.code));
       return;
     }
     await load();
   }
 
   const phase = job ? phaseOf(job) : "plan";
-  const phaseIndex = PHASES.findIndex((item) => item.id === phase);
+  const phaseIndex = PHASES.indexOf(phase);
+
+  function currentLabel(current: PublicJob): string {
+    if (current.status === "failed") return t("failed");
+    if (phase === "plan") return t("planning");
+    if (phase === "review") return t("reviewing");
+    if (phase === "lectures") return t("writing", { current: Math.min(current.lecturesDone + 1, current.lecturesTotal), total: current.lecturesTotal });
+    if (phase === "finish") return t("finishing");
+    return t("ready");
+  }
+
+  const editLink = job?.manageUrl ? `${window.location.origin}${job.manageUrl}` : "";
+
+  async function copyEditLink() {
+    try {
+      await navigator.clipboard.writeText(editLink);
+      setCopied(true);
+    } catch {
+      // the link stays selectable in the field
+    }
+  }
 
   return (
     <main className="job-page">
-      <header className="topbar">
-        <a className="brand" href="/">
-          <span className="brand-mark">✦</span>
-          <span>playground<span className="brand-dot">.</span></span>
-        </a>
-        <span className="topbar-note">You can close this page and reopen the link later</span>
-      </header>
+      <TopBar note={t("topNote")} />
 
       <section className="job-hero">
-        <div className="eyebrow"><span className="eyebrow-line" /> Building your study site</div>
-        <h1 className="job-title">{job ? currentLabel(job) : "Loading…"}</h1>
+        <div className="eyebrow"><span className="eyebrow-line" /> {t("eyebrow")}</div>
+        <h1 className="job-title">{job ? currentLabel(job) : t("loading")}</h1>
       </section>
 
       <div className="job-grid">
-        <ol className="phase-list panel" aria-label="Steps">
+        <ol className="phase-list panel" aria-label={t("stepsAria")}>
           {PHASES.map((item, index) => (
-            <li key={item.id} className={index < phaseIndex || job?.status === "done" ? "done" : index === phaseIndex ? "current" : ""} aria-current={index === phaseIndex ? "step" : undefined}>
+            <li key={item} className={index < phaseIndex || job?.status === "done" ? "done" : index === phaseIndex ? "current" : ""} aria-current={index === phaseIndex ? "step" : undefined}>
               <span className="phase-dot">{index < phaseIndex || job?.status === "done" ? "✓" : index + 1}</span>
               <span>
-                {item.label}
-                {item.id === "lectures" && job && job.lecturesTotal > 0 ? <small> {job.lecturesDone}/{job.lecturesTotal}</small> : null}
+                {t(PHASE_KEYS[item])}
+                {item === "lectures" && job && job.lecturesTotal > 0 ? <small> {job.lecturesDone}/{job.lecturesTotal}</small> : null}
               </span>
             </li>
           ))}
@@ -154,8 +162,8 @@ export default function JobPage() {
 
           {job?.status === "awaiting-review" && job.outline ? (
             <div className="outline">
-              <h2>Your lectures</h2>
-              <p className="helper">Rename a lecture or remove the ones you do not need. Then the lectures are written one by one.</p>
+              <h2>{t("outlineTitle")}</h2>
+              <p className="helper">{t("outlineHint")}</p>
               <ol className="outline-list">
                 {job.outline.map((lecture, index) => (
                   <li key={lecture.slug} className={removed.has(lecture.slug) ? "removed" : ""}>
@@ -163,7 +171,7 @@ export default function JobPage() {
                     <div className="outline-body">
                       <input
                         className="text-input"
-                        aria-label={`Title of lecture ${index + 1}`}
+                        aria-label={t("lectureTitle", { n: index + 1 })}
                         maxLength={120}
                         defaultValue={lecture.title}
                         disabled={removed.has(lecture.slug)}
@@ -183,13 +191,13 @@ export default function JobPage() {
                         })
                       }
                     >
-                      {removed.has(lecture.slug) ? "Keep" : "Remove"}
+                      {removed.has(lecture.slug) ? t("keep") : t("remove")}
                     </button>
                   </li>
                 ))}
               </ol>
               <button type="button" className="primary-button" onClick={build} disabled={saving}>
-                Build my site <span>→</span>
+                {t("build")} <span>→</span>
               </button>
             </div>
           ) : null}
@@ -200,8 +208,8 @@ export default function JobPage() {
               <p>{currentLabel(job)}</p>
               {paused && job.error ? (
                 <div className="retry">
-                  <p className="helper helper-error">{job.error} {3 - job.attempts} attempt(s) left.</p>
-                  <button type="button" className="primary-button" onClick={() => setPaused(false)}>Try again</button>
+                  <p className="helper helper-error">{errorText(job.error)} {t("attemptsLeft", { count: 3 - job.attempts })}</p>
+                  <button type="button" className="primary-button" onClick={() => setPaused(false)}>{t("tryAgain")}</button>
                 </div>
               ) : null}
             </div>
@@ -209,15 +217,25 @@ export default function JobPage() {
 
           {job?.status === "failed" ? (
             <div className="retry">
-              <p className="helper helper-error">{job.error ?? "This job failed."}</p>
-              <a className="secondary-button" href="/">Start again</a>
+              <p className="helper helper-error">{errorText(job.error)} {t("failedThree")}</p>
+              <a className="secondary-button" href="/create">{t("startAgain")}</a>
             </div>
           ) : null}
 
           {job?.status === "done" ? (
             <div className="finished">
               {job.siteUrl ? (
-                <a className="primary-button" href={job.siteUrl} target="_blank" rel="noreferrer">Open your site <span>→</span></a>
+                <a className="primary-button" href={job.siteUrl} target="_blank" rel="noreferrer">{t("openSite")} <span>→</span></a>
+              ) : null}
+              {job.manageUrl ? (
+                <div className="edit-link">
+                  <h3>{t("editLinkTitle")}</h3>
+                  <div className="edit-link-row">
+                    <input className="text-input" readOnly value={editLink} aria-label={t("editLinkTitle")} onFocus={(event) => event.currentTarget.select()} />
+                    <button type="button" onClick={copyEditLink} aria-label={t("copyAria")}>{copied ? t("copied") : t("copy")}</button>
+                  </div>
+                  <p>{t("editLinkWarning")}</p>
+                </div>
               ) : null}
             </div>
           ) : null}
