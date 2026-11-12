@@ -1,10 +1,13 @@
 import type { ReactNode } from "react";
 import type { SiteData } from "@core/site";
+import { siteFeatures } from "@core/site";
+import { CourseAssistant } from "@site/components/assistant/CourseAssistant";
 import { SiteFooter } from "@site/components/layout/SiteFooter";
 import { ServiceWorkerRegistration } from "@site/components/layout/ServiceWorkerRegistration";
 import { SiteHeader } from "@site/components/layout/SiteHeader";
 import { indexMetas } from "@site/content/registry";
 import { buildSearchRecords } from "@site/lib/search";
+import { siteToContext } from "@site/lib/assistant/courseContext";
 import { SiteProvider } from "@site/site/context";
 import { sitePaths } from "@site/site/paths";
 
@@ -25,6 +28,8 @@ export function SiteShell({
   offline?: boolean;
 }) {
   const records = buildSearchRecords(data.index, sitePaths(base).lecture);
+  const assistantContext = siteToContext(data);
+  const showAssistant = siteFeatures(data.course).assistant;
 
   return (
     <SiteProvider data={data} base={base}>
@@ -35,11 +40,12 @@ export function SiteShell({
         Skip to content
       </a>
       <SiteHeader metas={indexMetas(data.index)} records={records} />
-      <main id="main" className="flex-1">
+      <main id="main" className="flex-1" data-assistant-scope>
         {children}
       </main>
       <SiteFooter course={data.course} />
       {offline ? <ServiceWorkerRegistration /> : null}
+      {showAssistant ? <CourseAssistant context={assistantContext} /> : null}
     </SiteProvider>
   );
 }
