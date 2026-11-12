@@ -1,6 +1,7 @@
 import { BookOpen, ListChecks, Puzzle, Layers, Timer, Smartphone, ArrowRight, Sparkles } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { HeroBackground } from "@/components/landing/HeroBackground";
+import { Pipeline } from "@/components/landing/Pipeline";
 import { TopBar } from "@/components/TopBar";
 import styles from "./landing.module.css";
 
@@ -54,15 +55,7 @@ export default async function LandingPage() {
 
       <section id="how" className={styles.section} aria-labelledby="how-title">
         <h2 id="how-title" className={styles.heading}>{t("howTitle")}</h2>
-        <ol className={styles.steps}>
-          {([1, 2, 3] as const).map((n) => (
-            <li key={n} className={styles.step}>
-              <span className={styles.stepNumber} aria-hidden="true">{n}</span>
-              <h3>{t(`how${n}Title`)}</h3>
-              <p>{t(`how${n}Text`)}</p>
-            </li>
-          ))}
-        </ol>
+        <Pipeline />
       </section>
 
       <section className={styles.section} aria-labelledby="features-title">
