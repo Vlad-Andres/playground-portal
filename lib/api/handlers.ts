@@ -86,7 +86,7 @@ function fail(code: ApiErrorCode): Response {
 }
 
 const createBodySchema = z
-  .object({ accessCode: z.string().max(200), request: z.unknown().optional(), brief: z.unknown().optional(), materials: z.array(z.unknown()).max(50) })
+  .object({ accessCode: z.string().max(200), request: z.unknown().optional(), brief: z.unknown().optional(), materials: z.array(z.unknown()).max(50), keepSources: z.boolean().optional() })
   .strict();
 
 /** POST /api/jobs */
@@ -133,7 +133,7 @@ export async function createJobHandler(request: Request, store: Store, env: Node
   const { id } = await createJob(
     store,
     courseRequest?.success
-      ? { request: courseRequest.data, materials: materials.data, codeId, ownerId: user?.uid, keepSources: Boolean(user) && (raw as { keepSources?: unknown }).keepSources === true }
+      ? { request: courseRequest.data, materials: materials.data, codeId, ownerId: user?.uid, keepSources: Boolean(user) && body.data.keepSources === true }
       : { brief: brief!.data!, materials: materials.data, codeId, ownerId: user?.uid },
     now,
   );

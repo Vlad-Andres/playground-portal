@@ -234,3 +234,18 @@ describe("advanceJob and shouldChain", () => {
     expect((await advanceJob(id, deps, off)).state).toBeNull();
   });
 });
+
+describe("keep my files at creation", () => {
+  it("accepts keepSources from a signed-in creator and ignores it for a guest", async () => {
+    const store = memoryStore();
+    const request = { language: "auto", level: "auto", depth: "cram", examMode: false, quizzes: true, widgets: true, context: "", locale: "en" };
+    const send = () => new Request("http://x/api/jobs", { method: "POST", body: JSON.stringify({ accessCode: CODE, request, materials, keepSources: true }), headers: { "content-type": "application/json" } });
+    const signed = await createJobHandler(send(), store, { ...env, PORTAL_DAILY_JOB_LIMIT: "10" }, new Date(), { uid: "a".repeat(32), name: "A" });
+    expect(signed.status).toBe(202);
+    const { id } = await signed.json();
+    expect(JSON.parse((await store.read(jobKey(id, "state.json"))) as string)).toMatchObject({ keepSources: true, ownerId: "a".repeat(32) });
+    const guest = await createJobHandler(send(), store, { ...env, PORTAL_DAILY_JOB_LIMIT: "10" });
+    const guestId = (await guest.json()).id;
+    expect(JSON.parse((await store.read(jobKey(guestId, "state.json"))) as string).keepSources).toBeUndefined();
+  });
+});
