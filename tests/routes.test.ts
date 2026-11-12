@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cannedModel, type Brief } from "@core/generate/index";
 import { siteDataSchema } from "@core/site";
-import { advanceHandler, advanceJob, cleanupHandler, createJobHandler, getJobHandler, MAX_BODY_BYTES, outlineHandler, shouldChain } from "@/lib/api/handlers";
+import { advanceHandler, advanceJob, cleanupHandler, createJobHandler, getJobHandler, MAX_BODY_BYTES, designHandler, shouldChain } from "@/lib/api/handlers";
 import { jobKey } from "@/lib/jobs/state";
 import { memoryStore } from "@/lib/jobs/store";
 import { readSite } from "@/lib/sites/store";
@@ -57,18 +57,18 @@ describe("job routes", () => {
     const { id } = await (await createJobHandler(valid(), store, env)).json();
 
     // wrong-state cases before the plan exists
-    expect((await outlineHandler(id, new Request("http://x", { method: "PUT", body: "{}" }), store)).status).toBe(409);
+    expect((await designHandler(id, new Request("http://x", { method: "PUT", body: "{}" }), store)).status).toBe(409);
 
     let state = await (await advanceHandler(id, deps, env)).json();
     expect(state.status).toBe("awaiting-review");
     const job = await (await getJobHandler(id, store)).json();
-    expect(job.outline).toHaveLength(2);
+    expect(job.design.options[0].lectures).toHaveLength(2);
     expect(JSON.stringify(job)).not.toContain("Plants make glucose");
 
-    const keep = [job.outline[1].slug];
-    expect((await outlineHandler(id, new Request("http://x", { method: "PUT", body: JSON.stringify({ keep: [], titles: {} }) }), store)).status).toBe(400);
-    expect((await outlineHandler(id, new Request("http://x", { method: "PUT", body: JSON.stringify({ keep: ["nope"], titles: {} }) }), store)).status).toBe(400);
-    const outlined = await outlineHandler(id, new Request("http://x", { method: "PUT", body: JSON.stringify({ keep, titles: { [keep[0]]: "Renamed" } }) }), store);
+    const keep = [job.design.options[0].lectures[1].slug];
+    expect((await designHandler(id, new Request("http://x", { method: "PUT", body: JSON.stringify({ keep: [], titles: {} }) }), store)).status).toBe(400);
+    expect((await designHandler(id, new Request("http://x", { method: "PUT", body: JSON.stringify({ keep: ["nope"], titles: {} }) }), store)).status).toBe(400);
+    const outlined = await designHandler(id, new Request("http://x", { method: "PUT", body: JSON.stringify({ keep, titles: { [keep[0]]: "Renamed" } }) }), store);
     expect(outlined.status).toBe(200);
     expect((await outlined.json()).lecturesTotal).toBe(1);
 
@@ -170,7 +170,7 @@ describe("error codes", () => {
   it("wrong-state → 409", async () => {
     const store = memoryStore();
     const { id } = await (await createJobHandler(valid(), store, env)).json();
-    const response = await outlineHandler(id, new Request("http://x", { method: "PUT", body: "{}" }), store);
+    const response = await designHandler(id, new Request("http://x", { method: "PUT", body: "{}" }), store);
     expect(response.status).toBe(409);
     expect(await read(response)).toMatchObject({ code: "wrong-state" });
   });
@@ -179,10 +179,10 @@ describe("error codes", () => {
     const store = memoryStore();
     const { id } = await (await createJobHandler(valid(), store, env)).json();
     await advanceHandler(id, () => ({ store, model: cannedModel(), now: () => new Date() }), env);
-    const put = (body: unknown) => outlineHandler(id, new Request("http://x", { method: "PUT", body: JSON.stringify(body) }), store);
-    expect(await read(await put({ keep: [], titles: {} }))).toMatchObject({ code: "bad-outline" });
-    expect(await read(await put({ keep: ["nope"], titles: {} }))).toMatchObject({ code: "bad-outline" });
-    expect(await read(await put({ keep: ["nope"], titles: { nope: "x".repeat(121) } }))).toMatchObject({ code: "bad-outline" });
+    const put = (body: unknown) => designHandler(id, new Request("http://x", { method: "PUT", body: JSON.stringify(body) }), store);
+    expect(await read(await put({ keep: [], titles: {} }))).toMatchObject({ code: "bad-design" });
+    expect(await read(await put({ keep: ["nope"], titles: {} }))).toMatchObject({ code: "bad-design" });
+    expect(await read(await put({ keep: ["nope"], titles: { nope: "x".repeat(121) } }))).toMatchObject({ code: "bad-design" });
   });
 });
 
@@ -232,5 +232,20 @@ describe("advanceJob and shouldChain", () => {
     const { id } = await (await createJobHandler(valid(), store, env)).json();
     const off = { ...env, PORTAL_ENABLE_GENERATION: "false" } as unknown as NodeJS.ProcessEnv;
     expect((await advanceJob(id, deps, off)).state).toBeNull();
+  });
+});
+
+describe("keep my files at creation", () => {
+  it("accepts keepSources from a signed-in creator and ignores it for a guest", async () => {
+    const store = memoryStore();
+    const request = { language: "auto", level: "auto", depth: "cram", examMode: false, quizzes: true, widgets: true, context: "", locale: "en" };
+    const send = () => new Request("http://x/api/jobs", { method: "POST", body: JSON.stringify({ accessCode: CODE, request, materials, keepSources: true }), headers: { "content-type": "application/json" } });
+    const signed = await createJobHandler(send(), store, { ...env, PORTAL_DAILY_JOB_LIMIT: "10" }, new Date(), { uid: "a".repeat(32), name: "A" });
+    expect(signed.status).toBe(202);
+    const { id } = await signed.json();
+    expect(JSON.parse((await store.read(jobKey(id, "state.json"))) as string)).toMatchObject({ keepSources: true, ownerId: "a".repeat(32) });
+    const guest = await createJobHandler(send(), store, { ...env, PORTAL_DAILY_JOB_LIMIT: "10" });
+    const guestId = (await guest.json()).id;
+    expect(JSON.parse((await store.read(jobKey(guestId, "state.json"))) as string).keepSources).toBeUndefined();
   });
 });

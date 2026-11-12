@@ -77,7 +77,10 @@ export function localStore(root = path.join(/* turbopackIgnore: true */ process.
     },
     async write(key, body) {
       await fs.mkdir(path.dirname(file(key)), { recursive: true });
-      await fs.writeFile(file(key), body);
+      // Write then rename, so a concurrent reader never sees a half-written file (Blob writes are atomic too).
+      const temporary = `${file(key)}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
+      await fs.writeFile(temporary, body);
+      await fs.rename(temporary, file(key));
     },
     async create(key, body) {
       await fs.mkdir(path.dirname(file(key)), { recursive: true });
@@ -103,7 +106,7 @@ export function localStore(root = path.join(/* turbopackIgnore: true */ process.
       const result: { key: string; uploadedAt: Date }[] = [];
       for (const entry of entries) {
         const key = entry.split(path.sep).join("/");
-        if (!key.startsWith(prefix)) continue;
+        if (!key.startsWith(prefix) || key.endsWith(".tmp")) continue;
         const stat = await fs.stat(path.join(base, entry));
         if (stat.isFile()) result.push({ key, uploadedAt: stat.mtime });
       }

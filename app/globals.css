@@ -90,3 +90,10 @@ input[type="password"]:focus { border-color:var(--green); }
 @media (max-width:760px) { .topbar-right { gap:8px; } }
 html { scroll-behavior:smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+.advanced { border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-top:14px; }
+.advanced summary { cursor:pointer; font-weight:800; font-size:.8rem; color:#52645b; }
+.advanced[open] summary { margin-bottom:12px; }
+.account-menu { display:inline-flex; align-items:center; gap:10px; }
+.account-link { background:none; border:0; padding:0; font:inherit; font-size:.74rem; font-weight:800; color:var(--green); text-decoration:none; cursor:pointer; }
+.account-link:hover { text-decoration:underline; }
+@media (max-width:560px) { .account-menu { gap:6px; } }

@@ -28,7 +28,7 @@ beforeEach(async () => {
     title: "Demo course",
     lectures: 1,
     usage: { inputTokens: 10, outputTokens: 5, calls: 2 },
-    ownerHash: ownerHash(token),
+    ownerHash: ownerHash(token), ownerId: "", version: 1, keepSources: false,
   });
 });
 
@@ -45,7 +45,7 @@ describe("saveCourse", () => {
     expect(await saveCourse(token, { title: "Renamed course" })).toEqual({ ok: true });
     expect((await readSite(store, key))?.course.title).toBe("Renamed course");
     const meta = await readMeta(store, key);
-    expect(meta).toMatchObject({ title: "Renamed course", ownerHash: ownerHash(token), publishedAt: "2026-11-11T10:00:00Z", jobId: "12345678", usage: { inputTokens: 10, outputTokens: 5, calls: 2 } });
+    expect(meta).toMatchObject({ title: "Renamed course", ownerHash: ownerHash(token), ownerId: "", version: 2, keepSources: false, publishedAt: "2026-11-11T10:00:00Z", jobId: "12345678", usage: { inputTokens: 10, outputTokens: 5, calls: 2 } });
     expect(meta?.updatedAt).not.toBe("2026-11-11T10:00:00Z");
     expect(await findCourseByOwnerToken(store, token)).toBe(key);
     expect(updateTag).toHaveBeenCalledWith(`course:${key}`);

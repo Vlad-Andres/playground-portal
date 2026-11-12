@@ -1,18 +1,28 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { briefSchema, checkMaterials, materialSchema, type CoursePlan } from "@core/generate/index";
+import { briefSchema, checkMaterials, materialSchema, requestSchema, type ContextQuestion, type CoursePlan, type DesignOutline } from "@core/generate/index";
 import {
   dailyJobLimit,
   dayKey,
   dayPrefix,
+  GUEST_COOKIE,
   generationEnabled,
+  hasGuestCookie,
+  USER_DAILY_JOBS,
+  userDayPrefix,
   isLanguage,
   isLevel,
   underDailyLimit,
 } from "@/lib/guard";
-import { createJob, loadPlan, readState, advance, type AdvanceDeps } from "@/lib/jobs/steps";
+import { advance, answerContext, createCourseJob, createJob, defaultContextFor, loadContext, loadDesign, loadJobMaterials, loadRequest, readState, saveJobState, writeJobFile, type AdvanceDeps } from "@/lib/jobs/steps";
+import { addSources, claimBusy, claimRound, mergeSources, readBrief, readSources, releaseBusy, resolveAccess, SOURCE_LIMIT_BYTES, SOURCE_LIMIT_FILES } from "@/lib/sites/library";
+import { readMeta, readSite } from "@/lib/sites/store";
+import { LIMITS } from "@core/generate/index";
 import { JOB_ID, jobKey, type JobState } from "@/lib/jobs/state";
 import type { Store } from "@/lib/jobs/store";
+import { accountsConfigured } from "@/lib/auth/config";
+import type { User } from "@/lib/auth/session";
+import { logEvent } from "@/lib/log";
 import { DEFAULT_SETTINGS, matchCode, readSettings, type Settings } from "@/lib/settings";
 
 export const MAX_BODY_BYTES = 4 * 1024 * 1024;
@@ -33,6 +43,17 @@ const MESSAGES = {
   "not-found": "Job not found.",
   "wrong-state": "The outline can only be changed while it waits for review.",
   "bad-outline": "Keep at least one lecture; titles have at most 120 characters.",
+  "bad-answer": "Answer every question with one of its options.",
+  "guest-limit": "You already made a course in this browser. Sign in to make more.",
+  "user-daily-limit": "You reached today's limit. Please try again tomorrow.",
+  "sign-in-required": "Sign in first.",
+  "course-busy": "This course is being changed. Try again when that is done.",
+  "rounds-used": "All three refinement rounds of this course are used.",
+  "course-full": "This course already has the most lectures it can have.",
+  "sources-full": "The kept files would be larger than 4 MB or more than 12 files.",
+  "sources-missing": "Reorganising needs the original files, kept for this course.",
+  "refine-empty": "We could not turn that note into a change.",
+  "bad-design": "Choose a design and keep at least one of its lectures; titles have at most 120 characters.",
 } as const;
 
 export type ApiErrorCode = keyof typeof MESSAGES;
@@ -47,6 +68,17 @@ const STATUS: Record<ApiErrorCode, number> = {
   "not-found": 404,
   "wrong-state": 409,
   "bad-outline": 400,
+  "bad-answer": 400,
+  "guest-limit": 403,
+  "user-daily-limit": 429,
+  "sign-in-required": 401,
+  "course-busy": 409,
+  "rounds-used": 409,
+  "course-full": 409,
+  "sources-full": 413,
+  "sources-missing": 409,
+  "refine-empty": 400,
+  "bad-design": 400,
 };
 
 function fail(code: ApiErrorCode): Response {
@@ -54,11 +86,11 @@ function fail(code: ApiErrorCode): Response {
 }
 
 const createBodySchema = z
-  .object({ accessCode: z.string().max(200), brief: z.unknown(), materials: z.array(z.unknown()).max(50) })
+  .object({ accessCode: z.string().max(200), request: z.unknown().optional(), brief: z.unknown().optional(), materials: z.array(z.unknown()).max(50), keepSources: z.boolean().optional() })
   .strict();
 
 /** POST /api/jobs */
-export async function createJobHandler(request: Request, store: Store, env: NodeJS.ProcessEnv, now = new Date()): Promise<Response> {
+export async function createJobHandler(request: Request, store: Store, env: NodeJS.ProcessEnv, now = new Date(), user: User | null = null): Promise<Response> {
   const settings = await readSettings(store);
   if (!generationEnabled(env, settings)) return fail("generation-off");
   const declared = Number(request.headers.get("content-length") ?? "0");
@@ -77,38 +109,78 @@ export async function createJobHandler(request: Request, store: Store, env: Node
   const codeId = matchCode(body.data.accessCode, env, settings);
   if (codeId === null) return fail("wrong-code");
 
-  const briefInput = (body.data.brief ?? {}) as Record<string, unknown>;
-  if (!isLanguage(briefInput.language) || !isLevel(briefInput.level)) return fail("bad-request");
+  // New clients send a request ("auto" allowed); older ones a decided brief.
+  const input = ((body.data.request ?? body.data.brief) ?? {}) as Record<string, unknown>;
+  const auto = body.data.request !== undefined;
+  if (!(isLanguage(input.language) || (auto && input.language === "auto")) || !(isLevel(input.level) || (auto && input.level === "auto"))) return fail("bad-request");
   const day = dayKey(now);
   const counted = async (prefix: string) => (await store.list(prefix)).length;
+  const accounts = accountsConfigured(env);
+  if (accounts && !user && hasGuestCookie(request.headers.get("cookie"))) return fail("guest-limit");
+  if (user && (await counted(userDayPrefix(user.uid, day))) >= USER_DAILY_JOBS) return fail("user-daily-limit");
   if (!(await underDailyLimit(day, settings.dailyJobLimit ?? dailyJobLimit(env), counted))) {
     return fail("daily-limit");
   }
 
-  const brief = briefSchema.safeParse(body.data.brief);
-  if (!brief.success) return fail("bad-request");
+  const courseRequest = auto ? requestSchema.safeParse(body.data.request) : null;
+  const brief = auto ? null : briefSchema.safeParse(body.data.brief);
+  if ((courseRequest && !courseRequest.success) || (brief && !brief.success)) return fail("bad-request");
   const materials = z.array(materialSchema).safeParse(body.data.materials);
   if (!materials.success) return fail("bad-request");
   const check = checkMaterials(materials.data);
   if (!check.ok) return json({ error: check.message, code: check.code }, 400);
 
-  const { id } = await createJob(store, { brief: brief.data, materials: materials.data, codeId }, now);
+  const { id } = await createJob(
+    store,
+    courseRequest?.success
+      ? { request: courseRequest.data, materials: materials.data, codeId, ownerId: user?.uid, keepSources: Boolean(user) && body.data.keepSources === true }
+      : { brief: brief!.data!, materials: materials.data, codeId, ownerId: user?.uid },
+    now,
+  );
   await store.write(`${dayPrefix(day)}${id}`, "1");
-  return json({ id }, 202);
+  if (user) await store.write(`${userDayPrefix(user.uid, day)}${id}`, "1");
+  logEvent("job.created", { jobId: id, kind: "create", signedIn: Boolean(user) });
+  const response = json({ id }, 202);
+  if (accounts && !user) {
+    response.headers.append("Set-Cookie", `${GUEST_COOKIE}=1; Path=/; Max-Age=15552000; HttpOnly; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`);
+  }
+  return response;
 }
 
 /** What a job page may see: progress and the result, never usage, models, invite codes or internal files. */
-export type PublicJob = Pick<JobState, "id" | "step" | "status" | "lecturesTotal" | "lecturesDone" | "attempts" | "error" | "siteUrl" | "createdAt" | "updatedAt"> & {
+export interface PublicDesignOption {
+  id: "recommended" | "alt-1" | "alt-2";
+  approach: string;
+  why: string;
+  lectures: { slug: string; title: string; summary: string; forms: string[] }[];
+}
+
+export type PublicJob = Pick<JobState, "id" | "kind" | "step" | "status" | "waiting" | "lecturesTotal" | "lecturesDone" | "attempts" | "error" | "siteUrl" | "createdAt" | "updatedAt"> & {
   /** "/manage/<token>", shown only once the job is done. */
   manageUrl?: string;
-  outline?: { slug: string; title: string; summary: string }[];
+  /** Only while waiting for answers. */
+  questions?: ContextQuestion[];
+  /** Only while waiting for the design choice. */
+  design?: { language: string; level: string; subject: string; goals: string[]; assumptions: string[]; options: PublicDesignOption[] };
+  /** Package D: what a refinement changed. */
+  summary?: string;
+  /** Package D: the reorganisation offer while waiting for a choice. */
+  choice?: { reason: string; affected: { slug: string; title: string }[]; canReorganize: boolean };
 };
 
 export function publicJob(state: JobState): PublicJob {
   const { id, step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt } = state;
-  const result: PublicJob = { id, step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt };
+  const result: PublicJob = { id, kind: state.kind ?? "create", step, status, lecturesTotal, lecturesDone, attempts, error, siteUrl, createdAt, updatedAt };
+  if (status === "awaiting-review") result.waiting = waitingOf(state);
+  if (status === "done" && state.summary) result.summary = state.summary;
   if (status === "done" && state.manageUrl) result.manageUrl = state.manageUrl;
   return result;
+}
+
+/** Older jobs paused at "review" without a waiting field are waiting for the design. */
+function waitingOf(state: JobState): JobState["waiting"] {
+  if (state.status !== "awaiting-review") return undefined;
+  return state.waiting ?? (state.step === "review" ? "design" : undefined);
 }
 
 function validId(id: string): boolean {
@@ -121,9 +193,37 @@ export async function getJobHandler(id: string, store: Store): Promise<Response>
   const state = await readState(store, id);
   if (!state) return fail("not-found");
   const result: PublicJob = publicJob(state);
-  if (state.status === "awaiting-review") {
-    const plan = await loadPlan(store, id);
-    result.outline = plan.lectures.map(({ slug, title, summary }) => ({ slug, title, summary }));
+  const waiting = waitingOf(state);
+  if (waiting === "answers") result.questions = (await loadContext(store, id)).questions;
+  if (waiting === "choice" && state.courseKey) {
+    const [append, site, meta] = await Promise.all([store.read(jobKey(id, "append.json")), readSite(store, state.courseKey), readMeta(store, state.courseKey)]);
+    const proposal = append ? (JSON.parse(append) as { restructure?: { affected: string[]; reason: string } | null }).restructure : null;
+    const kept = meta?.keepSources ? (await readSources(store, state.courseKey)).length > 0 : false;
+    result.choice = {
+      reason: proposal?.reason ?? "",
+      affected: (proposal?.affected ?? []).map((slug) => ({ slug, title: site?.lectures.find((lecture) => lecture.meta.slug === slug)?.meta.title ?? slug })),
+      canReorganize: kept,
+    };
+  }
+  if (waiting === "design") {
+    const [design, context] = await Promise.all([loadDesign(store, id), loadContext(store, id)]);
+    const plan = design.recommended;
+    result.design = {
+      language: plan.course.language,
+      level: plan.course.level ?? context.level,
+      subject: context.subject || plan.course.title,
+      goals: context.goals,
+      assumptions: context.assumptions,
+      options: [
+        {
+          id: "recommended",
+          approach: plan.approach,
+          why: plan.why,
+          lectures: plan.lectures.map(({ slug, title, summary, sections }) => ({ slug, title, summary, forms: [...new Set(sections.flatMap((section) => section.blocks))].slice(0, 4) })),
+        },
+        ...design.alternatives.map((alt: DesignOutline) => ({ id: alt.id, approach: alt.approach, why: alt.why, lectures: alt.lectures.map(({ slug, title, summary }) => ({ slug, title, summary, forms: [] as string[] })) })),
+      ],
+    };
   }
   return json(result);
 }
@@ -154,38 +254,168 @@ export async function advanceHandler(id: string, deps: () => AdvanceDeps, env: N
   return (await advanceJob(id, deps, env, settings)).response;
 }
 
-const outlineSchema = z
-  .object({ keep: z.array(z.string().max(80)).min(1).max(12), titles: z.record(z.string(), z.string().trim().min(1).max(120)) })
-  .strict();
+async function readBody(request: Request): Promise<unknown> {
+  try {
+    return await request.json();
+  } catch {
+    return undefined;
+  }
+}
 
-/** PUT /api/jobs/:id/outline */
-export async function outlineHandler(id: string, request: Request, store: Store, now = new Date()): Promise<Response> {
+const answersSchema = z.object({ answers: z.record(z.string(), z.string().max(40)) }).strict();
+
+/** PUT /api/jobs/:id/answers — the language and/or focus questions. */
+export async function answersHandler(id: string, request: Request, store: Store, now = new Date()): Promise<Response> {
   if (!validId(id)) return fail("bad-id");
   const state = await readState(store, id);
   if (!state) return fail("not-found");
-  if (state.status !== "awaiting-review") return fail("wrong-state");
-  let raw: unknown;
-  try {
-    raw = await request.json();
-  } catch {
-    return fail("bad-request");
-  }
-  const body = outlineSchema.safeParse(raw);
-  if (!body.success) return fail("bad-outline");
-  const plan = await loadPlan(store, id);
-  const slugs = new Set(plan.lectures.map((lecture) => lecture.slug));
-  if (body.data.keep.some((slug) => !slugs.has(slug))) return fail("bad-outline");
-  const keep = new Set(body.data.keep);
-  const lectures = plan.lectures
-    .filter((lecture) => keep.has(lecture.slug))
-    .map((lecture, index) => ({ ...lecture, number: index + 1, title: body.data.titles[lecture.slug] ?? lecture.title }));
-  const next: CoursePlan = { ...plan, lectures };
-  await store.write(jobKey(id, "plan.json"), `${JSON.stringify(next)}\n`);
-  const updated: JobState = { ...state, step: "lecture:1", status: "idle", lecturesTotal: lectures.length, lecturesDone: 0, attempts: 0, updatedAt: now.toISOString() };
-  await store.write(jobKey(id, "state.json"), `${JSON.stringify(updated)}\n`);
+  if (waitingOf(state) !== "answers") return fail("wrong-state");
+  const body = answersSchema.safeParse(await readBody(request));
+  if (!body.success || Object.keys(body.data.answers).length > 4) return fail("bad-answer");
+  const [context, courseRequest] = await Promise.all([loadContext(store, id), loadRequest(store, id)]);
+  const answered = answerContext(context, courseRequest, body.data.answers);
+  if (!answered.ok) return fail("bad-answer");
+  await writeJobFile(store, id, "context.json", answered.context);
+  await writeJobFile(store, id, "brief.json", answered.brief);
+  const updated = await saveJobState(store, { ...state, step: "design", status: "idle", waiting: undefined, attempts: 0, error: undefined }, now);
   return json(publicJob(updated));
 }
 
+const designSchema = z
+  .object({
+    choice: z.enum(["recommended", "alt-1", "alt-2"]).default("recommended"),
+    keep: z.array(z.string().max(80)).min(1).max(12),
+    titles: z.record(z.string(), z.string().trim().min(1).max(120)),
+  })
+  .strict();
+
+/** PUT /api/jobs/:id/design — pick the recommendation or an alternative, rename or remove lectures. */
+export async function designHandler(id: string, request: Request, store: Store, now = new Date()): Promise<Response> {
+  if (!validId(id)) return fail("bad-id");
+  const state = await readState(store, id);
+  if (!state) return fail("not-found");
+  if (waitingOf(state) !== "design") return fail("wrong-state");
+  const body = designSchema.safeParse(await readBody(request));
+  if (!body.success) return fail("bad-design");
+  const design = await loadDesign(store, id);
+  const keep = new Set(body.data.keep);
+  const titled = <T extends { slug: string; title: string }>(lectures: T[]) =>
+    lectures.filter((lecture) => keep.has(lecture.slug)).map((lecture, index) => ({ ...lecture, number: index + 1, title: body.data.titles[lecture.slug] ?? lecture.title }));
+  const base = { ...state, status: "idle" as const, waiting: undefined, lecturesDone: 0, attempts: 0, error: undefined };
+
+  if (body.data.choice === "recommended") {
+    const plan = design.recommended;
+    if (body.data.keep.some((slug) => !plan.lectures.some((lecture) => lecture.slug === slug))) return fail("bad-design");
+    const next: CoursePlan = { ...plan, lectures: titled(plan.lectures) };
+    await writeJobFile(store, id, "plan.json", next);
+    return json(publicJob(await saveJobState(store, { ...base, step: "lecture:1", lecturesTotal: next.lectures.length }, now)));
+  }
+  const outline = design.alternatives.find((alt) => alt.id === body.data.choice);
+  if (!outline || body.data.keep.some((slug) => !outline.lectures.some((lecture) => lecture.slug === slug))) return fail("bad-design");
+  const chosen: DesignOutline = { ...outline, lectures: titled(outline.lectures).map(({ number: _number, ...lecture }) => lecture) };
+  await writeJobFile(store, id, "outline.json", chosen);
+  return json(publicJob(await saveJobState(store, { ...base, step: "expand", lecturesTotal: chosen.lectures.length }, now)));
+}
+
+const courseJobSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("refine"), note: z.string() }).strict(),
+  z.object({ kind: z.literal("append"), materials: z.array(z.unknown()).max(50) }).strict(),
+]);
+
+/** POST /api/courses/:key/jobs — an owner refines a course or adds material to it. */
+export async function courseJobHandler(key: string, request: Request, store: Store, env: NodeJS.ProcessEnv, user: User | null, now = new Date()): Promise<Response> {
+  if (!user) return fail("sign-in-required");
+  const access = await resolveAccess(store, { uid: user.uid, key }).catch(() => null);
+  if (!access) return fail("not-found");
+  const settings = await readSettings(store);
+  if (!generationEnabled(env, settings)) return fail("generation-off");
+  const text = await request.text();
+  if (Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES) return fail("too-large");
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return fail("bad-request");
+  }
+  const body = courseJobSchema.safeParse(raw);
+  if (!body.success) return fail("bad-request");
+
+  let materials: z.infer<typeof materialSchema>[] = [];
+  if (body.data.kind === "refine") {
+    const note = body.data.note.trim();
+    if (!note || note.length > LIMITS.refineNote) return fail("bad-request");
+  } else {
+    const parsed = z.array(materialSchema).safeParse(body.data.materials);
+    if (!parsed.success) return fail("bad-request");
+    materials = parsed.data;
+    const check = checkMaterials(materials);
+    if (!check.ok) return json({ error: check.message, code: check.code }, 400);
+    const site = await readSite(store, access.key);
+    if (site && site.lectures.length >= LIMITS.courseLectures) return fail("course-full");
+    if (access.meta.keepSources) {
+      const merged = mergeSources(await readSources(store, access.key), materials);
+      const bytes = merged.reduce((sum, material) => sum + Buffer.byteLength(JSON.stringify(material), "utf8"), 0);
+      if (merged.length > SOURCE_LIMIT_FILES || bytes > SOURCE_LIMIT_BYTES) return fail("sources-full");
+    }
+  }
+
+  const day = dayKey(now);
+  const counted = async (prefix: string) => (await store.list(prefix)).length;
+  if ((await counted(userDayPrefix(user.uid, day))) >= USER_DAILY_JOBS) return fail("user-daily-limit");
+  if (!(await underDailyLimit(day, settings.dailyJobLimit ?? dailyJobLimit(env), counted))) return fail("daily-limit");
+
+  const id = crypto.randomUUID();
+  if (!(await claimBusy(store, access.key, id, now))) return fail("course-busy");
+  let round: number | undefined;
+  if (body.data.kind === "refine") {
+    const claimed = await claimRound(store, access.key, id, now);
+    if (claimed === null) {
+      await releaseBusy(store, access.key, id);
+      return fail("rounds-used");
+    }
+    round = claimed;
+  }
+  await createCourseJob(
+    store,
+    { kind: body.data.kind, courseKey: access.key, ownerId: user.uid, round, ...(body.data.kind === "refine" ? { note: body.data.note.trim() } : { materials }) },
+    now,
+    id,
+  );
+  await store.write(`${dayPrefix(day)}${id}`, "1");
+  await store.write(`${userDayPrefix(user.uid, day)}${id}`, "1");
+  logEvent("job.created", { jobId: id, kind: body.data.kind, signedIn: true });
+  return json({ id }, 202);
+}
+
+const choiceSchema = z.object({ choice: z.enum(["append", "reorganize"]) }).strict();
+
+/** PUT /api/jobs/:id/choice — after added material overlaps: add as new lectures, or reorganise everything. */
+export async function choiceHandler(id: string, request: Request, store: Store, now = new Date()): Promise<Response> {
+  if (!validId(id)) return fail("bad-id");
+  const state = await readState(store, id);
+  if (!state || !state.courseKey) return fail("not-found");
+  if (waitingOf(state) !== "choice") return fail("wrong-state");
+  const body = choiceSchema.safeParse(await readBody(request));
+  if (!body.success) return fail("bad-request");
+  const base = { ...state, status: "idle" as const, waiting: undefined, attempts: 0, error: undefined, lecturesDone: 0 };
+  if (body.data.choice === "append") return json(publicJob(await saveJobState(store, { ...base, step: "lecture:1" }, now)));
+
+  const meta = await readMeta(store, state.courseKey);
+  const stored = meta?.keepSources ? await readSources(store, state.courseKey) : [];
+  if (stored.length === 0) return fail("sources-missing");
+  const merged = mergeSources(stored, await loadJobMaterials(store, id));
+  const check = checkMaterials(merged);
+  if (!check.ok) return json({ error: check.message, code: check.code }, 400);
+  const site = await readSite(store, state.courseKey);
+  if (!site) return fail("not-found");
+  const brief = await readBrief(store, state.courseKey, site);
+  await writeJobFile(store, id, "materials.json", merged);
+  await writeJobFile(store, id, "brief.json", brief);
+  await writeJobFile(store, id, "context.json", defaultContextFor(brief, site.course.title));
+  return json(publicJob(await saveJobState(store, { ...base, kind: "rebuild", step: "design" }, now)));
+}
+
+export { addSources };
 
 function secretMatches(header: string | null, secret: string | undefined): boolean {
   if (!secret || secret.length < 16 || !header) return false;
@@ -218,6 +448,13 @@ export async function cleanupHandler(request: Request, store: Store, env: NodeJS
     }
   }
   const oldMarkers = (await store.list("days/")).filter(({ key }) => Date.parse(key.split("/")[1] ?? "") < cutoff).map(({ key }) => key);
+  // Per-user day markers (users/<uid>/days/<date>/<job>); never the users/<uid>/courses/ markers.
+  oldMarkers.push(
+    ...(await store.list("users/"))
+      .map(({ key }) => ({ key, day: /^users\/[0-9a-f]{32}\/days\/(\d{4}-\d{2}-\d{2})\//.exec(key)?.[1] }))
+      .filter((entry) => entry.day !== undefined && Date.parse(entry.day) < cutoff)
+      .map((entry) => entry.key),
+  );
   await store.delete(oldMarkers);
   return json({ deletedJobs, deletedMarkers: oldMarkers.length });
 }

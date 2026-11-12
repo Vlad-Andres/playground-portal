@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AccountMenu } from "./AccountMenu";
 import { LanguageSwitch } from "./LanguageSwitch";
 
 /** The brand, the language switch and an optional note or action; shared by every portal page. */
@@ -11,6 +12,7 @@ export function TopBar({ note, children }: { note?: string; children?: ReactNode
       </a>
       <div className="topbar-right">
         {note ? <span className="topbar-note">{note}</span> : null}
+        <AccountMenu />
         <LanguageSwitch />
         {children}
       </div>

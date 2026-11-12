@@ -1,4 +1,6 @@
 export * from "./types";
+export * from "./language";
+export * from "./context";
 export * from "./ingest";
 export * from "./model";
 export * from "./prompts";
@@ -8,3 +10,5 @@ export * from "./lecture";
 export * from "./finish";
 export * from "./bundle";
 export * from "./fake";
+export * from "./refine";
+export * from "./append";

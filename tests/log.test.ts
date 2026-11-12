@@ -76,7 +76,7 @@ describe("job logs", () => {
       .map((line) => JSON.parse(line) as Record<string, unknown>)
       .filter((entry) => entry.event === "job.failed");
     expect(failed).toHaveLength(1);
-    expect(failed[0]).toMatchObject({ jobId: id, step: "plan" });
+    expect(failed[0]).toMatchObject({ jobId: id, step: "design" });
     expect(typeof failed[0].code).toBe("string");
   });
 });

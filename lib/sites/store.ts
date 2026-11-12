@@ -22,6 +22,12 @@ export interface SiteMeta {
   usage: { inputTokens: number; outputTokens: number; calls: number };
   /** sha256 hex of the owner token. */
   ownerHash: string;
+  /** The account that owns the course; "" = nobody. */
+  ownerId: string;
+  /** Bumped by every change (iteration 5, versions). */
+  version: number;
+  /** The owner chose to keep the uploaded files (iteration 5). */
+  keepSources: boolean;
 }
 
 export function courseKeyFor(courseId: string, jobId: string): string {
@@ -98,6 +104,9 @@ export async function readMeta(store: Store, key: string): Promise<SiteMeta | nu
     lectures: typeof meta.lectures === "number" && Number.isFinite(meta.lectures) ? meta.lectures : 0,
     usage: readUsage(meta.usage),
     ownerHash: typeof meta.ownerHash === "string" ? meta.ownerHash : "",
+    ownerId: typeof meta.ownerId === "string" ? meta.ownerId : "",
+    version: typeof meta.version === "number" && Number.isInteger(meta.version) && meta.version > 0 ? meta.version : 1,
+    keepSources: meta.keepSources === true,
   };
 }
 

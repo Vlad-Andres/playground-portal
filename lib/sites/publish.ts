@@ -34,7 +34,7 @@ export function siteFromFiles(key: string, files: Record<string, string>): SiteD
  */
 export async function publishCourse(
   store: Store,
-  input: { key: string; files: Record<string, string>; jobId: string; usage: JobState["usage"]; now: Date },
+  input: { key: string; files: Record<string, string>; jobId: string; usage: JobState["usage"]; now: Date; ownerId?: string; keepSources?: boolean },
 ): Promise<{ siteUrl: string; manageUrl: string }> {
   const site = siteFromFiles(input.key, input.files);
   const token = newOwnerToken();
@@ -48,7 +48,11 @@ export async function publishCourse(
     lectures: site.lectures.length,
     usage: input.usage,
     ownerHash: ownerHash(token),
+    ownerId: input.ownerId ?? "",
+    version: 1,
+    keepSources: input.keepSources ?? false,
   });
+  if (input.ownerId) await store.write(`users/${input.ownerId}/courses/${input.key}.json`, JSON.stringify({ key: input.key }));
   logEvent("course.published", { key: input.key, jobId: input.jobId, lectures: site.lectures.length });
   return { siteUrl: `/courses/${input.key}/`, manageUrl: `/manage/${token}` };
 }

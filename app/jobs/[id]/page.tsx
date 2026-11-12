@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { CoursePreview } from "@/components/job/CoursePreview";
+import { DesignPreview } from "@/components/job/DesignPreview";
+import { Questions } from "@/components/job/Questions";
+import { Waiting } from "@/components/job/Waiting";
 import { TopBar } from "@/components/TopBar";
 import { useErrorText } from "@/components/useErrorText";
 import type { PublicJob } from "@/lib/api/handlers";
@@ -10,18 +14,20 @@ import { shouldAdvance } from "@/lib/jobs/poll";
 
 const POLL_MS = 3000;
 
-type Phase = "plan" | "review" | "lectures" | "finish" | "done";
+type Phase = "context" | "design" | "lectures" | "finish" | "done";
 
 function phaseOf(job: PublicJob): Phase {
-  if (job.step === "plan") return "plan";
-  if (job.step === "review") return "review";
-  if (job.step.startsWith("lecture:")) return "lectures";
-  if (job.step === "finish") return "finish";
-  return "done";
+  const step = job.step;
+  if (job.status === "done" || step === "done") return "done";
+  if (step === "context") return "context";
+  if (["ask", "design", "review", "expand", "plan", "refine-plan", "append-plan", "choice"].includes(step)) return "design";
+  if (step.startsWith("lecture:") || step.startsWith("refine:")) return "lectures";
+  return "finish";
 }
 
-const PHASES: Phase[] = ["plan", "review", "lectures", "finish", "done"];
-const PHASE_KEYS = { plan: "phasePlan", review: "phaseReview", lectures: "phaseLectures", finish: "phaseFinish", done: "phaseDone" } as const;
+const PHASES: Phase[] = ["context", "design", "lectures", "finish", "done"];
+const PHASE_KEYS = { context: "phaseContext", design: "phaseDesign", lectures: "phaseLectures", finish: "phaseFinish", done: "phaseDone" } as const;
+const REFINE_PHASE_KEYS = { context: "phaseNote", design: "phaseNote", lectures: "phaseRewrite", finish: "phaseFinish", done: "phaseDone" } as const;
 
 export default function JobPage() {
   const { id } = useParams<{ id: string }>();
@@ -34,8 +40,6 @@ export default function JobPage() {
   const [job, setJob] = useState<PublicJob | null>(null);
   const [problem, setProblem] = useState("");
   const [paused, setPaused] = useState(false);
-  const [titles, setTitles] = useState<Record<string, string>>({});
-  const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const advancing = useRef(false);
 
@@ -90,36 +94,36 @@ export default function JobPage() {
     };
   }, [load, step, paused]);
 
-  async function build() {
-    if (!job?.outline) return;
-    const keep = job.outline.map((lecture) => lecture.slug).filter((slug) => !removed.has(slug));
-    if (keep.length === 0) {
-      setProblem(errorText("bad-outline"));
-      return;
-    }
+  async function put(path: string, body: unknown) {
     setSaving(true);
-    const changed = Object.fromEntries(Object.entries(titles).filter(([slug, title]) => keep.includes(slug) && title.trim()));
-    const response = await fetch(`/api/jobs/${id}/outline`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ keep, titles: changed }),
-    });
-    setSaving(false);
-    if (!response.ok) {
-      const body = (await response.json().catch(() => ({}))) as { code?: string };
-      setProblem(errorRef.current(body.code));
-      return;
+    try {
+      const response = await fetch(`/api/jobs/${id}/${path}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!response.ok) {
+        const result = (await response.json().catch(() => ({}))) as { code?: string };
+        setProblem(errorRef.current(result.code));
+        return;
+      }
+      await load();
+    } catch {
+      setProblem(errorRef.current("network"));
+    } finally {
+      setSaving(false);
     }
-    await load();
   }
 
-  const phase = job ? phaseOf(job) : "plan";
+  const phase = job ? phaseOf(job) : "context";
   const phaseIndex = PHASES.indexOf(phase);
+  const refining = job?.kind === "refine";
+  const phaseKeys = refining ? REFINE_PHASE_KEYS : PHASE_KEYS;
+  const phases = refining ? PHASES.filter((item) => item !== "design") : PHASES;
 
   function currentLabel(current: PublicJob): string {
     if (current.status === "failed") return t("failed");
-    if (phase === "plan") return t("planning");
-    if (phase === "review") return t("reviewing");
+    if (current.waiting === "answers") return t("asking");
+    if (current.waiting === "design") return t("reviewing");
+    if (current.waiting === "choice") return t("choosing");
+    if (phase === "context") return t("planning");
+    if (phase === "design") return refining ? t("readingNote") : t("designing");
     if (phase === "lectures") return t("writing", { current: Math.min(current.lecturesDone + 1, current.lecturesTotal), total: current.lecturesTotal });
     if (phase === "finish") return t("finishing");
     return t("ready");
@@ -136,6 +140,8 @@ export default function JobPage() {
     }
   }
 
+  const working = job && job.status !== "awaiting-review" && job.status !== "done" && job.status !== "failed";
+
   return (
     <main className="job-page">
       <TopBar note={t("topNote")} />
@@ -147,73 +153,53 @@ export default function JobPage() {
 
       <div className="job-grid">
         <ol className="phase-list panel" aria-label={t("stepsAria")}>
-          {PHASES.map((item, index) => (
-            <li key={item} className={index < phaseIndex || job?.status === "done" ? "done" : index === phaseIndex ? "current" : ""} aria-current={index === phaseIndex ? "step" : undefined}>
-              <span className="phase-dot">{index < phaseIndex || job?.status === "done" ? "✓" : index + 1}</span>
-              <span>
-                {t(PHASE_KEYS[item])}
-                {item === "lectures" && job && job.lecturesTotal > 0 ? <small> {job.lecturesDone}/{job.lecturesTotal}</small> : null}
-              </span>
-            </li>
-          ))}
+          {phases.map((item, position) => {
+            const index = PHASES.indexOf(item);
+            const done = index < phaseIndex || job?.status === "done";
+            return (
+              <li key={item} className={done ? "done" : index === phaseIndex ? "current" : ""} aria-current={index === phaseIndex ? "step" : undefined}>
+                <span className="phase-dot">{done ? "✓" : position + 1}</span>
+                <span>
+                  {t(phaseKeys[item])}
+                  {item === "lectures" && job && job.lecturesTotal > 0 ? <small> {job.lecturesDone}/{job.lecturesTotal}</small> : null}
+                </span>
+              </li>
+            );
+          })}
         </ol>
 
         <section className="panel job-main" aria-live="polite">
           {problem ? <p className="helper helper-error">{problem}</p> : null}
 
-          {job?.status === "awaiting-review" && job.outline ? (
-            <div className="outline">
-              <h2>{t("outlineTitle")}</h2>
-              <p className="helper">{t("outlineHint")}</p>
-              <ol className="outline-list">
-                {job.outline.map((lecture, index) => (
-                  <li key={lecture.slug} className={removed.has(lecture.slug) ? "removed" : ""}>
-                    <span className="outline-number">{index + 1}</span>
-                    <div className="outline-body">
-                      <input
-                        className="text-input"
-                        aria-label={t("lectureTitle", { n: index + 1 })}
-                        maxLength={120}
-                        defaultValue={lecture.title}
-                        disabled={removed.has(lecture.slug)}
-                        onChange={(event) => setTitles((current) => ({ ...current, [lecture.slug]: event.target.value }))}
-                      />
-                      <small>{lecture.summary}</small>
-                    </div>
-                    <button
-                      type="button"
-                      className="secondary-button small"
-                      onClick={() =>
-                        setRemoved((current) => {
-                          const next = new Set(current);
-                          if (next.has(lecture.slug)) next.delete(lecture.slug);
-                          else next.add(lecture.slug);
-                          return next;
-                        })
-                      }
-                    >
-                      {removed.has(lecture.slug) ? t("keep") : t("remove")}
-                    </button>
-                  </li>
-                ))}
-              </ol>
-              <button type="button" className="primary-button" onClick={build} disabled={saving}>
-                {t("build")} <span>→</span>
-              </button>
+          {job?.waiting === "answers" && job.questions ? (
+            <Questions questions={job.questions} busy={saving} onSubmit={(answers) => void put("answers", { answers })} />
+          ) : null}
+
+          {job?.waiting === "design" && job.design ? (
+            <DesignPreview design={job.design} busy={saving} onBuild={(input) => void put("design", input)} />
+          ) : null}
+
+          {job?.waiting === "choice" && job.choice ? (
+            <div className="retry">
+              <h2>{t("choiceTitle")}</h2>
+              <p className="helper">{job.choice.reason}</p>
+              <ul>{job.choice.affected.map((lecture) => <li key={lecture.slug}>{lecture.title}</li>)}</ul>
+              <button type="button" className="primary-button" disabled={saving} onClick={() => void put("choice", { choice: "append" })}>{t("choiceAppend")}</button>
+              <button type="button" className="secondary-button" disabled={saving || !job.choice.canReorganize} onClick={() => void put("choice", { choice: "reorganize" })}>{t("choiceReorganize")}</button>
+              {!job.choice.canReorganize ? <p className="helper">{t("choiceNeedsFiles")}</p> : null}
             </div>
           ) : null}
 
-          {job && job.status !== "awaiting-review" && job.status !== "done" && job.status !== "failed" ? (
-            <div className="working">
-              <span className="spinner" aria-hidden />
-              <p>{currentLabel(job)}</p>
+          {working ? (
+            <>
+              <Waiting label={currentLabel(job)} done={job.lecturesDone} total={job.lecturesTotal} showProgress={phase === "lectures" || phase === "finish"} />
               {paused && job.error ? (
                 <div className="retry">
                   <p className="helper helper-error">{errorText(job.error)} {t("attemptsLeft", { count: 3 - job.attempts })}</p>
                   <button type="button" className="primary-button" onClick={() => setPaused(false)}>{t("tryAgain")}</button>
                 </div>
               ) : null}
-            </div>
+            </>
           ) : null}
 
           {job?.status === "failed" ? (
@@ -225,9 +211,9 @@ export default function JobPage() {
 
           {job?.status === "done" ? (
             <div className="finished">
-              {job.siteUrl ? (
-                <a className="primary-button" href={job.siteUrl} target="_blank" rel="noreferrer">{t("openSite")} <span>→</span></a>
-              ) : null}
+              {job.summary ? <p className="helper">{job.summary}</p> : null}
+              {job.siteUrl ? <CoursePreview siteUrl={job.siteUrl} /> : null}
+              {refining ? <a className="helper" href="/my">{t("restoreHint")}</a> : null}
               {job.manageUrl ? (
                 <div className="edit-link">
                   <h3>{t("editLinkTitle")}</h3>

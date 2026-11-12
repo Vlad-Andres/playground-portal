@@ -1,8 +1,17 @@
-export type Step = "plan" | "review" | `lecture:${number}` | "finish" | "done";
+export type JobKind = "create" | "refine" | "append" | "rebuild";
+export type Step =
+  | "context" | "ask" | "design" | "review" | "expand" | `lecture:${number}` | "finish" | "done"
+  | "refine-plan" | `refine:${number}` | "append-plan" | "choice"
+  /** Written by older versions; handled as "design". */
+  | "plan";
 
 export interface JobState {
   id: string;
+  /** A stored state without kind is a "create" job. */
+  kind?: JobKind;
   step: Step;
+  /** Set exactly while status is "awaiting-review": what the job waits for. */
+  waiting?: "answers" | "design" | "choice";
   status: "idle" | "working" | "awaiting-review" | "done" | "failed";
   lecturesTotal: number;
   lecturesDone: number;
@@ -13,6 +22,16 @@ export interface JobState {
   siteUrl?: string;
   /** "/manage/<token>", set when the job is done. */
   manageUrl?: string;
+  /** The account that created the job; never sent to the browser. */
+  ownerId?: string;
+  /** The signed-in creator asked to keep the files (iteration 5 D2). */
+  keepSources?: boolean;
+  /** Package D: the course a refine/append/rebuild job changes. */
+  courseKey?: string;
+  /** Package D: the claimed refinement round. */
+  round?: number;
+  /** Package D: what a refinement changed, shown when done. */
+  summary?: string;
   /** Which invite code created the job; never sent to the browser. */
   codeId?: string;
   usage: { inputTokens: number; outputTokens: number; calls: number };

@@ -120,6 +120,9 @@ describe("site metadata and owner links", () => {
       jobId: "12345678",
       publishedAt: "2026-11-11T10:00:00Z",
       updatedAt: "2026-11-11T10:00:00Z",
+      ownerId: "",
+      version: 1,
+      keepSources: false,
       title: "Demo course",
       lectures: 1,
       usage: { inputTokens: 1000, outputTokens: 2000, calls: 3 },
@@ -146,6 +149,9 @@ describe("site metadata and owner links", () => {
       lectures: 0,
       usage: { inputTokens: 0, outputTokens: 0, calls: 0 },
       ownerHash: "",
+      ownerId: "",
+      version: 1,
+      keepSources: false,
     });
   });
 
@@ -184,6 +190,9 @@ describe("readSite, writeSite, deleteSite", () => {
     lectures: 1,
     usage: { inputTokens: 0, outputTokens: 0, calls: 0 },
     ownerHash: "e".repeat(64),
+    ownerId: "",
+    version: 1,
+    keepSources: false,
   };
 
   it.each([["../x"], ["ABC-1234abcd"], ["demo-1234"], [""], ["unknown-abcd1234"]])("returns null for %j", async (bad) => {

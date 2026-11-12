@@ -53,3 +53,14 @@ export function isLanguage(value: unknown): value is Language {
 export function isLevel(value: unknown): value is Level {
   return typeof value === "string" && (LEVELS as readonly string[]).includes(value);
 }
+
+export const USER_DAILY_JOBS = 5;
+export const GUEST_COOKIE = "pg_guest";
+
+export function userDayPrefix(uid: string, day: string): string {
+  return `users/${uid}/days/${day}/`;
+}
+
+export function hasGuestCookie(cookieHeader: string | null): boolean {
+  return (cookieHeader ?? "").split(";").some((part) => part.trim().startsWith(`${GUEST_COOKIE}=`));
+}

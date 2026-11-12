@@ -94,7 +94,7 @@ describe("advance", () => {
     });
     const { store, deps } = setup(model);
     const { id } = await createJob(store, { brief, materials }, deps.now());
-    await claimStep(store, id, "plan", 0, deps.now());
+    await claimStep(store, id, "design", 0, deps.now());
     const state = await advance(id, deps);
     expect(state.status).toBe("working");
     expect(calls).toBe(0);
@@ -103,13 +103,13 @@ describe("advance", () => {
   it("a stale claim increases attempts; the third failure fails the job", async () => {
     const { store, deps, tick } = setup();
     const { id } = await createJob(store, { brief, materials }, deps.now());
-    await claimStep(store, id, "plan", 0, deps.now());
+    await claimStep(store, id, "design", 0, deps.now());
     tick(CLAIM_TTL_SECONDS + 1);
     expect((await advance(id, deps)).attempts).toBe(1);
-    await claimStep(store, id, "plan", 1, deps.now());
+    await claimStep(store, id, "design", 1, deps.now());
     tick(CLAIM_TTL_SECONDS + 1);
     expect((await advance(id, deps)).attempts).toBe(2);
-    await claimStep(store, id, "plan", 2, deps.now());
+    await claimStep(store, id, "design", 2, deps.now());
     tick(CLAIM_TTL_SECONDS + 1);
     const state = await advance(id, deps);
     expect(state).toMatchObject({ status: "failed", error: "step-failed" });
@@ -140,7 +140,7 @@ describe("advance", () => {
     const { id } = await createJob(store, { brief, materials }, deps.now());
     // A request that was stopped after it saved "working" and claimed the step.
     await store.write(jobKey(id, "state.json"), JSON.stringify({ ...(await readState(store, id)), status: "working" }));
-    await claimStep(store, id, "plan", 0, deps.now());
+    await claimStep(store, id, "design", 0, deps.now());
     tick(CLAIM_TTL_SECONDS + 1);
 
     const resumed = await advance(id, deps);

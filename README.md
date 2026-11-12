@@ -18,8 +18,11 @@ Browser                                   Server (Next.js on Vercel)            
                                           text) → checks, daily limit, new job ─────▶  jobs/<id>/materials.json
 3. job page polls and calls          ───▶ POST /api/jobs/<id>/advance  (one step      jobs/<id>/state.json
    "advance" until done                    per request, atomic claim)
-      plan      model → course plan (lectures, page ranges, sections) ───────────────▶  jobs/<id>/plan.json
-      review    PAUSE: user renames / removes lectures (PUT …/outline)
+      context   language decided by code; model → subject, level, goals ───────────────▶  jobs/<id>/context.json
+      ask       PAUSE only if needed: mixed languages, or a focus to pick (PUT …/answers)
+      design    model → recommended plan + up to 2 real alternatives ──────────────────▶  jobs/<id>/design.json, plan.json
+      review    PAUSE: pick a structure, rename / remove lectures (PUT …/design)
+      expand    only if an alternative was picked: its outline → full plan
       lecture:n model → one lecture as JSON; every block validated, one repair ───────▶  jobs/<id>/lectures/n.json
                 call, invalid blocks dropped, one "improve" call for thin lectures
       finish    validate the whole course, publish, delete the uploaded text ────────▶  courses/<key>/site.json + meta.json
@@ -41,6 +44,9 @@ Key ideas:
   claim (`store.create`) so two tabs cannot run it twice; a claim older than 330 s counts as abandoned,
   a step is retried up to 3 times, then the job fails with a stable error code. State is persisted after
   every step, so a user can close the tab and come back to the same link.
+- **Code decides, the model proposes.** The course language, whether to ask a question, which alternatives
+  survive, where a custom exercise is allowed and every limit are rules in code; the model only fills
+  validated JSON, with at most one retry per call.
 - **Budget guards.** Each job has a token budget (600k input / 120k output); limits on files (12), pages
   (400), characters (600k) and request size (4 MB); an access code; a daily job limit.
 
@@ -49,12 +55,27 @@ Key ideas:
 **For people creating a course**
 - Landing page (`/`) with an animated background; builder at `/create`; job page at `/jobs/<id>`.
 - English and Romanian everywhere (language switch in the top bar; stored in a cookie, URLs do not change).
-- Options: site title, course language (9 languages), level, depth (cram / standard / deep), accent colour,
-  quizzes, interactive widgets, exam mode, a short free-text context.
-- Outline review before anything is written: rename or remove lectures.
+- Just files and an optional note. Language, level and structure are worked out from the files; the old
+  options (title, language, level, depth, colour, quizzes, widgets, exam mode) sit under a closed "Advanced".
+- At most two questions, only when needed: which language (mixed material) and what to focus on.
+- A design screen before anything is written: the recommended structure and up to two alternatives, each
+  with its approach and why; rename or remove lectures.
+- Honest progress (a real bar during the lectures) with optional jokes, and a preview of the finished
+  course that grows into the real site.
 - A private **edit link** (`/manage/<token>`) shown when the course is done: rename the site and lectures,
   change the description and accent colour, edit paragraph/note text, remove blocks or lectures, or delete
   the site. Changes are live at once. A wrong link is a plain 404.
+
+**With an account** (Google sign-in; optional, see Environment)
+- `/my` lists your courses; a guest course can be claimed from its private link.
+- `/my/<key>`: refine the course with a note (three rounds per course, at most three lectures each);
+  add material as new lectures — when it overlaps two or more lectures you choose between adding and
+  reorganising the whole course; restore one of the three previous versions; edit by hand; delete.
+- Keep my files (opt-in per course, at most 4 MB / 12 files): needed to reorganise; deleted when switched
+  off, with the course, or with the account.
+- Delete the account with everything it owns.
+- Limits: guests one course per browser; signed-in users five jobs a day (refinements count, the round
+  limit is separate).
 
 **For people studying**
 - Lectures with explanations, tables, worked steps, quizzes, flashcards, interactive exercises (ordering,
@@ -82,10 +103,14 @@ server logs and on `/admin`.
 | `/manage/<token>` | Owner editor (404 for any wrong token) |
 | `/admin` | Owner dashboard (404 until `ADMIN_TOKEN` is set) |
 | `/admin/translations` | Edit the portal's English and Romanian texts |
+| `/my`, `/my/<key>` | Account courses and the owner page (404 while sign-in is not configured) |
+| `/api/auth/google`, `/api/auth/google/callback` | Google sign-in |
+| `/api/auth/me` | Whether sign-in is on and who is signed in (name only) |
+| `POST /api/courses/<key>/jobs` | Refine (`{ kind: "refine", note }`) or add material (`{ kind: "append", materials }`) |
+| `PUT /api/jobs/<id>/answers`, `/design`, `/choice` | Answer questions, pick a design, choose append or reorganise |
 | `POST /api/jobs` | Create a job |
 | `GET /api/jobs/<id>` | Public job state (progress, outline, result; no internals) |
 | `POST /api/jobs/<id>/advance` | Run the next step |
-| `PUT /api/jobs/<id>/outline` | Save the reviewed outline |
 | `GET /api/cron/cleanup` | Daily cleanup, protected by `CRON_SECRET` (`vercel.json`, 03:00 UTC) |
 
 Every API error is `{ "error": "<English sentence>", "code": "<code>" }`; the browser translates the code
@@ -116,6 +141,10 @@ One `Store` interface (`lib/jobs/store.ts`) with three adapters: Vercel Blob (pr
 | `owners/<sha256>.json` | owner-token lookup (only the hash of the token is stored) | with the course |
 | `config/settings.json` | admin settings and hashed invite codes | kept |
 | `config/messages.json` | text overrides from `/admin/translations` | kept |
+| `courses/<key>/versions/<n>.json` | the three previous versions | with the course |
+| `courses/<key>/sources/`, `brief.json` | kept files (opt-in) and the options the course was built with | with the course, or until switched off |
+| `courses/<key>/rounds/<1-3>.json`, `busy.json` | used refinement rounds; the lock while a job changes the course | with the course |
+| `users/<uid>/courses/<key>.json`, `users/<uid>/days/…` | which courses an account owns; its jobs per day | with the account |
 
 A course key is `<slug>-<first 8 hex of the job id>`.
 
@@ -144,6 +173,8 @@ Do not commit `.env.local`; see `.env.example`.
 | `BLOB_READ_WRITE_TOKEN` | private Vercel Blob store; without it local files are used |
 | `CRON_SECRET` | protects the daily cleanup |
 | `ADMIN_TOKEN` | password for `/admin`, 24+ characters; unset means `/admin` is a 404 |
+| `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` | Google OAuth client; with `SESSION_SECRET`, switches accounts on |
+| `SESSION_SECRET` | 32+ random characters for the sign-in cookie |
 | `PORTAL_FAKE_MODEL` | development only: deterministic fake model, no cost |
 
 ## Local development
@@ -176,3 +207,11 @@ variables above for Production, and keep `PORTAL_ENABLE_GENERATION=false` until 
 are set. The server writes one JSON line per event to stdout (`job.step`, `job.failed`, `course.published`,
 `course.updated`, `course.deleted`, `admin.login`, `request.error`, …) without material text, tokens or
 codes; read them in the Vercel logs.
+
+## Privacy
+
+Files are read in the browser; only their text is sent. That text is used to generate the course and is
+deleted from the job when the course is published (jobs themselves are deleted after 7 days). It is kept
+only when a signed-in owner switches on "Keep my files" for that course, and it is deleted when they
+switch it off, delete the course or delete the account. Accounts store a hashed user id and a display
+name, nothing else from Google.

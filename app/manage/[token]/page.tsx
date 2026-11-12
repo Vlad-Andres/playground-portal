@@ -4,7 +4,13 @@ import { Editor } from "@/components/manage/Editor";
 import { TopBar } from "@/components/TopBar";
 import { defaultStore } from "@/lib/jobs/store";
 import { editorModel } from "@/lib/sites/editor-model";
-import { findCourseByOwnerToken, readSite } from "@/lib/sites/store";
+import { findCourseByOwnerToken, readMeta, readSite } from "@/lib/sites/store";
+import { accountsConfigured } from "@/lib/auth/config";
+import { currentUser } from "@/lib/auth/session";
+import { ClaimBox } from "@/components/manage/ClaimBox";
+import { Versions } from "@/components/course/Versions";
+import { listVersions } from "@/lib/sites/library";
+import { removeCourse, restore, saveCourse } from "./actions";
 import styles from "../manage.module.css";
 
 export const metadata = { robots: { index: false, follow: false } };
@@ -19,13 +25,18 @@ export default async function ManagePage({ params }: { params: Promise<{ token: 
   const site = await readSite(store, key);
   if (!site) notFound();
   const t = await getTranslations("manage");
+  const meta = await readMeta(store, key);
+  const showClaim = accountsConfigured(process.env) && meta !== null && meta.ownerId === "";
+  const signedIn = showClaim ? (await currentUser()) !== null : false;
 
   return (
     <main className={styles.page}>
       <TopBar />
       <h1 className={styles.title}>{t("title")}</h1>
       <p className={styles.lead}>{t("lead")}</p>
-      <Editor token={token} model={editorModel(site)} />
+      {showClaim ? <ClaimBox token={token} signedIn={signedIn} /> : null}
+      <Editor model={editorModel(site)} save={saveCourse.bind(null, token)} remove={removeCourse.bind(null, token)} />
+      <Versions versions={await listVersions(store, key)} restore={restore.bind(null, token)} />
     </main>
   );
 }

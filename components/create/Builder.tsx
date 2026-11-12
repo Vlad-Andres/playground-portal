@@ -1,9 +1,9 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { checkMaterials, LIMITS, type Brief, type Material } from "@core/generate/index";
+import { checkMaterials, LIMITS, type CourseRequest, type Material } from "@core/generate/index";
 import { useErrorText } from "@/components/useErrorText";
 import { extractMaterial } from "@/lib/extract-pdf.client";
 
@@ -40,6 +40,15 @@ export function Builder({ announcement }: { announcement?: string }) {
   const [busy, setBusy] = useState(false);
   const [accent, setAccent] = useState(SWATCHES[0]);
   const [context, setContext] = useState("");
+  const [signedIn, setSignedIn] = useState(false);
+  const tc = useTranslations("course");
+
+  useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((response) => response.json() as Promise<{ signedIn?: boolean }>)
+      .then((me) => setSignedIn(me.signedIn === true))
+      .catch(() => undefined);
+  }, []);
 
   const ready = entries.flatMap((entry) => (entry.state === "ready" && entry.material ? [entry.material] : []));
   const reading = entries.some((entry) => entry.state === "reading");
@@ -93,10 +102,11 @@ export function Builder({ announcement }: { announcement?: string }) {
     if (!overall?.ok) return;
     const form = new FormData(event.currentTarget);
     const title = String(form.get("title") ?? "").trim();
-    const brief: Brief = {
-      language: String(form.get("language")),
-      level: String(form.get("level")) as Brief["level"],
-      depth: String(form.get("depth")) as Brief["depth"],
+    const request: CourseRequest = {
+      language: String(form.get("language") ?? "auto"),
+      level: String(form.get("level") ?? "auto") as CourseRequest["level"],
+      depth: String(form.get("depth") ?? "standard") as CourseRequest["depth"],
+      locale,
       quizzes: form.get("quizzes") === "on",
       widgets: form.get("widgets") === "on",
       examMode: form.get("examMode") === "on",
@@ -111,7 +121,7 @@ export function Builder({ announcement }: { announcement?: string }) {
       response = await fetch("/api/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessCode: String(form.get("accessCode") ?? ""), brief, materials: ready }),
+        body: JSON.stringify({ accessCode: String(form.get("accessCode") ?? ""), request, materials: ready, ...(signedIn && form.get("keepSources") === "on" ? { keepSources: true } : {}) }),
       });
     } catch {
       setBusy(false);
@@ -190,6 +200,13 @@ export function Builder({ announcement }: { announcement?: string }) {
           ) : null}
           {overall && !overall.ok ? <p className="helper helper-error">{materialText(overall.code, ready)}</p> : null}
           {bytes > MAX_TEXT_BYTES ? <p className="helper helper-error">{t("bigText")}</p> : null}
+          <p className="helper">{t("autoHint")}</p>
+          {signedIn ? (
+            <label className="option-card" style={{ marginTop: 12 }}>
+              <input name="keepSources" type="checkbox" />
+              <span><b>{tc("keepWhenCreating")}</b><small>{tc("keepHelper")}</small></span>
+            </label>
+          ) : null}
           <p className="helper">{t("privacy")}</p>
         </section>
 
@@ -197,17 +214,23 @@ export function Builder({ announcement }: { announcement?: string }) {
           <div className="panel-heading">
             <div><span className="panel-kicker">02</span><h2>{t("shapeTitle")}</h2></div>
           </div>
+          <label className="field-label" htmlFor="context">{t("note")} <span>{t("contextCount", { count: format.number(context.length), max: format.number(LIMITS.contextCharacters) })}</span></label>
+          <textarea id="context" maxLength={LIMITS.contextCharacters} value={context} onChange={(event) => setContext(event.target.value)} placeholder={t("contextPlaceholder")} />
+          <details className="advanced">
+            <summary>{t("advanced")}</summary>
           <label className="field-label">{t("siteTitle")} <span>{t("optional")}</span>
             <input className="text-input" name="title" maxLength={120} placeholder={t("titlePlaceholder")} />
           </label>
           <div className="grid-two">
             <label className="field-label">{t("language")}
-              <select name="language" defaultValue="en">
+              <select name="language" defaultValue="auto">
+                <option value="auto">{t("automatic")}</option>
                 {LANGUAGE_CODES.map((code) => <option key={code} value={code}>{languageNames.of(code)}</option>)}
               </select>
             </label>
             <label className="field-label">{t("level")}
-              <select name="level" defaultValue="university">
+              <select name="level" defaultValue="auto">
+                <option value="auto">{t("automatic")}</option>
                 <option value="school">{t("levelSchool")}</option>
                 <option value="university">{t("levelUniversity")}</option>
                 <option value="professional">{t("levelProfessional")}</option>
@@ -250,8 +273,7 @@ export function Builder({ announcement }: { announcement?: string }) {
             <label className="option-card"><input name="widgets" type="checkbox" defaultChecked /><span><b>{t("widgets")}</b><small>{t("widgetsHint")}</small></span></label>
             <label className="option-card"><input name="examMode" type="checkbox" /><span><b>{t("examMode")}</b><small>{t("examModeHint")}</small></span></label>
           </div>
-          <label className="field-label" htmlFor="context">{t("context")} <span>{t("contextCount", { count: format.number(context.length), max: format.number(LIMITS.contextCharacters) })}</span></label>
-          <textarea id="context" maxLength={LIMITS.contextCharacters} value={context} onChange={(event) => setContext(event.target.value)} placeholder={t("contextPlaceholder")} />
+          </details>
         </section>
 
         <section className="panel review-panel">

@@ -22,7 +22,7 @@ const ids = ["00000000-0000-4000-8000-000000000001", "00000000-0000-4000-8000-00
 
 async function putCourse(store: ReturnType<typeof memoryStore>, key: string, usage = { inputTokens: 1000, outputTokens: 500, calls: 3 }, publishedAt = "2026-11-11T10:00:00Z") {
   const site = buildSiteData({ key, course: fixtureCourse, lectures: [fixtureLecture], exam: null, expected: [] });
-  await writeSite(store, key, site, { formatVersion: 1, jobId: key.slice(-8), publishedAt, updatedAt: publishedAt, title: "Demo", lectures: 1, usage, ownerHash: "" });
+  await writeSite(store, key, site, { formatVersion: 1, jobId: key.slice(-8), publishedAt, updatedAt: publishedAt, title: "Demo", lectures: 1, usage, ownerHash: "" , ownerId: "", version: 1, keepSources: false});
 }
 
 describe("estimateCost", () => {
