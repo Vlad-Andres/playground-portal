@@ -1,11 +1,13 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { removeCourseAsAdmin } from "@/lib/admin/overview";
 import { adminConfigured, getAdminSession, requireAdmin, tokenMatches } from "@/lib/admin/session";
 import { defaultStore } from "@/lib/jobs/store";
 import { logEvent } from "@/lib/log";
 import { newInviteCode, readSettings, writeSettings } from "@/lib/settings";
+import { courseTag } from "@/lib/sites/load";
 
 const WRONG_TOKEN_DELAY_MS = 500;
 
@@ -93,6 +95,15 @@ export async function deleteCode(id: string): Promise<ActionResult> {
   if (!current.codes.some((entry) => entry.id === id)) return { ok: false, error: "Unknown code." };
   await writeSettings(store, { ...current, codes: current.codes.filter((entry) => entry.id !== id) });
   logEvent("admin.settings", { action: "code-deleted" });
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+export async function deleteCourse(key: string): Promise<ActionResult> {
+  await requireAdmin();
+  if (!(await removeCourseAsAdmin(defaultStore(), String(key)))) return { ok: false, error: "That course does not exist." };
+  // A takedown must reach the cached page at once.
+  updateTag(courseTag(String(key)));
   revalidatePath("/admin");
   return { ok: true };
 }
