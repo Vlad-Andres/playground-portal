@@ -1,12 +1,16 @@
 import { generateCodeVerifier, generateState } from "arctic";
 import { cookies } from "next/headers";
 import { accountsConfigured, safeNext } from "@/lib/auth/config";
-import { GOOGLE_SCOPES, googleClient } from "@/lib/auth/google";
+import { canonicalOrigin, GOOGLE_SCOPES, googleClient } from "@/lib/auth/google";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   if (!accountsConfigured(process.env)) return new Response("Not found", { status: 404 });
+  // Start on the main address, so the state cookies and the return address are on the same host.
+  const here = new URL(request.url);
+  const origin = canonicalOrigin(request.url);
+  if (here.origin !== origin) return Response.redirect(`${origin}${here.pathname}${here.search}`, 302);
   const state = generateState();
   const verifier = generateCodeVerifier();
   const url = googleClient(request.url).createAuthorizationURL(state, verifier, GOOGLE_SCOPES);
