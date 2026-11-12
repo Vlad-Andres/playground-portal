@@ -1,6 +1,6 @@
 import { BookOpen, ListChecks, Puzzle, Layers, Timer, Smartphone, ArrowRight, Sparkles } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { HeroBackground } from "@/components/landing/HeroBackground";
+import { LavaBackground } from "@/components/landing/LavaBackground";
 import { Pipeline } from "@/components/landing/Pipeline";
 import { TopBar } from "@/components/TopBar";
 import styles from "./landing.module.css";
@@ -20,12 +20,12 @@ export default async function LandingPage() {
   const t = await getTranslations("landing");
   return (
     <main className={styles.page}>
+      <LavaBackground />
       <TopBar>
         <a className={styles.topCta} href="/create">{t("cta")}</a>
       </TopBar>
 
       <section className={styles.hero}>
-        <HeroBackground />
         <div className={styles.heroInner}>
           <div className="eyebrow"><span className="eyebrow-line" /> {t("eyebrow")}</div>
           <h1 className={styles.title}>{t.rich("title", { em: (chunks) => <em>{chunks}</em> })}</h1>

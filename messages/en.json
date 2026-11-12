@@ -147,6 +147,8 @@
     "pipeline3Text": "Minutes later your interactive study site is online — quizzes, flashcards and exercises included.",
     "pipeline4Title": "Share & change it",
     "pipeline4Text": "One link to share. Learners need no account, and you can change or delete it any time.",
+    "prev": "Previous step",
+    "next": "Next step",
     "pipelineDrop": "Drop your files here",
     "pipelineFile": "Lecture 1.pdf",
     "pipelineReady": "ready",
