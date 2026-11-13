@@ -68,7 +68,7 @@ function describeError(error: unknown): { kind: ProxyErrorKind; message: string 
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.ASSISTANT_API_KEY;
   if (!apiKey) {
     return Response.json({ kind: "auth", error: "Ask AI is not configured on this server." }, { status: 500 });
   }
