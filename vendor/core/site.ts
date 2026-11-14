@@ -145,3 +145,15 @@ export function replaceLectures(site: SiteData, files: LectureFile[], course?: {
   next.index = next.lectures.map(toIndexEntry);
   return next;
 }
+
+/** What differs between a standalone course and one served by a host such as the portal. */
+export interface SiteHost {
+  brand: {
+    /** Shown in the course header. */
+    name: string;
+    /** When set, the footer links here with "Made with {name} — make your own". */
+    homeUrl: string | null;
+  };
+}
+
+export const DEFAULT_HOST: SiteHost = { brand: { name: "Study Playground", homeUrl: null } };

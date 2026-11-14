@@ -46,3 +46,4 @@
 .saveBar button { border: 0; border-radius: 10px; padding: 10px 14px; font: inherit; font-weight: 800; font-size: .8rem; cursor: pointer; background: var(--green); color: #fff; }
 .saveBar button:disabled { opacity: .5; cursor: default; }
 @media (max-width: 760px) { .translation { grid-template-columns: 1fr; } }
+.row input.limitInput { width: 6rem; }

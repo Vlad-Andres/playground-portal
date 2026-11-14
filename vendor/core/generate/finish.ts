@@ -6,6 +6,16 @@ import type { Brief } from "./types";
 export const DEFAULT_BUDGET = { inputTokens: 600_000, outputTokens: 120_000 };
 
 const EXAM_QUESTIONS_PER_LECTURE = 3;
+/** A practice exam is built only from at least this many questions… */
+export const EXAM_MIN_QUESTIONS = 5;
+/** …drawn from at least this many lectures. */
+export const EXAM_MIN_LECTURES = 2;
+
+function hasEnoughForExam(lectures: LectureFile[]): boolean {
+  const picked = lectures.map((lecture) => Math.min(lecture.quiz.length, EXAM_QUESTIONS_PER_LECTURE));
+  const total = picked.reduce((sum, count) => sum + count, 0);
+  return total >= EXAM_MIN_QUESTIONS && picked.filter((count) => count > 0).length >= EXAM_MIN_LECTURES;
+}
 
 function json(value: unknown): string {
   return `${JSON.stringify(value, null, 2)}\n`;
@@ -54,7 +64,7 @@ export function finishCourse(plan: CoursePlan, lectures: LectureFile[], brief: B
   const course = { ...plan.course, indexable: false };
   const files: Record<string, string> = { "course.json": json(course) };
   for (const lecture of lectures) files[lectureFileName(lecture)] = json(lecture);
-  const exam = plan.exam && brief.examMode ? examFile(plan, lectures) : null;
+  const exam = plan.exam && brief.examMode && hasEnoughForExam(lectures) ? examFile(plan, lectures) : null;
   if (exam) files["exam.json"] = json(exam);
   const problems = validateCourseData({
     course,

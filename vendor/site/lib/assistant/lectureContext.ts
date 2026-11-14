@@ -1,4 +1,5 @@
 import type { Block, Concept, ExerciseSheet, ExerciseTask, Lecture, QuizQuestion } from "@site/content/types";
+import { citationLabel } from "@site/lib/assistant/citations";
 
 function table(headers: string[], rows: string[][]) {
   const line = (cells: string[]) => `| ${cells.map((cell) => cell.replace(/\|/g, "\\|")).join(" | ")} |`;
@@ -101,8 +102,12 @@ export function lectureToContext(lecture: Lecture) {
     `Topics: ${meta.topics.join(", ")}`,
   ].join("\n\n");
 
-  const sections = lecture.sections.map((section) =>
-    [`## ${section.title}`, ...section.blocks.map((item) => block(item, concepts))].join("\n\n"),
+  // Numbered lectures label each section so answers can cite it, e.g. "[L2 §3]".
+  const sections = lecture.sections.map((section, index) =>
+    [
+      `## ${meta.number > 0 ? `${citationLabel(meta.number, index)} ` : ""}${section.title}`,
+      ...section.blocks.map((item) => block(item, concepts)),
+    ].join("\n\n"),
   );
 
   const glossary = concepts

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Flag, Flame, Gamepad2, Layers, ListTodo, Sparkles, Trophy } from "lucide-react";
 import { DifficultItemCard } from "@site/components/difficult/DifficultItemCard";
@@ -17,6 +17,11 @@ import { useSite } from "@site/site/context";
 
 type Tab = "focus" | "review" | "match";
 
+function subscribeHash(onChange: () => void) {
+  window.addEventListener("hashchange", onChange);
+  return () => window.removeEventListener("hashchange", onChange);
+}
+
 function useNow() {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -32,7 +37,10 @@ export function DifficultHub() {
   const now = useNow();
   const [data, setData] = useState<ReviewData | null>(null);
   const [error, setError] = useState(false);
-  const [tab, setTab] = useState<Tab>("focus");
+  // "Start review" on the course home links here with #review; until a tab is chosen, the hash decides.
+  const hash = useSyncExternalStore(subscribeHash, () => window.location.hash, () => "");
+  const [chosenTab, setTab] = useState<Tab | null>(null);
+  const tab: Tab = chosenTab ?? (hash === "#review" ? "review" : "focus");
   const [sessionId, setSessionId] = useState(0);
 
   const items = useMemo(() => Object.values(state.items), [state.items]);

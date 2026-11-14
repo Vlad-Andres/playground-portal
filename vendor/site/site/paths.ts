@@ -20,3 +20,9 @@ export function sitePaths(base: string): SitePaths {
     difficult: `${prefix}/difficult/`,
   };
 }
+
+/** Link to a lecture's quiz section (its id comes from the outline), or to the lecture when it has none. */
+export function quizHref(paths: SitePaths, meta: { outline: { id: string; kind: string }[] } | undefined, slug: string): string {
+  const quiz = meta?.outline.find((section) => section.kind === "quiz");
+  return quiz ? `${paths.lecture(slug)}#${quiz.id}` : paths.lecture(slug);
+}

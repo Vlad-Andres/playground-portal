@@ -23,7 +23,7 @@ import type { Store } from "@/lib/jobs/store";
 import { accountsConfigured } from "@/lib/auth/config";
 import type { User } from "@/lib/auth/session";
 import { logEvent } from "@/lib/log";
-import { DEFAULT_SETTINGS, matchCode, readSettings, type Settings } from "@/lib/settings";
+import { codeJobsThisMonth, codeMonthPrefix, DEFAULT_SETTINGS, matchCode, readSettings, type Settings } from "@/lib/settings";
 
 export const MAX_BODY_BYTES = 4 * 1024 * 1024;
 export const RETENTION_DAYS = 7;
@@ -39,6 +39,7 @@ const MESSAGES = {
   "bad-request": "The request is not valid.",
   "wrong-code": "The access code is not correct.",
   "daily-limit": "Today's job limit has been reached. Please try again tomorrow.",
+  "group-limit": "Your group has used this month's courses. Ask whoever gave you the code.",
   "bad-id": "Invalid job id.",
   "not-found": "Job not found.",
   "wrong-state": "The outline can only be changed while it waits for review.",
@@ -64,6 +65,7 @@ const STATUS: Record<ApiErrorCode, number> = {
   "bad-request": 400,
   "wrong-code": 401,
   "daily-limit": 429,
+  "group-limit": 429,
   "bad-id": 400,
   "not-found": 404,
   "wrong-state": 409,
@@ -121,6 +123,8 @@ export async function createJobHandler(request: Request, store: Store, env: Node
   if (!(await underDailyLimit(day, settings.dailyJobLimit ?? dailyJobLimit(env), counted))) {
     return fail("daily-limit");
   }
+  const groupLimit = settings.codes.find((entry) => entry.id === codeId)?.monthlyJobLimit ?? null;
+  if (groupLimit !== null && (await codeJobsThisMonth(store, codeId, now)) >= groupLimit) return fail("group-limit");
 
   const courseRequest = auto ? requestSchema.safeParse(body.data.request) : null;
   const brief = auto ? null : briefSchema.safeParse(body.data.brief);
@@ -138,6 +142,7 @@ export async function createJobHandler(request: Request, store: Store, env: Node
     now,
   );
   await store.write(`${dayPrefix(day)}${id}`, "1");
+  if (codeId !== "env") await store.write(`${codeMonthPrefix(codeId, now)}${id}`, "1");
   if (user) await store.write(`${userDayPrefix(user.uid, day)}${id}`, "1");
   logEvent("job.created", { jobId: id, kind: "create", signedIn: Boolean(user) });
   const response = json({ id }, 202);

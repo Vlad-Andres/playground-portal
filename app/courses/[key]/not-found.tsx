@@ -7,7 +7,7 @@ export default function CourseNotFound() {
       <h1 className="text-2xl font-semibold">This page is not part of the course.</h1>
       <p className="text-muted">The course may have been removed, or the link is wrong.</p>
       <Link href="/" className="mx-auto w-fit rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-ink">
-        Back to playground.
+        Back to Study with AI
       </Link>
     </div>
   );

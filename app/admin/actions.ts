@@ -6,7 +6,7 @@ import { removeCourseAsAdmin } from "@/lib/admin/overview";
 import { adminConfigured, getAdminSession, requireAdmin, tokenMatches } from "@/lib/admin/session";
 import { defaultStore } from "@/lib/jobs/store";
 import { logEvent } from "@/lib/log";
-import { newInviteCode, readSettings, writeSettings } from "@/lib/settings";
+import { newInviteCode, readSettings, withCodeLimit, writeSettings } from "@/lib/settings";
 import { courseTag } from "@/lib/sites/load";
 import { MESSAGES_TAG, updateOverrides, type TranslationChange } from "@/lib/translations";
 
@@ -85,6 +85,21 @@ export async function setCodeActive(id: string, active: boolean): Promise<Action
   if (!current.codes.some((entry) => entry.id === id)) return { ok: false, error: "Unknown code." };
   await writeSettings(store, { ...current, codes: current.codes.map((entry) => (entry.id === id ? { ...entry, active } : entry)) });
   logEvent("admin.settings", { action: active ? "code-enabled" : "code-disabled" });
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+/** Sets a code's monthly job limit (a beta group's allowance); an empty value removes it. */
+export async function setCodeLimit(id: string, value: string): Promise<ActionResult> {
+  await requireAdmin();
+  const store = defaultStore();
+  const trimmed = value.trim();
+  const limit = trimmed === "" ? null : Number(trimmed);
+  if (limit !== null && !(Number.isInteger(limit) && limit >= 1 && limit <= 1000)) return { ok: false, error: "Use a whole number from 1 to 1000, or leave it empty for no limit." };
+  const next = withCodeLimit(await readSettings(store), id, limit);
+  if (!next) return { ok: false, error: "Unknown code." };
+  await writeSettings(store, next);
+  logEvent("admin.settings", { action: "code-limit" });
   revalidatePath("/admin");
   return { ok: true };
 }

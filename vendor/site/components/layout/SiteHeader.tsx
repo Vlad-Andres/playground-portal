@@ -19,7 +19,7 @@ interface SiteHeaderProps {
 }
 
 export function SiteHeader({ metas, records }: SiteHeaderProps) {
-  const { data, paths } = useSite();
+  const { data, host, paths } = useSite();
   const course = data.course;
   const features = siteFeatures(course);
   const pathname = usePathname();
@@ -64,7 +64,7 @@ export function SiteHeader({ metas, records }: SiteHeaderProps) {
           <span className="grid size-8 place-items-center rounded-lg bg-brand text-sm text-brand-ink">
             {course.shortTitle.slice(0, 3).toUpperCase()}
           </span>
-          <span className="hidden sm:inline">Study Playground</span>
+          <span className="hidden sm:inline">{host.brand.name}</span>
         </Link>
 
         <nav className="ml-4 hidden items-center gap-1 md:flex">
@@ -125,7 +125,7 @@ export function SiteHeader({ metas, records }: SiteHeaderProps) {
             )}
           >
             <GraduationCap size={15} aria-hidden />
-            Exam training
+            Practice exam
           </Link> : null}
 
           {hasExpected ? <Link
@@ -201,7 +201,7 @@ export function SiteHeader({ metas, records }: SiteHeaderProps) {
             onClick={closeMenus}
             className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-sunken"
           >
-            Exam training
+            Practice exam
           </Link> : null}
           {hasExpected ? <Link
             href={paths.expected}

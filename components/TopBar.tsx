@@ -8,7 +8,7 @@ export function TopBar({ note, children }: { note?: string; children?: ReactNode
     <header className="topbar">
       <a className="brand" href="/">
         <span className="brand-mark">✦</span>
-        <span>playground<span className="brand-dot">.</span></span>
+        <span>study <span className="brand-dot">/</span> with ai</span>
       </a>
       <div className="topbar-right">
         {note ? <span className="topbar-note">{note}</span> : null}

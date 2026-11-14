@@ -5,7 +5,7 @@ import { DEFAULT_MESSAGES, flattenMessages, readOverrides } from "@/lib/translat
 import styles from "../admin.module.css";
 import { TranslationEditor, type TranslationRow } from "./TranslationEditor";
 
-export const metadata = { title: "Translations · Admin · playground.", robots: { index: false, follow: false } };
+export const metadata = { title: "Translations · Admin · Study with AI", robots: { index: false, follow: false } };
 
 export default async function TranslationsPage() {
   if (!adminConfigured(process.env)) notFound();

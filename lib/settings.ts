@@ -12,6 +12,8 @@ export interface InviteCode {
   hash: string;
   active: boolean;
   createdAt: string;
+  /** Jobs this code may start per UTC month (a beta group's allowance); missing or null = no extra cap. */
+  monthlyJobLimit?: number | null;
 }
 
 export interface Settings {
@@ -33,6 +35,7 @@ const inviteCodeSchema = z
     hash: z.string().regex(/^[0-9a-f]{64}$/),
     active: z.boolean(),
     createdAt: z.string().max(40),
+    monthlyJobLimit: z.number().int().min(1).max(1000).nullable().optional(),
   })
   .strict();
 
@@ -106,4 +109,20 @@ export function matchCode(given: string, env: NodeJS.ProcessEnv, settings: Setti
     if (matches && found === null) found = entry.id;
   }
   return found;
+}
+
+/** Where the jobs an invite code started in a UTC month (YYYY-MM) are counted. */
+export function codeMonthPrefix(codeId: string, now: Date): string {
+  return `codes/${codeId}/months/${now.toISOString().slice(0, 7)}/`;
+}
+
+/** How many jobs an invite code started in the UTC month of `now`. */
+export async function codeJobsThisMonth(store: Store, codeId: string, now: Date): Promise<number> {
+  return (await store.list(codeMonthPrefix(codeId, now))).length;
+}
+
+/** Settings with one invite code's monthly limit set (or cleared with null); null when the code is unknown. */
+export function withCodeLimit(settings: Settings, id: string, limit: number | null): Settings | null {
+  if (!settings.codes.some((entry) => entry.id === id)) return null;
+  return { ...settings, codes: settings.codes.map((entry) => (entry.id === id ? { ...entry, monthlyJobLimit: limit } : entry)) };
 }

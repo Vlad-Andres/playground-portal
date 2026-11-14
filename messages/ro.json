@@ -1,6 +1,6 @@
 {
   "common": {
-    "metaTitle": "playground. · Cursul tău, interactiv",
+    "metaTitle": "Study with AI · Notițele tale, transformate în curs",
     "metaDescription": "Creează un site de studiu frumos, construit doar din materialele cursului tău.",
     "language": "Limbă"
   },
@@ -10,6 +10,7 @@
     "bad-request": "Ceva din cerere nu a fost valid. Verifică opțiunile și încearcă din nou.",
     "wrong-code": "Codul de acces nu este corect.",
     "daily-limit": "Limita de azi a fost atinsă. Încearcă din nou mâine.",
+    "group-limit": "Grupul tău a folosit cursurile pe luna aceasta. Întreabă persoana care ți-a dat codul.",
     "bad-id": "Acest link nu este valid.",
     "not-found": "Nu am găsit această pagină.",
     "wrong-state": "Se poate modifica doar cât timp cuprinsul așteaptă verificarea.",
@@ -89,8 +90,8 @@
     "quizzesHint": "Întrebări după fiecare lecție",
     "widgets": "Exerciții interactive",
     "widgetsHint": "Ordonare, potrivire, sortare, grafice, glisoare",
-    "examMode": "Mod examen",
-    "examModeHint": "O pagină de examen cu un test cronometrat",
+    "examMode": "Examen de exersare",
+    "examModeHint": "Apare când materialul dă cel puțin 5 întrebări din 2 lecții. Scorul e doar pentru exersare.",
     "context": "Puțin context",
     "contextCount": "opțional · {count}/{max}",
     "contextPlaceholder": "Pentru cine este? Ce ar trebui să învețe?",

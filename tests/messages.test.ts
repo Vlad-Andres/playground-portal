@@ -23,7 +23,7 @@ function flatten(tree: Tree | (string | Tree)[], prefix = ""): Record<string, st
 const en = flatten(load("en"));
 const ro = flatten(load("ro"));
 
-const API_CODES = ["generation-off", "too-large", "bad-request", "wrong-code", "daily-limit", "bad-id", "not-found", "wrong-state", "bad-outline"];
+const API_CODES = ["generation-off", "too-large", "bad-request", "wrong-code", "daily-limit", "group-limit", "bad-id", "not-found", "wrong-state", "bad-outline"];
 const JOB_CODES = ["course-too-big", "plan-failed", "lecture-failed", "busy", "material-gone", "step-failed"];
 const MATERIAL_CODES = ["empty", "too-many-files", "too-many-pages", "too-long", "scanned"];
 
@@ -69,5 +69,29 @@ describe("pickLocale", () => {
     expect(pickLocale(undefined, "de-DE")).toBe("en");
     expect(pickLocale(undefined, null)).toBe("en");
     expect(LOCALES).toEqual(["en", "ro"]);
+  });
+});
+
+describe("practice exam option", () => {
+  it("is on by default in the creator form", () => {
+    const builder = fs.readFileSync(path.resolve("components/create/Builder.tsx"), "utf8");
+    expect(builder).toMatch(/<input name="examMode" type="checkbox" defaultChecked \/>/);
+  });
+
+  it("explains when the exam appears and that scores are practice, in both languages", () => {
+    const enHint = Object.entries(en).find(([key]) => key.endsWith(".examModeHint"))?.[1] ?? "";
+    const roHint = Object.entries(ro).find(([key]) => key.endsWith(".examModeHint"))?.[1] ?? "";
+    expect(enHint).toMatch(/5 questions.*2 lectures/);
+    expect(enHint).toMatch(/practice/i);
+    expect(roHint).toMatch(/5 întrebări.*2 lecții/);
+  });
+});
+
+describe("Study with AI brand", () => {
+  it("no user-facing text says playground", () => {
+    for (const [key, value] of [...Object.entries(en), ...Object.entries(ro)]) expect(value, key).not.toMatch(/playground/i);
+    for (const file of ["components/TopBar.tsx", "app/courses/[key]/not-found.tsx", "app/admin/page.tsx", "app/admin/translations/page.tsx"]) {
+      expect(fs.readFileSync(path.resolve(file), "utf8"), file).not.toMatch(/playground(<|\.|\s)/i);
+    }
   });
 });

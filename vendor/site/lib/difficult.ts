@@ -182,3 +182,13 @@ export function reviveDifficult(raw: unknown): DifficultState | null {
     matchBest: isNumber(source.matchBest) ? source.matchBest : null,
   };
 }
+
+/** How many flagged items are due for review now, and when the next one is due after that. */
+export function dueSummary(items: DifficultItem[], now: number): { total: number; due: number; nextDue: number | null } {
+  const later = items.filter((item) => item.due > now).map((item) => item.due);
+  return {
+    total: items.length,
+    due: items.length - later.length,
+    nextDue: later.length > 0 ? Math.min(...later) : null,
+  };
+}

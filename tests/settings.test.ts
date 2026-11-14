@@ -3,7 +3,7 @@ import { cannedModel, type Brief } from "@core/generate/index";
 import { advanceHandler, createJobHandler, getJobHandler } from "@/lib/api/handlers";
 import { generationEnabled } from "@/lib/guard";
 import { memoryStore } from "@/lib/jobs/store";
-import { DEFAULT_SETTINGS, matchCode, newInviteCode, readSettings, settingsSchema, writeSettings, type Settings } from "@/lib/settings";
+import { codeJobsThisMonth, DEFAULT_SETTINGS, matchCode, newInviteCode, readSettings, settingsSchema, writeSettings, type Settings } from "@/lib/settings";
 
 const CODE = "correct-horse-battery";
 const env = { PORTAL_ENABLE_GENERATION: "true", PORTAL_ACCESS_CODE: CODE, PORTAL_DAILY_JOB_LIMIT: "10" } as unknown as NodeJS.ProcessEnv;
@@ -141,5 +141,52 @@ describe("settings in the API", () => {
   it("generationEnabled is false while paused", () => {
     expect(generationEnabled(env, DEFAULT_SETTINGS)).toBe(true);
     expect(generationEnabled(env, { ...DEFAULT_SETTINGS, generationPaused: true })).toBe(false);
+  });
+});
+
+describe("monthly limit per invite code", () => {
+  it("blocks a group's next job once its monthly limit is reached, with group-limit", async () => {
+    const store = memoryStore();
+    const invite = newInviteCode("Class A", now);
+    await writeSettings(store, { ...DEFAULT_SETTINGS, codes: [{ ...invite.entry, monthlyJobLimit: 1 }] });
+    expect((await createJobHandler(create(invite.code), store, env, now)).status).toBe(202);
+    const second = await createJobHandler(create(invite.code), store, env, now);
+    expect(second.status).toBe(429);
+    expect(await second.json()).toMatchObject({ code: "group-limit" });
+    // Other codes and the environment code are not affected.
+    expect((await createJobHandler(create(CODE), store, env, now)).status).toBe(202);
+  });
+
+  it("counts per UTC month and only for that code", async () => {
+    const store = memoryStore();
+    const invite = newInviteCode("Class A", now);
+    await writeSettings(store, { ...DEFAULT_SETTINGS, codes: [{ ...invite.entry, monthlyJobLimit: 1 }] });
+    expect((await createJobHandler(create(invite.code), store, env, now)).status).toBe(202);
+    const nextMonth = new Date("2026-12-01T00:00:00Z");
+    expect((await createJobHandler(create(invite.code), store, env, nextMonth)).status).toBe(202);
+    expect(await codeJobsThisMonth(store, invite.entry.id, nextMonth)).toBe(1);
+    expect(await codeJobsThisMonth(store, invite.entry.id, now)).toBe(1);
+  });
+
+  it("keeps working with stored codes that have no limit field, and rejects a limit of 0", async () => {
+    const store = memoryStore();
+    const invite = newInviteCode("x", now);
+    const { monthlyJobLimit: _ignored, ...legacy } = { ...invite.entry, monthlyJobLimit: null };
+    await store.write("config/settings.json", JSON.stringify({ ...DEFAULT_SETTINGS, codes: [legacy] }));
+    expect((await readSettings(store)).codes).toHaveLength(1);
+    await expect(writeSettings(store, { ...DEFAULT_SETTINGS, codes: [{ ...invite.entry, monthlyJobLimit: 0 }] })).rejects.toThrow();
+  });
+});
+
+describe("withCodeLimit", () => {
+  it("sets and clears one code's monthly limit, leaving the others; unknown ids give null", async () => {
+    const { withCodeLimit } = await import("@/lib/settings");
+    const a = newInviteCode("A", now).entry;
+    const b = newInviteCode("B", now).entry;
+    const settings: Settings = { ...DEFAULT_SETTINGS, codes: [a, b] };
+    const limited = withCodeLimit(settings, a.id, 20)!;
+    expect(limited.codes.map((code) => code.monthlyJobLimit ?? null)).toEqual([20, null]);
+    expect(withCodeLimit(limited, a.id, null)!.codes[0].monthlyJobLimit).toBeNull();
+    expect(withCodeLimit(settings, "ffffffff", 3)).toBeNull();
   });
 });
