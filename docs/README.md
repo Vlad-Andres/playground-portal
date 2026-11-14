@@ -7,6 +7,7 @@ Product, engineering and planning documents for the Learning Playground (`playgr
 | [`NEXT.md`](NEXT.md) | Live hand-off: what is merged, what awaits the owner, what comes next | Start of every session |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Repo sync flow, storage model, CSP/styling boundaries, local dev command | Before changing cross-repo or hosting behaviour |
 | [`plans/iter-6/`](plans/iter-6/00-guidelines.md) | **Active:** iteration 6, closed beta — owner gate, packages A–G, V (visual), R (beta run) | When `NEXT.md` points there |
+| [`plans/iter-7/`](plans/iter-7/00-guidelines.md) | **Planned (draft):** iteration 7, landing showcase — scripted recording of the demo course (A) shown in the landing hero (B) | After iteration 6 G, E and V3 are merged |
 | [`product/prd.md`](product/prd.md) | Product requirements for the public "Study with AI" launch (background; iteration 6 overrides it for the beta) | Before public-launch work |
 | [`product/launch-plan-review.md`](product/launch-plan-review.md) | Review of the proposed launch plan and its corrected priorities | With the PRD |
 | [`plans/launch/pr-plan.md`](plans/launch/pr-plan.md) | Public-launch PR cards 01–11 (deferred until the beta review) | After iteration 6, Package R |
