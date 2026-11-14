@@ -15,16 +15,16 @@
 - **Next:** the owner's testing; after that, a real-model run on the five fixtures (at most 5 runs, with the owner's go-ahead) scored with the rubric.
 - **Note:** the owner's opencode agent has temporary worktrees on both `iteration-5` branches that are now behind; delete them before reusing that agent.
 
-## Iteration 6 — closed beta (A–C merged, D in review)
+## Iteration 6 — closed beta (A–D merged, F in review)
 
 - **Plan:** [`plans/iter-6/00-guidelines.md`](plans/iter-6/00-guidelines.md). Invite-only beta for 20–30 students; the owner said "start" on 2026-11-14.
-- **Merged (PR #17, `90dcd20`):** packages A (honest course page, host brand, make-your-own footer), B (exam history, study next, due today, Ask AI section links) and C (template sync, Ask AI citation prompt, practice exam on by default, monthly limit per invite code, "Study with AI" in portal copy). Template branch `iteration-6` at `e42ba69` is vendored.
-- **In review (PR on branch `iteration-6-d`):** package D — share card that copies only the course link; required rights checkbox at creation (`rights-not-confirmed`); `/privacy` and `/terms` (EN/RO, marked beta); "Report a problem" on every course → `/report?course=<key>` → admin queue with Dismiss and Take down. Also: the top bar wraps on phones.
-- **Next package:** [`plans/iter-6/package-F.md`](plans/iter-6/package-F.md) (beta measurement) after D is merged. Package E waits for the approved Figma design (V1) and the demo courses (G).
+- **Merged:** A–C (PR #17, `90dcd20`) and D (PR #18, `df69c7a`): honest course page and brand, study next / due today / exam history / Ask AI section links, practice exam on by default, monthly limit per invite code, share card, rights checkbox, `/privacy` and `/terms`, report a problem with an admin queue.
+- **In review (branch `iteration-6-f`):** package F — daily counters with no cookies or identifiers (`lib/metrics.ts`, kept 90 days), study events announced by course pages (template `0809f3d`) and counted by the portal, private 1–5 feedback after creating a course and under every course (added at the owner's request), and "Beta, last 14 days" + "Feedback" in `/admin`.
+- **Next:** Package R (run the beta) once the owner gate is done; Package E waits for the approved Figma design (V1) and the demo courses (G).
 - **Can start any time:** Figma refinement ([`package-V.md`](plans/iter-6/package-V.md) V1) and the demo source notes ([`package-G.md`](plans/iter-6/package-G.md) G1).
-- **Owner actions:** review and merge the D PR; set `CONTACT_EMAIL` in Vercel (shown on `/privacy`; until then it says "the person who gave you your invite code"); decide at the legal review whether the privacy page must name the AI provider (today it says "an AI provider", following the rule that learners never see provider names); the owner-gate items in [`package-0-owner.md`](plans/iter-6/package-0-owner.md). Admin translation overrides stored before C may still show the old title "playground."; check `/admin/translations`.
-- **Not checked:** Ask AI citations with the real model (needs a real model call).
-- **Found for Package V:** on a 375 px screen the practice exam's "Unanswered" label overflows its box; the exam page is titled "Exam training" while links say "Practice exam"; the "Report a problem" link sits below the course footer.
+- **Owner actions:** review and merge the F PR; set `CONTACT_EMAIL` in Vercel; decide at the legal review whether the privacy page must name the AI provider; the owner-gate items in [`package-0-owner.md`](plans/iter-6/package-0-owner.md) (Google sign-in settings, model credit and the real-model run, the `landing-polish` branch, beta groups and their invite codes). Check `/admin/translations` for an old "playground." title override.
+- **Not checked:** Ask AI citations with the real model; counters and feedback on the production deployment (checked locally with the fake model).
+- **Found for Package V:** on a 375 px screen the practice exam's "Unanswered" label overflows its box; the exam page is titled "Exam training" while links say "Practice exam"; the feedback prompt and "Report a problem" sit below the course footer with no styling of their own.
 - **Superseded:** the public-launch documents in `product/` and `plans/launch/` are background only until the beta review (Package R).
 
 ## On-demand reference

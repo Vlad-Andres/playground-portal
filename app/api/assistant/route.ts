@@ -1,6 +1,8 @@
 import { GoogleGenAI, type Content } from "@google/genai";
 import { z } from "zod";
 import { buildSystem } from "@/lib/assistant/prompt";
+import { defaultStore } from "@/lib/jobs/store";
+import { recordMetric } from "@/lib/metrics";
 
 export const runtime = "nodejs";
 
@@ -70,6 +72,7 @@ export async function POST(request: Request) {
   }
 
   const { question, context, courseTitle, history } = parsed.data;
+  await recordMetric(defaultStore(), "assistant_question", new Date());
 
   const controller = new AbortController();
   request.signal.addEventListener("abort", () => controller.abort());

@@ -43,6 +43,7 @@ import { courseKeyFor } from "@/lib/sites/store";
 import { claimAge, claimStep, CLAIM_TTL_SECONDS } from "./claim";
 import { jobKey, lectureNumber, type JobState, type Step } from "./state";
 import type { Store } from "./store";
+import { recordMetric } from "@/lib/metrics";
 
 export type { JobState, Step } from "./state";
 
@@ -427,6 +428,13 @@ export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> 
     return state;
   }
   const now = deps.now();
+  // Beta measurement: only first creations count towards a group's success rate.
+  const counted = async (result: JobState): Promise<JobState> => {
+    if ((result.kind ?? "create") === "create" && (result.status === "done" || result.status === "failed")) {
+      await recordMetric(store, result.status === "done" ? "job_published" : "job_failed", deps.now(), { group: result.codeId });
+    }
+    return result;
+  };
 
   if (!(await claimStep(store, id, state.step, state.attempts, now))) {
     const age = await claimAge(store, id, state.step, state.attempts, now);
@@ -436,7 +444,7 @@ export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> 
       const failed: JobState = { ...state, attempts, status: "failed", error: "step-failed" };
       await releaseCourse(failed, store);
       logEvent("job.failed", { jobId: id, step: state.step, code: failed.error });
-      return saveState(store, failed, now);
+      return counted(await saveState(store, failed, now));
     }
     return saveState(store, { ...state, attempts, status: "idle" }, now);
   }
@@ -467,7 +475,7 @@ export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> 
   try {
     const next = await runStep(state, deps, model);
     logEvent("job.step", { ...stepFields(), ok: true, ms: Date.now() - started });
-    return saveState(store, addUsage(next), deps.now());
+    return counted(await saveState(store, addUsage(next), deps.now()));
   } catch (error) {
     const code = errorCode(error);
     logEvent("job.step", { ...stepFields(), ok: false, ms: Date.now() - started, error: logMessage(error) });
@@ -475,7 +483,7 @@ export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> 
       const failed: JobState = { ...state, status: "failed", error: code };
       await releaseCourse(failed, store);
       logEvent("job.failed", { jobId: id, step: state.step, code: failed.error });
-      return saveState(store, addUsage(failed), deps.now());
+      return counted(await saveState(store, addUsage(failed), deps.now()));
     }
     const attempts = state.attempts + 1;
     const gaveUp = attempts >= MAX_ATTEMPTS;
@@ -489,6 +497,6 @@ export async function advance(id: string, deps: AdvanceDeps): Promise<JobState> 
       await releaseCourse(next, store);
       logEvent("job.failed", { jobId: id, step: state.step, code: next.error });
     }
-    return saveState(store, addUsage(next), deps.now());
+    return counted(await saveState(store, addUsage(next), deps.now()));
   }
 }

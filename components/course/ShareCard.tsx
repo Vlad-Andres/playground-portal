@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useState, useSyncExternalStore } from "react";
+import { sendMetric } from "@/lib/metrics-client";
 import { courseShareUrl } from "@/lib/sites/share";
 
 const noSubscription = () => () => {};
@@ -20,6 +21,8 @@ export function ShareCard({ siteUrl }: { siteUrl: string }) {
     try {
       await navigator.clipboard.writeText(link!);
       setCopied(true);
+      const key = /\/courses\/([^/]+)\//.exec(link!)?.[1];
+      if (key) sendMetric("share_copied", key);
     } catch {
       // the link stays selectable in the field
     }

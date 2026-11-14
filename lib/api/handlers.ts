@@ -24,6 +24,7 @@ import { accountsConfigured } from "@/lib/auth/config";
 import type { User } from "@/lib/auth/session";
 import { logEvent } from "@/lib/log";
 import { codeJobsThisMonth, codeMonthPrefix, DEFAULT_SETTINGS, matchCode, readSettings, type Settings } from "@/lib/settings";
+import { expiredMetricKeys, recordMetric } from "@/lib/metrics";
 
 export const MAX_BODY_BYTES = 4 * 1024 * 1024;
 export const RETENTION_DAYS = 7;
@@ -148,6 +149,7 @@ export async function createJobHandler(request: Request, store: Store, env: Node
   if (codeId !== "env") await store.write(`${codeMonthPrefix(codeId, now)}${id}`, "1");
   if (user) await store.write(`${userDayPrefix(user.uid, day)}${id}`, "1");
   logEvent("job.created", { jobId: id, kind: "create", signedIn: Boolean(user) });
+  await recordMetric(store, "job_submitted", now, { group: codeId });
   const response = json({ id }, 202);
   if (accounts && !user) {
     response.headers.append("Set-Cookie", `${GUEST_COOKIE}=1; Path=/; Max-Age=15552000; HttpOnly; SameSite=Lax${process.env.NODE_ENV === "production" ? "; Secure" : ""}`);
@@ -463,6 +465,9 @@ export async function cleanupHandler(request: Request, store: Store, env: NodeJS
       .filter((entry) => entry.day !== undefined && Date.parse(entry.day) < cutoff)
       .map((entry) => entry.key),
   );
+  oldMarkers.push(...(await expiredMetricKeys(store, now)));
+  // Report rate markers (report-rate/<course>/<YYYY-MM-DDTHH>/<id>) are only needed for an hour.
+  oldMarkers.push(...(await store.list("report-rate/")).filter(({ uploadedAt }) => uploadedAt.getTime() < cutoff).map(({ key }) => key));
   await store.delete(oldMarkers);
   return json({ deletedJobs, deletedMarkers: oldMarkers.length });
 }

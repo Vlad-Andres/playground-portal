@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, RotateCcw, Trophy, X } from "lucide-react";
 import type { QuizQuestion } from "@site/content/types";
 import { Markdown } from "@site/components/content/Markdown";
@@ -10,6 +10,7 @@ import { ProgressBar } from "@site/components/ui/ProgressBar";
 import { useProgress } from "@site/hooks/useProgress";
 import { QUIZ_PASS_RATIO } from "@site/lib/progress";
 import { cn } from "@site/lib/cn";
+import { announceStudyEvent } from "@site/lib/studyEvents";
 
 interface QuizCardProps {
   lectureSlug: string;
@@ -32,6 +33,18 @@ export function QuizCard({ lectureSlug, sectionId, questions }: QuizCardProps) {
   useEffect(() => {
     if (finished) recordQuizResult(lectureSlug, sectionId, correctCount, questions.length);
   }, [finished, correctCount, questions.length, lectureSlug, sectionId, recordQuizResult]);
+
+  // Announce each finished attempt once; a retry clears the quiz and starts a new attempt.
+  const announced = useRef(false);
+  useEffect(() => {
+    if (!finished) {
+      announced.current = false;
+      return;
+    }
+    if (announced.current) return;
+    announced.current = true;
+    announceStudyEvent("quiz_completed");
+  }, [finished]);
 
   return (
     <Card className="grid gap-5 p-5 sm:p-6">

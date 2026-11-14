@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { Store } from "@/lib/jobs/store";
 import { logEvent } from "@/lib/log";
+import { recordMetric } from "@/lib/metrics";
 import { COURSE_KEY, readMeta } from "@/lib/sites/store";
 
 export const REPORT_CATEGORIES = ["wrong-content", "copyright", "other"] as const;
@@ -70,6 +71,7 @@ export async function createReportHandler(request: Request, store: Store, now: D
   await store.write(reportKey(report.id), `${JSON.stringify(report)}\n`);
   await store.write(`${prefix}${report.id}`, "1");
   logEvent("report.created", { category: report.category });
+  await recordMetric(store, "report_sent", now, { courseKey: report.courseKey });
   return Response.json({ ok: true }, { status: 202 });
 }
 

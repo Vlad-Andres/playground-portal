@@ -106,6 +106,9 @@ describe("job routes", () => {
     expect(site?.lectures).toHaveLength(1);
     expect(site?.lectures[0]?.meta.title).toBe("Renamed");
     expect(await store.read(jobKey(id, "bundle.json"))).toBeNull();
+    // Beta measurement: one submitted and one published marker for the environment code, nothing else about the job.
+    const metrics = (await store.list("metrics/")).map((entry) => entry.key.split("/").slice(2, 4).join("/"));
+    expect(metrics.sort()).toEqual(["job_published/env", "job_submitted/env"]);
   });
 
   it("400 for a malformed id, 404 for an unknown job, 503 when advancing while disabled", async () => {

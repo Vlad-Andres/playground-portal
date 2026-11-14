@@ -7,6 +7,10 @@ import { codeJobsThisMonth, readSettings } from "@/lib/settings";
 import { logout } from "./actions";
 import { CourseTable } from "./CourseTable";
 import { ReportQueue } from "./ReportQueue";
+import { BetaNumbers } from "./BetaNumbers";
+import { FeedbackList } from "./FeedbackList";
+import { listFeedback, summariseFeedback } from "@/lib/feedback";
+import { groupRows, metricsSummary } from "@/lib/metrics";
 import { listOpenReports } from "@/lib/reports";
 import { InviteCodes } from "./InviteCodes";
 import { LoginForm } from "./LoginForm";
@@ -42,7 +46,8 @@ export default async function AdminPage() {
 
   const store = defaultStore();
   const now = new Date();
-  const [settings, data, reports] = await Promise.all([readSettings(store), overview(store, now), listOpenReports(store)]);
+  const [settings, data, reports, summary, feedback] = await Promise.all([readSettings(store), overview(store, now), listOpenReports(store), metricsSummary(store, now, 14), listFeedback(store)]);
+  const courseTitles = new Map(data.courses.map(({ key, meta }) => [key, meta.title]));
   const codeUsage = Object.fromEntries(await Promise.all(settings.codes.map(async (code) => [code.id, await codeJobsThisMonth(store, code.id, now)] as const)));
   const limit = settings.dailyJobLimit ?? dailyJobLimit(process.env);
   const codeLabels = new Map(settings.codes.map((code) => [code.id, code.label]));
@@ -100,6 +105,12 @@ export default async function AdminPage() {
 
       <h2 className={styles.section}>Invite codes</h2>
       <InviteCodes codes={settings.codes} usage={codeUsage} />
+
+      <h2 className={styles.section}>Beta, last 14 days</h2>
+      <BetaNumbers summary={summary} groups={groupRows(summary.groups, settings.codes)} titles={courseTitles} />
+
+      <h2 className={styles.section}>Feedback ({feedback.length})</h2>
+      <FeedbackList entries={feedback} averages={summariseFeedback(feedback)} titles={courseTitles} />
 
       <h2 className={styles.section}>Reports ({reports.length})</h2>
       <ReportQueue reports={reports} />

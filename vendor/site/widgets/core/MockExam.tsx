@@ -15,6 +15,7 @@ import type { ExamAttempt } from "@site/lib/examHistory";
 import { useExamHistory } from "@site/hooks/useExamHistory";
 import { useSite } from "@site/site/context";
 import { quizHref } from "@site/site/paths";
+import { announceStudyEvent } from "@site/lib/studyEvents";
 
 interface PoolQuestion {
   key: string;
@@ -139,6 +140,7 @@ export function MockExam({ questionCount, minutes }: MockExamProps = {}) {
       })
       .filter((row) => row.total > 0);
     recordAttempt({ at: Date.now(), score: correct, total: questions.length, byLecture });
+    announceStudyEvent("exam_completed");
   }, [phase, sources, questions, answers, correct, recordAttempt]);
 
   if (phase === "setup") {
