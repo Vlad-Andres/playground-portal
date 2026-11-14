@@ -11,6 +11,7 @@
     "wrong-code": "The access code is not correct.",
     "daily-limit": "Today's limit has been reached. Please try again tomorrow.",
     "group-limit": "Your group has used this month's courses. Ask whoever gave you the code.",
+    "rights-not-confirmed": "Confirm that you may use this material before creating a course.",
     "bad-id": "This link is not valid.",
     "not-found": "We could not find this page.",
     "wrong-state": "This can only be changed while the outline waits for review.",
@@ -107,7 +108,9 @@
     "note": "Anything we should know? (optional)",
     "autoHint": "We work out the language, the level and the structure from your files. You confirm the structure before anything is written.",
     "advanced": "Advanced",
-    "automatic": "Automatic"
+    "automatic": "Automatic",
+    "rightsTitle": "I may use this material",
+    "rightsHint": "Anyone with the course link can read the course, so only upload notes you are allowed to use and share."
   },
   "job": {
     "topNote": "You can close this page. We keep working and the link stays valid.",

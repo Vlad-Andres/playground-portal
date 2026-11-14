@@ -98,3 +98,4 @@ html { scroll-behavior:smooth; }
 .account-link:hover { text-decoration:underline; }
 @media (max-width:560px) { .account-menu { gap:6px; } }
 .share-link { border-color: var(--green, #2f7a4d); }
+.rights-card { margin-top: 12px; }

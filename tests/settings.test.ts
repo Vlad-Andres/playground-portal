@@ -10,7 +10,7 @@ const env = { PORTAL_ENABLE_GENERATION: "true", PORTAL_ACCESS_CODE: CODE, PORTAL
 const brief: Brief = { language: "en", level: "school", depth: "cram", examMode: false, quizzes: true, widgets: true, context: "" };
 const materials = [{ name: "a.txt", pages: [{ n: 1, text: "Plants make glucose from light. ".repeat(20) }] }];
 const create = (code: string) =>
-  new Request("http://x/api/jobs", { method: "POST", body: JSON.stringify({ accessCode: code, brief, materials }), headers: { "content-type": "application/json" } });
+  new Request("http://x/api/jobs", { method: "POST", body: JSON.stringify({ accessCode: code, brief, materials, rightsConfirmed: true }), headers: { "content-type": "application/json" } });
 const now = new Date("2026-11-12T10:00:00Z");
 
 describe("readSettings / writeSettings", () => {

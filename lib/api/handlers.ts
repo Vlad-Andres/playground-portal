@@ -40,6 +40,7 @@ const MESSAGES = {
   "wrong-code": "The access code is not correct.",
   "daily-limit": "Today's job limit has been reached. Please try again tomorrow.",
   "group-limit": "Your group has used this month's courses. Ask whoever gave you the code.",
+  "rights-not-confirmed": "Confirm that you may use this material before creating a course.",
   "bad-id": "Invalid job id.",
   "not-found": "Job not found.",
   "wrong-state": "The outline can only be changed while it waits for review.",
@@ -66,6 +67,7 @@ const STATUS: Record<ApiErrorCode, number> = {
   "wrong-code": 401,
   "daily-limit": 429,
   "group-limit": 429,
+  "rights-not-confirmed": 400,
   "bad-id": 400,
   "not-found": 404,
   "wrong-state": 409,
@@ -88,7 +90,7 @@ function fail(code: ApiErrorCode): Response {
 }
 
 const createBodySchema = z
-  .object({ accessCode: z.string().max(200), request: z.unknown().optional(), brief: z.unknown().optional(), materials: z.array(z.unknown()).max(50), keepSources: z.boolean().optional() })
+  .object({ accessCode: z.string().max(200), request: z.unknown().optional(), brief: z.unknown().optional(), materials: z.array(z.unknown()).max(50), keepSources: z.boolean().optional(), rightsConfirmed: z.boolean().optional() })
   .strict();
 
 /** POST /api/jobs */
@@ -108,6 +110,7 @@ export async function createJobHandler(request: Request, store: Store, env: Node
   }
   const body = createBodySchema.safeParse(raw);
   if (!body.success) return fail("bad-request");
+  if (body.data.rightsConfirmed !== true) return fail("rights-not-confirmed");
   const codeId = matchCode(body.data.accessCode, env, settings);
   if (codeId === null) return fail("wrong-code");
 

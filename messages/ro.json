@@ -11,6 +11,7 @@
     "wrong-code": "Codul de acces nu este corect.",
     "daily-limit": "Limita de azi a fost atinsă. Încearcă din nou mâine.",
     "group-limit": "Grupul tău a folosit cursurile pe luna aceasta. Întreabă persoana care ți-a dat codul.",
+    "rights-not-confirmed": "Confirmă că ai voie să folosești acest material înainte de a crea un curs.",
     "bad-id": "Acest link nu este valid.",
     "not-found": "Nu am găsit această pagină.",
     "wrong-state": "Se poate modifica doar cât timp cuprinsul așteaptă verificarea.",
@@ -107,7 +108,9 @@
     "note": "Ceva ce ar trebui să știm? (opțional)",
     "autoHint": "Stabilim limba, nivelul și structura din fișierele tale. Confirmi structura înainte să fie scris ceva.",
     "advanced": "Avansat",
-    "automatic": "Automat"
+    "automatic": "Automat",
+    "rightsTitle": "Am voie să folosesc acest material",
+    "rightsHint": "Oricine are linkul cursului îl poate citi, așa că încarcă doar notițe pe care ai voie să le folosești și să le distribui."
   },
   "job": {
     "topNote": "Poți închide pagina. Lucrăm în continuare, iar linkul rămâne valabil.",
