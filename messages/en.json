@@ -396,5 +396,16 @@
     "busy": "This course got many reports in the last hour. Try again later.",
     "note": "We only store what you write here, the course link and the time.",
     "link": "Report a problem"
+  },
+  "feedback": {
+    "titleCreated": "How useful is the course you just made?",
+    "titleCourse": "How useful is this course?",
+    "ratingLabel": "Your rating",
+    "star": "{n} of 5",
+    "comment": "What would make it better? (optional)",
+    "send": "Send",
+    "thanks": "Thank you — this helps us improve.",
+    "error": "It could not be sent. Try again.",
+    "note": "Only the people running Study with AI see this. No name or account is stored."
   }
 }

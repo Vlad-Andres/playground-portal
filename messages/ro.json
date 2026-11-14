@@ -396,5 +396,16 @@
     "busy": "Cursul a primit multe rapoarte în ultima oră. Încearcă mai târziu.",
     "note": "Păstrăm doar ce scrii aici, linkul cursului și ora.",
     "link": "Raportează o problemă"
+  },
+  "feedback": {
+    "titleCreated": "Cât de util e cursul pe care tocmai l-ai creat?",
+    "titleCourse": "Cât de util e acest curs?",
+    "ratingLabel": "Nota ta",
+    "star": "{n} din 5",
+    "comment": "Ce l-ar face mai bun? (opțional)",
+    "send": "Trimite",
+    "thanks": "Mulțumim — ne ajută să îmbunătățim site-ul.",
+    "error": "Nu a putut fi trimis. Încearcă din nou.",
+    "note": "Doar cei care administrează Study with AI văd asta. Nu păstrăm niciun nume sau cont."
   }
 }

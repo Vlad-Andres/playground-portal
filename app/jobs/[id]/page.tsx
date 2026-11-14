@@ -12,6 +12,7 @@ import { useErrorText } from "@/components/useErrorText";
 import type { PublicJob } from "@/lib/api/handlers";
 import { shouldAdvance } from "@/lib/jobs/poll";
 import { ShareCard } from "@/components/course/ShareCard";
+import { FeedbackPrompt } from "@/components/feedback/FeedbackPrompt";
 
 const POLL_MS = 3000;
 
@@ -215,6 +216,9 @@ export default function JobPage() {
               {job.summary ? <p className="helper">{job.summary}</p> : null}
               {job.siteUrl ? <CoursePreview siteUrl={job.siteUrl} /> : null}
               {job.siteUrl ? <ShareCard siteUrl={job.siteUrl} /> : null}
+              {job.siteUrl && job.kind !== "refine" && job.kind !== "append" ? (
+                <FeedbackPrompt courseKey={job.siteUrl.split("/")[2] ?? ""} where="created" variant="portal" />
+              ) : null}
               {refining ? <a className="helper" href="/my">{t("restoreHint")}</a> : null}
               {job.manageUrl ? (
                 <div className="edit-link">

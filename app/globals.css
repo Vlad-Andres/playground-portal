@@ -111,3 +111,6 @@ html { scroll-behavior:smooth; }
 .report-form textarea { resize: vertical; }
 .brand { white-space: nowrap; }
 @media (max-width:560px) { .topbar { flex-wrap: wrap; gap: 10px; } .topbar-right { flex-wrap: wrap; } }
+.feedback-stars { display: flex; gap: 4px; }
+.feedback-stars button { border: 0; background: none; font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--line); padding: 2px; }
+.feedback-stars button.on { color: var(--orange); }
