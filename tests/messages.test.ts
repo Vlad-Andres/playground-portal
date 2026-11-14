@@ -86,3 +86,12 @@ describe("practice exam option", () => {
     expect(roHint).toMatch(/5 întrebări.*2 lecții/);
   });
 });
+
+describe("Study with AI brand", () => {
+  it("no user-facing text says playground", () => {
+    for (const [key, value] of [...Object.entries(en), ...Object.entries(ro)]) expect(value, key).not.toMatch(/playground/i);
+    for (const file of ["components/TopBar.tsx", "app/courses/[key]/not-found.tsx", "app/admin/page.tsx", "app/admin/translations/page.tsx"]) {
+      expect(fs.readFileSync(path.resolve(file), "utf8"), file).not.toMatch(/playground(<|\.|\s)/i);
+    }
+  });
+});

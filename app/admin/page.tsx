@@ -11,7 +11,7 @@ import { LoginForm } from "./LoginForm";
 import { SettingsForm } from "./SettingsForm";
 import styles from "./admin.module.css";
 
-export const metadata = { title: "Admin · playground.", robots: { index: false, follow: false } };
+export const metadata = { title: "Admin · Study with AI", robots: { index: false, follow: false } };
 
 function formatUsd(usd: number): string {
   return `$${usd.toFixed(4)}`;
