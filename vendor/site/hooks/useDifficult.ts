@@ -12,6 +12,7 @@ import {
   type Rating,
 } from "@site/lib/difficult";
 import { useSite } from "@site/site/context";
+import { announceStudyEvent } from "@site/lib/studyEvents";
 
 const stores = new Map<string, PersistentStore<DifficultState>>();
 
@@ -50,6 +51,7 @@ export function useDifficult() {
 
   const review = useCallback((key: string, rating: Rating) => {
     store.set((previous) => applyReview(previous, key, rating, Date.now()));
+    announceStudyEvent("review_completed");
   }, [store]);
 
   const setNote = useCallback((key: string, note: string) => {
