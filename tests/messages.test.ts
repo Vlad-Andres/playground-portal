@@ -95,3 +95,11 @@ describe("Study with AI brand", () => {
     }
   });
 });
+
+describe("honest landing copy", () => {
+  it("promises no grades, mastery, tutor or guarantees", () => {
+    for (const [key, value] of [...Object.entries(en), ...Object.entries(ro)].filter(([key]) => key.startsWith("landing."))) {
+      expect(value, key).not.toMatch(/mastery|AI tutor|\bgrades?\b|diagnos|guarantee|garant/i);
+    }
+  });
+});

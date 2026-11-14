@@ -5,58 +5,71 @@
 :root {
   color-scheme: light;
 
-  --canvas: oklch(98.5% 0.006 265);
-  --surface: oklch(100% 0 0);
-  --elevated: oklch(99.2% 0.004 265);
-  --sunken: oklch(96.2% 0.009 265);
-  --line: oklch(90.5% 0.012 265);
-  --line-strong: oklch(84% 0.018 265);
+  /* Study with AI palette: cream paper, navy ink, indigo accent (a course may override --brand). */
+  --canvas: #f3efe6;
+  --surface: #fbf9f4;
+  --elevated: #fffdf8;
+  --sunken: #ebe6da;
+  --line: #ded7c9;
+  --line-strong: #c4bba8;
 
-  --ink: oklch(24% 0.03 265);
-  --muted: oklch(48% 0.024 265);
-  --faint: oklch(62% 0.018 265);
+  --ink: #1d1a36;
+  --muted: #55516e;
+  --faint: #7c7894;
 
-  --brand: oklch(52% 0.19 275);
-  --brand-strong: oklch(44% 0.2 275);
-  --brand-soft: oklch(94.5% 0.03 275);
-  --brand-ink: oklch(100% 0 0);
+  --brand: #4a3fd0;
+  --brand-strong: #3a30b0;
+  --brand-soft: #e6e2fb;
+  --brand-ink: #ffffff;
 
-  --accent: oklch(64% 0.16 55);
-  --accent-soft: oklch(95% 0.045 75);
+  --accent: #c8553a;
+  --accent-soft: #fbe3da;
+  --highlight: #e3f36a;
 
-  --positive: oklch(55% 0.14 155);
-  --positive-soft: oklch(95% 0.05 155);
-  --warning: oklch(62% 0.14 75);
-  --warning-soft: oklch(95.5% 0.055 85);
-  --danger: oklch(55% 0.19 20);
-  --danger-soft: oklch(95% 0.04 20);
-  --info: oklch(55% 0.13 235);
-  --info-soft: oklch(95% 0.04 235);
+  --positive: oklch(52% 0.13 155);
+  --positive-soft: oklch(94% 0.05 155);
+  --warning: oklch(58% 0.14 70);
+  --warning-soft: oklch(95% 0.06 90);
+  --danger: oklch(53% 0.19 25);
+  --danger-soft: oklch(94% 0.04 25);
+  --info: oklch(52% 0.13 255);
+  --info-soft: oklch(94% 0.04 255);
 
-  --shadow-card: 0 1px 2px oklch(24% 0.03 265 / 0.05), 0 8px 24px oklch(24% 0.03 265 / 0.06);
+  --shadow-card: 0 1px 0 rgb(29 26 54 / 0.06);
+
+  /* Squarer corners, like the concept (a course with sharp corners goes further). */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 10px;
+  --radius-3xl: 14px;
+  --radius-4xl: 18px;
 }
 
 .dark {
   color-scheme: dark;
 
-  --canvas: oklch(17.5% 0.018 265);
-  --surface: oklch(21.5% 0.02 265);
-  --elevated: oklch(25% 0.022 265);
-  --sunken: oklch(19.5% 0.019 265);
-  --line: oklch(31% 0.022 265);
-  --line-strong: oklch(38% 0.026 265);
+  --canvas: #17152b;
+  --surface: #1f1c38;
+  --elevated: #262344;
+  --sunken: #1b1932;
+  --line: #34305a;
+  --line-strong: #46427a;
 
-  --ink: oklch(95% 0.008 265);
-  --muted: oklch(76% 0.018 265);
-  --faint: oklch(62% 0.02 265);
+  --ink: #f3efe6;
+  --muted: #c4c0dc;
+  --faint: #9a96bd;
 
-  --brand: oklch(72% 0.15 275);
-  --brand-strong: oklch(80% 0.13 275);
-  --brand-soft: oklch(30% 0.06 275);
-  --brand-ink: oklch(18% 0.03 275);
+  --brand: #b7affa;
+  --brand-strong: #d2ccff;
+  --brand-soft: #2e2a5c;
+  --brand-ink: #17152b;
 
-  --accent: oklch(76% 0.14 60);
-  --accent-soft: oklch(30% 0.05 60);
+  --accent: #f59a80;
+  --accent-soft: #3d2530;
+  --highlight: #e3f36a;
 
   --positive: oklch(74% 0.14 155);
   --positive-soft: oklch(28% 0.05 155);
@@ -67,7 +80,7 @@
   --info: oklch(74% 0.12 235);
   --info-soft: oklch(29% 0.05 235);
 
-  --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.4), 0 8px 24px oklch(0% 0 0 / 0.28);
+  --shadow-card: 0 1px 0 rgb(0 0 0 / 0.3);
 }
 
 @theme inline {
@@ -101,10 +114,14 @@
 
   --shadow-card: var(--shadow-card);
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+  --color-highlight: var(--highlight);
+
+  /* --font-grotesk / --font-jetbrains / --font-instrument are set by next/font (template layout or portal). */
+  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
+  --font-serif: var(--font-instrument), Georgia, serif;
 }
 
 @layer base {
@@ -194,4 +211,12 @@
   font-style: var(--shiki-dark-font-style) !important;
   font-weight: var(--shiki-dark-font-weight) !important;
   text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+/* Study with AI: small uppercase labels are set in the monospace face, like the concept. */
+@layer components {
+  .uppercase {
+    font-family: var(--font-mono);
+    letter-spacing: 0.06em;
+  }
 }
