@@ -88,7 +88,8 @@ Return this JSON shape:
 Rules:
 - 1 to ${maxLectures} lectures. Every page with real content belongs to exactly one lecture; give each lecture the page ranges it covers, per file.
 - 4 to 8 sections per lecture. Start with an "objectives" section and end with a "summary" section. 1 to 4 "goals" per lecture.
-- "blocks" lists the block kinds that fit that section's content. List "custom" only when no widget type can teach the idea.
+- "blocks" lists the block kinds that fit that section's content.
+${planCustomRule(brief)}
 - "domains" lists the packs that fit: core (always), math (formulas), cs (algorithms, code), memorise (vocabulary, facts to learn by heart), humanities (history, texts, arguments).
 - "home": a short welcome built only from the material: an intro, up to 4 highlights and up to 6 study steps.
 - Block kinds: ${Object.keys(blockExamples).filter((kind) => kind !== "figure").join(", ")}.
@@ -105,6 +106,13 @@ Rules:
     fixed ? `LECTURES ARE FIXED:\n${fixed.map((lecture, index) => `- ${index + 1}. ${lecture.title} (${lecture.pages})`).join("\n")}` : "",
   ].filter(Boolean);
   return { system, user: `${lines.join("\n\n")}\n\nCOURSE MATERIAL:\n${materialText}` };
+}
+
+/** How freely the plan may ask for model-written simulations ("custom" blocks). */
+function planCustomRule(brief: Brief): string {
+  const limit = brief.widgets ? DEPTH_TARGETS[brief.depth].custom : 0;
+  if (limit <= 0) return '- Do not list "custom".';
+  return `- "custom" is a simulation or interactive model that is written for this material (HTML, CSS and JS in a sandbox). Prefer "custom" over a catalogue widget whenever an idea is better shown than told: something that moves, changes over time or reacts to the learner — collisions, oscillations, circuits, processes, algorithms running step by step, a system with parameters to vary. List it in the section that teaches that idea, at most ${limit} per lecture.`;
 }
 
 export const APPROACH_LIST = "follow-source | by-topic | problem-first | exam-focused | timeline";
@@ -202,7 +210,9 @@ function customPart(limit: number): string {
   if (limit <= 0) return 'Do not use "custom" blocks.';
   const example = blockExamples.custom;
   return `CUSTOM EXERCISE (block kind "custom"): ${example.use}
-- Use at most ${limit} in this lecture, and only in the section the plan marks with "custom", when no widget type can teach the idea.
+- Use at most ${limit} in this lecture, in the sections the plan marks with "custom". Use it there instead of a catalogue widget.
+- Build a real simulation or interactive model of the idea from the pages: use their actual quantities, rules and values, let the learner change something (sliders, buttons, dragging) and see the result move or update, and label what is shown.
+- It must work 360 px wide and in light and dark mode (use the CSS media query prefers-color-scheme).
 - "html" holds self-contained HTML, CSS and JS (at most 60,000 characters). No network, no storage, no links to other sites.
 - Call pg.done(score) with a number from 0 to 1 when the learner succeeds.
   ${JSON.stringify(example.example)}`;
