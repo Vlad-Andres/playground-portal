@@ -60,8 +60,8 @@ Anything that differs between a standalone course and a portal course (brand, fo
 ### H4. Design tokens before components
 Package V turns the Figma styles into CSS custom properties (`--color-*`, `--font-*`, `--space-*`, `--radius-*`) in one file per repo before any component is restyled. Components use tokens only; no new hard-coded colours.
 
-### H5. Both languages, both widths
-Every new string is added to EN **and** RO in the same commit. Every new screen is checked at 375 px and 1280 px, in light and dark mode.
+### H5. Languages and widths
+Translation is for the **portal only**: every new portal string goes into `messages/en.json` **and** `messages/ro.json` in the same commit. Course pages (`TEMPLATE`) are not translated: their interface text stays English, and the course content is in whatever language it was generated in. Every new screen, portal or course, is checked at 375 px and 1280 px, in light and dark mode.
 
 ---
 

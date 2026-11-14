@@ -17,14 +17,14 @@
 
 **Files:** `src/screens/HomeScreen.tsx`, `src/components/home/*`, `src/components/layout/SiteHeader.tsx`, tests.
 - Hide links and cards for "Expected at the exam", open questions, principles and the exam when the course JSON lacks that data. No dead link anywhere in navigation.
-- The exam card/link says "Practice exam — built from the lecture questions" (EN/RO).
+- The exam card/link says "Practice exam — built from the lecture questions" (course pages are English only, H5).
 - Tests render a course without exam/expected data and assert no link to `/exam` or `/expected`.
 - **Commit:** `fix: course home shows only features the course has`
 
 ### Task A3: Host brand and footer link
 
 **Files:** `core/site.ts`, `src/components/layout/{SiteHeader,SiteFooter}.tsx`, tests.
-- Add to the host config: `brand: { name: string; homeUrl: string | null }` (standalone default: course title, `null`).
+- Add to the host config: `brand: { name: string; homeUrl: string | null }` (standalone default: `"Study Playground"`, `null` — `DEFAULT_HOST`).
 - Header shows `brand.name` when set. When `homeUrl` is set, the footer shows "Made with {name} — make your own" linking to `${homeUrl}?from=course`.
 - Ask AI and every other screen must not show model or provider names (check and fix if any remain).
 - **Commit:** `feat: host brand and a make-your-own footer link`

@@ -37,4 +37,4 @@ These are the features the landing page and the demo videos show. Each must look
 - Tests: parser turns valid labels into links, drops unknown ones, leaves other brackets alone.
 - **Commit (template):** `feat: assistant answers link to the course sections they use`; **(portal, in C):** `feat: assistant prompt cites course sections`
 
-**Check by hand:** with a fixture course, fail two quiz questions in lecture 2, take the exam, flag one part: home shows lecture 2 first with the right reason, "due today" after the review time passes (use a test clock in dev), exam history after a second attempt. EN and RO, 375 px.
+**Check by hand:** with a fixture course, fail two quiz questions in lecture 2, take the exam, flag one part: home shows lecture 2 first with the right reason, "due today" after the review time passes (use a test clock in dev), exam history after a second attempt. 375 px and 1280 px, light and dark.
