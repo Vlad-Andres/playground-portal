@@ -71,3 +71,18 @@ describe("pickLocale", () => {
     expect(LOCALES).toEqual(["en", "ro"]);
   });
 });
+
+describe("practice exam option", () => {
+  it("is on by default in the creator form", () => {
+    const builder = fs.readFileSync(path.resolve("components/create/Builder.tsx"), "utf8");
+    expect(builder).toMatch(/<input name="examMode" type="checkbox" defaultChecked \/>/);
+  });
+
+  it("explains when the exam appears and that scores are practice, in both languages", () => {
+    const enHint = Object.entries(en).find(([key]) => key.endsWith(".examModeHint"))?.[1] ?? "";
+    const roHint = Object.entries(ro).find(([key]) => key.endsWith(".examModeHint"))?.[1] ?? "";
+    expect(enHint).toMatch(/5 questions.*2 lectures/);
+    expect(enHint).toMatch(/practice/i);
+    expect(roHint).toMatch(/5 întrebări.*2 lecții/);
+  });
+});

@@ -271,7 +271,7 @@ export function Builder({ announcement }: { announcement?: string }) {
           <div className="option-grid">
             <label className="option-card"><input name="quizzes" type="checkbox" defaultChecked /><span><b>{t("quizzes")}</b><small>{t("quizzesHint")}</small></span></label>
             <label className="option-card"><input name="widgets" type="checkbox" defaultChecked /><span><b>{t("widgets")}</b><small>{t("widgetsHint")}</small></span></label>
-            <label className="option-card"><input name="examMode" type="checkbox" /><span><b>{t("examMode")}</b><small>{t("examModeHint")}</small></span></label>
+            <label className="option-card"><input name="examMode" type="checkbox" defaultChecked /><span><b>{t("examMode")}</b><small>{t("examModeHint")}</small></span></label>
           </div>
           </details>
         </section>
