@@ -15,14 +15,16 @@
 - **Next:** the owner's testing; after that, a real-model run on the five fixtures (at most 5 runs, with the owner's go-ahead) scored with the rubric.
 - **Note:** the owner's opencode agent has temporary worktrees on both `iteration-5` branches that are now behind; delete them before reusing that agent.
 
-## Iteration 6 — closed beta (A–C in review)
+## Iteration 6 — closed beta (A–C merged, D in review)
 
 - **Plan:** [`plans/iter-6/00-guidelines.md`](plans/iter-6/00-guidelines.md). Invite-only beta for 20–30 students; the owner said "start" on 2026-11-14.
-- **Done, in PR #17 (`iteration-6` → `main`):** packages A (honest course page, host brand, make-your-own footer), B (exam history, study next, due today, Ask AI section links) and C (template sync, Ask AI citation prompt, practice exam on by default, monthly limit per invite code, "Study with AI" in portal copy). Template branch `iteration-6` at `e42ba69` is vendored. Checked with the fake model only; Ask AI citations are not checked with the real model.
-- **Next package:** [`plans/iter-6/package-D.md`](plans/iter-6/package-D.md) (trust and sharing), after the owner reviews PR #17.
+- **Merged (PR #17, `90dcd20`):** packages A (honest course page, host brand, make-your-own footer), B (exam history, study next, due today, Ask AI section links) and C (template sync, Ask AI citation prompt, practice exam on by default, monthly limit per invite code, "Study with AI" in portal copy). Template branch `iteration-6` at `e42ba69` is vendored.
+- **In review (PR on branch `iteration-6-d`):** package D — share card that copies only the course link; required rights checkbox at creation (`rights-not-confirmed`); `/privacy` and `/terms` (EN/RO, marked beta); "Report a problem" on every course → `/report?course=<key>` → admin queue with Dismiss and Take down. Also: the top bar wraps on phones.
+- **Next package:** [`plans/iter-6/package-F.md`](plans/iter-6/package-F.md) (beta measurement) after D is merged. Package E waits for the approved Figma design (V1) and the demo courses (G).
 - **Can start any time:** Figma refinement ([`package-V.md`](plans/iter-6/package-V.md) V1) and the demo source notes ([`package-G.md`](plans/iter-6/package-G.md) G1).
-- **Owner actions:** review and merge PR #17; the owner-gate items in [`package-0-owner.md`](plans/iter-6/package-0-owner.md) (Google sign-in settings, model credit, the real-model run, the `landing-polish` branch, beta groups). Admin translation overrides stored before this change may still show the old page title "playground."; check `/admin/translations` after merging.
-- **Found for Package V:** on a 375 px screen the practice exam's "Unanswered" label overflows its box; the exam page is titled "Exam training" while links say "Practice exam".
+- **Owner actions:** review and merge the D PR; set `CONTACT_EMAIL` in Vercel (shown on `/privacy`; until then it says "the person who gave you your invite code"); decide at the legal review whether the privacy page must name the AI provider (today it says "an AI provider", following the rule that learners never see provider names); the owner-gate items in [`package-0-owner.md`](plans/iter-6/package-0-owner.md). Admin translation overrides stored before C may still show the old title "playground."; check `/admin/translations`.
+- **Not checked:** Ask AI citations with the real model (needs a real model call).
+- **Found for Package V:** on a 375 px screen the practice exam's "Unanswered" label overflows its box; the exam page is titled "Exam training" while links say "Practice exam"; the "Report a problem" link sits below the course footer.
 - **Superseded:** the public-launch documents in `product/` and `plans/launch/` are background only until the beta review (Package R).
 
 ## On-demand reference
