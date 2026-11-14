@@ -35,7 +35,7 @@ export function CourseOverview({ course, entries }: CourseOverviewProps) {
           {course.overviewBadge ?? course.title}
         </Badge>
         <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-          {course.overviewTitle ?? `An interactive learning playground for ${course.title.toLowerCase()}.`}
+          {course.overviewTitle ?? `Study ${course.title.toLowerCase()}, one idea at a time.`}
         </h1>
         <p className="text-lg text-muted text-pretty">
           {course.overviewMd ?? course.description}
