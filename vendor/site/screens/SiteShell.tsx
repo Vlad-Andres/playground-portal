@@ -30,6 +30,9 @@ export function SiteShell({
   const records = buildSearchRecords(data.index, sitePaths(base).lecture);
   const assistantContext = siteToContext(data);
   const showAssistant = siteFeatures(data.course).assistant;
+  // A site served under a path (e.g. /courses/<key>/ on the portal) shares its origin with other
+  // sites, so a single service worker would cover all of them and the host may not serve /sw.js.
+  const enableOffline = offline && base === "";
 
   return (
     <SiteProvider data={data} base={base}>
@@ -44,7 +47,7 @@ export function SiteShell({
         {children}
       </main>
       <SiteFooter course={data.course} />
-      {offline ? <ServiceWorkerRegistration /> : null}
+      {enableOffline ? <ServiceWorkerRegistration /> : null}
       {showAssistant ? <CourseAssistant context={assistantContext} /> : null}
     </SiteProvider>
   );
