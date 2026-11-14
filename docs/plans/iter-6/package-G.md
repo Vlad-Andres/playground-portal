@@ -7,12 +7,14 @@
 
 ### G1: Write the source notes (can start now)
 
-**Files:** `examples/demo-energy/notes-en.md`, `notes-ro.md` (our own text, no copied material).
-- Topic (changed by the owner on 2026-11-14, was *Electricity basics: circuits and Ohm's law*): *Energy on the move: from Newton's cradle to the Tesla coil*, for ages 14–16. 3 lectures: (1) energy stores and the pendulum; (2) momentum and Newton's cradle; (3) resonance, induction, the transformer and the Tesla coil, with safety.
-- Include on purpose: formulas with units (E_k, E_p, p, T, f, transformer ratio), tables (energy stores, elastic vs inelastic, transformer vs Tesla coil), procedures (measure a pendulum, build a mini cradle), worked examples with numbers — so the generator has reasons to produce a parameter explorer / function plot, steps, categorize, recall cards and enough quiz questions for the exam.
-- Also on purpose, for model-written `custom` blocks: things that move and cannot be taught by a catalogue widget, described as rules, frame-by-frame motion and tables of values (pendulum energy bars, the cradle's "n balls in, n balls out", coupled pendulums trading energy, the Tesla coil cycle). The notes never instruct the generator; the material only makes a simulation the natural choice.
-- The RO file is a faithful translation reviewed by the owner.
-- **Commit:** `docs: demo source notes on energy, Newton's cradle and the Tesla coil`
+**Files:** `examples/demo-energy/notes-en.md`, `notes-ro.md`.
+- Topic (changed by the owner on 2026-11-14, was *Electricity basics: circuits and Ohm's law*): *Energy on the move: from Newton's cradle to the Tesla coil*, school level. 3 lectures: (1) mechanical energy and the pendulum; (2) momentum, collisions and Newton's cradle; (3) Faraday's law, alternating current, the transformer and the Tesla coil, with safety.
+- Source (the owner asked for real lectures on 2026-11-14): adapted from Siyavula *Everything Science: Physical Sciences* — Grade 10 ch. 22, Grade 11 ch. 10, Grade 12 ch. 2 and ch. 11 — **CC BY 3.0**, which allows public use, changes and translation with credit. CK-12 and LibreTexts (non-commercial), OpenStax (no AI use) and Wikibooks (share-alike) were ruled out. The credit and the list of changes are at the top of both files; sections headed "Added for this course" (pendulum swing by swing, Newton's cradle up close, transformer, resonance and the Tesla coil) are ours, because the textbooks do not cover them.
+- Kept on purpose: formulas with units, worked examples with numbers, a hands-on activity and a trolley experiment, so the generator has reasons to produce a parameter explorer / function plot, steps, recall cards and enough quiz questions for the exam. Removed: figures, videos, exercises, curriculum lists, impulse sections; figure-dependent sentences reworded; source typos fixed (two units, a LaTeX comment).
+- For model-written `custom` blocks, the added sections describe motion as rules, frame-by-frame steps and tables of values (pendulum energy bars, "n balls in, n balls out", coupled pendulums trading energy, the Tesla coil cycle). The notes never instruct the generator.
+- The RO file is a translation of the EN file, reviewed by the owner.
+- **Owner action at G2:** check that the Siyavula credit appears on the generated course (CC BY requires it); if the generator drops it, add it with the course editor.
+- **Commit:** `docs: demo source notes adapted from Siyavula (CC BY)`
 
 ### G2: Generate, score, fix
 
