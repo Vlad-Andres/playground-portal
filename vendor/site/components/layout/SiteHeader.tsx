@@ -58,7 +58,7 @@ export function SiteHeader({ metas, records }: SiteHeaderProps) {
   }, [features.search]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-canvas/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-line-strong bg-canvas/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-4 sm:px-6">
         <Link href={paths.home} onClick={closeMenus} className="flex items-center gap-2.5 font-semibold">
           <span className="grid size-8 place-items-center rounded-lg bg-brand text-sm text-brand-ink">

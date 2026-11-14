@@ -22,7 +22,7 @@ export function LectureHeader({ meta, badge }: { meta: LectureMeta; badge?: stri
       </div>
 
       <div className="grid max-w-3xl gap-3">
-        <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">{meta.title}</h1>
+        <h1 className="text-4xl font-medium tracking-tight text-balance sm:text-5xl">{meta.title}</h1>
         <p className="text-lg text-muted">{meta.subtitle}</p>
         <p className="text-pretty text-muted">{meta.summary}</p>
       </div>

@@ -5,9 +5,9 @@ import { getLocale, getTranslations } from "next-intl/server";
 import "./globals.css";
 
 // Self-hosted at build time, so the portal's `default-src 'self'` policy still holds.
-const sans = Space_Grotesk({ subsets: ["latin", "latin-ext"], variable: "--font-sans", display: "swap" });
-const serif = Instrument_Serif({ subsets: ["latin", "latin-ext"], weight: "400", style: ["italic", "normal"], variable: "--font-serif", display: "swap" });
-const mono = JetBrains_Mono({ subsets: ["latin", "latin-ext"], variable: "--font-mono", display: "swap" });
+const sans = Space_Grotesk({ subsets: ["latin", "latin-ext"], variable: "--font-grotesk", display: "swap" });
+const serif = Instrument_Serif({ subsets: ["latin", "latin-ext"], weight: "400", style: ["italic", "normal"], variable: "--font-instrument", display: "swap" });
+const mono = JetBrains_Mono({ subsets: ["latin", "latin-ext"], variable: "--font-jetbrains", display: "swap" });
 
 export async function generateMetadata() {
   const t = await getTranslations("common");

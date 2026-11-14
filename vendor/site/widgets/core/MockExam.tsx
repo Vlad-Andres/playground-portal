@@ -250,7 +250,7 @@ export function MockExam({ questionCount, minutes }: MockExamProps = {}) {
         </div>
       ) : (
         <div className="grid gap-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Stat label="Score" value={`${correct} / ${questions.length}`} tone="brand" />
             <Stat
               label="Percentage"
