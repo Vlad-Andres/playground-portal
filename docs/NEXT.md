@@ -15,9 +15,13 @@
 - **Next:** the owner's testing; after that, a real-model run on the five fixtures (at most 5 runs, with the owner's go-ahead) scored with the rubric.
 - **Note:** the owner's opencode agent has temporary worktrees on both `iteration-5` branches that are now behind; delete them before reusing that agent.
 
-## Launch workstream (proposed, not started)
+## Iteration 6 — closed beta (approved 2026-11-14, not started)
 
-- The public "Study with AI" launch is planned in [`product/prd.md`](product/prd.md), [`product/launch-plan-review.md`](product/launch-plan-review.md) and the PR cards in [`plans/launch/pr-plan.md`](plans/launch/pr-plan.md). The owner decides when it starts and how it fits with the iteration-5 testing above.
+- **Plan:** [`plans/iter-6/00-guidelines.md`](plans/iter-6/00-guidelines.md). Invite-only beta for 20–30 students; selling features built in the browser (study next, due today, exam history, Ask AI section links); the Figma concept refined, then built; a real EN + RO demo course on circuits and Ohm's law.
+- **Active package:** [`plans/iter-6/package-0-owner.md`](plans/iter-6/package-0-owner.md) — owner gate. Code packages start only when the owner says `"start iteration 6"`.
+- **Can start now without the gate:** Figma refinement ([`package-V.md`](plans/iter-6/package-V.md) V1) and the demo source notes ([`package-G.md`](plans/iter-6/package-G.md) G1).
+- **Unmerged work to decide (Package 0.5):** `playground-portal` branch `landing-polish` (6 landing commits, local only, in an opencode worktree).
+- **Superseded:** the public-launch documents in `product/` and `plans/launch/` are background only; iteration 6 takes from them what a closed beta needs and defers the rest until the beta review (Package R).
 
 ## On-demand reference
 

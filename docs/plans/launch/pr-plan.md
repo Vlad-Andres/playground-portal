@@ -1,5 +1,7 @@
 # Study with AI — implementation plan by pull request
 
+> **Status (2026-11-14):** background document. For the closed beta, [`plans/iter-6/00-guidelines.md`](../iter-6/00-guidelines.md) decides; items it defers stay here for the public launch.
+
 **Status:** implementation draft, 14 November 2026  
 **Product source:** [PRD](../../product/prd.md) and [launch-plan review](../../product/launch-plan-review.md)  
 **Target:** public free launch for university exam preparation in English and Romanian.

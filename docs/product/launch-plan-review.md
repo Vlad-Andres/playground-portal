@@ -1,5 +1,7 @@
 # Study with AI — launch plan review
 
+> **Status (2026-11-14):** background document. For the closed beta, [`plans/iter-6/00-guidelines.md`](../plans/iter-6/00-guidelines.md) decides; items it defers stay here for the public launch.
+
 **Status:** Draft for owner review  
 **Date:** 14 November 2026  
 **Companion document:** [Product requirements](prd.md)

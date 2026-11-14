@@ -1,5 +1,7 @@
 # Study with AI — Product Requirements Document
 
+> **Status (2026-11-14):** background document. For the closed beta, [`plans/iter-6/00-guidelines.md`](../plans/iter-6/00-guidelines.md) decides; items it defers stay here for the public launch.
+
 **Product:** Study with AI  
 **Product type:** Responsive web application for creating and studying shareable courses  
 **Owner:** Product owner (name to add)  
