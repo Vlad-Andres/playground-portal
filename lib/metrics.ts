@@ -104,3 +104,27 @@ export async function expiredMetricKeys(store: Store, now: Date): Promise<string
   const cutoff = now.getTime() - METRICS_RETENTION_DAYS * 86_400_000;
   return (await store.list("metrics/")).map(({ key }) => key).filter((key) => Date.parse(key.split("/")[1] ?? "") < cutoff);
 }
+
+export interface GroupRow {
+  group: string;
+  label: string;
+  submitted: number;
+  published: number;
+  failed: number;
+  /** Published out of submitted, written with its denominator. */
+  success: string;
+}
+
+/** Rows for the admin table: invite codes by label, then the environment code, then deleted codes. */
+export function groupRows(groups: MetricsSummary["groups"], codes: { id: string; label: string }[]): GroupRow[] {
+  const labels = new Map(codes.map((code) => [code.id, code.label]));
+  const rank = (group: string) => (labels.has(group) ? 0 : group === "env" ? 1 : 2);
+  return Object.entries(groups)
+    .sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b))
+    .map(([group, counts]) => ({
+      group,
+      label: labels.get(group) ?? (group === "env" ? "Environment code" : "Deleted code"),
+      ...counts,
+      success: `${counts.published} / ${counts.submitted}`,
+    }));
+}
