@@ -10,6 +10,7 @@
     "bad-request": "Ceva din cerere nu a fost valid. Verifică opțiunile și încearcă din nou.",
     "wrong-code": "Codul de acces nu este corect.",
     "daily-limit": "Limita de azi a fost atinsă. Încearcă din nou mâine.",
+    "group-limit": "Grupul tău a folosit cursurile pe luna aceasta. Întreabă persoana care ți-a dat codul.",
     "bad-id": "Acest link nu este valid.",
     "not-found": "Nu am găsit această pagină.",
     "wrong-state": "Se poate modifica doar cât timp cuprinsul așteaptă verificarea.",

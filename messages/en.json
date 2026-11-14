@@ -10,6 +10,7 @@
     "bad-request": "Something in the request was not valid. Check your options and try again.",
     "wrong-code": "The access code is not correct.",
     "daily-limit": "Today's limit has been reached. Please try again tomorrow.",
+    "group-limit": "Your group has used this month's courses. Ask whoever gave you the code.",
     "bad-id": "This link is not valid.",
     "not-found": "We could not find this page.",
     "wrong-state": "This can only be changed while the outline waits for review.",
