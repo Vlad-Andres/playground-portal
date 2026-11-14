@@ -15,13 +15,15 @@
 - **Next:** the owner's testing; after that, a real-model run on the five fixtures (at most 5 runs, with the owner's go-ahead) scored with the rubric.
 - **Note:** the owner's opencode agent has temporary worktrees on both `iteration-5` branches that are now behind; delete them before reusing that agent.
 
-## Iteration 6 — closed beta (approved 2026-11-14, not started)
+## Iteration 6 — closed beta (A–C in review)
 
-- **Plan:** [`plans/iter-6/00-guidelines.md`](plans/iter-6/00-guidelines.md). Invite-only beta for 20–30 students; selling features built in the browser (study next, due today, exam history, Ask AI section links); the Figma concept refined, then built; a real EN + RO demo course on circuits and Ohm's law.
-- **Active package:** [`plans/iter-6/package-0-owner.md`](plans/iter-6/package-0-owner.md) — owner gate. Code packages start only when the owner says `"start iteration 6"`.
-- **Can start now without the gate:** Figma refinement ([`package-V.md`](plans/iter-6/package-V.md) V1) and the demo source notes ([`package-G.md`](plans/iter-6/package-G.md) G1).
-- **Unmerged work to decide (Package 0.5):** `playground-portal` branch `landing-polish` (6 landing commits, local only, in an opencode worktree).
-- **Superseded:** the public-launch documents in `product/` and `plans/launch/` are background only; iteration 6 takes from them what a closed beta needs and defers the rest until the beta review (Package R).
+- **Plan:** [`plans/iter-6/00-guidelines.md`](plans/iter-6/00-guidelines.md). Invite-only beta for 20–30 students; the owner said "start" on 2026-11-14.
+- **Done, in PR #17 (`iteration-6` → `main`):** packages A (honest course page, host brand, make-your-own footer), B (exam history, study next, due today, Ask AI section links) and C (template sync, Ask AI citation prompt, practice exam on by default, monthly limit per invite code, "Study with AI" in portal copy). Template branch `iteration-6` at `e42ba69` is vendored. Checked with the fake model only; Ask AI citations are not checked with the real model.
+- **Next package:** [`plans/iter-6/package-D.md`](plans/iter-6/package-D.md) (trust and sharing), after the owner reviews PR #17.
+- **Can start any time:** Figma refinement ([`package-V.md`](plans/iter-6/package-V.md) V1) and the demo source notes ([`package-G.md`](plans/iter-6/package-G.md) G1).
+- **Owner actions:** review and merge PR #17; the owner-gate items in [`package-0-owner.md`](plans/iter-6/package-0-owner.md) (Google sign-in settings, model credit, the real-model run, the `landing-polish` branch, beta groups). Admin translation overrides stored before this change may still show the old page title "playground."; check `/admin/translations` after merging.
+- **Found for Package V:** on a 375 px screen the practice exam's "Unanswered" label overflows its box; the exam page is titled "Exam training" while links say "Practice exam".
+- **Superseded:** the public-launch documents in `product/` and `plans/launch/` are background only until the beta review (Package R).
 
 ## On-demand reference
 
