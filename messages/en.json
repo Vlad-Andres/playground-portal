@@ -134,7 +134,7 @@
     "failedThree": "It failed three times.",
     "startAgain": "Start again",
     "openSite": "Open your site",
-    "editLinkTitle": "Your private edit link",
+    "editLinkTitle": "Private edit link — keep it to yourself",
     "editLinkWarning": "Anyone with this link can change or delete your site. Save it now — it is shown here for 7 days only.",
     "copy": "Copy",
     "copied": "Copied",
@@ -301,5 +301,11 @@
     "addHelper": "New lectures are added at the end. Existing lectures are not changed.",
     "addButton": "Add to this course",
     "keepWhenCreating": "Keep my files privately so I can reorganise this course later"
+  },
+  "share": {
+    "title": "Share this course",
+    "copy": "Copy course link",
+    "copied": "Copied",
+    "note": "Anyone with this link can read the course. Share it only if you may share the material it was made from."
   }
 }

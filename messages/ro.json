@@ -134,7 +134,7 @@
     "failedThree": "A eșuat de trei ori.",
     "startAgain": "Începe din nou",
     "openSite": "Deschide site-ul",
-    "editLinkTitle": "Linkul tău privat de editare",
+    "editLinkTitle": "Link privat de editare — păstrează-l pentru tine",
     "editLinkWarning": "Oricine are acest link poate modifica sau șterge site-ul tău. Salvează-l acum — este afișat aici doar 7 zile.",
     "copy": "Copiază",
     "copied": "Copiat",
@@ -301,5 +301,11 @@
     "addHelper": "Lecțiile noi se adaugă la final. Lecțiile existente nu se schimbă.",
     "addButton": "Adaugă la acest curs",
     "keepWhenCreating": "Păstrează-mi fișierele în privat, ca să pot reorganiza cursul mai târziu"
+  },
+  "share": {
+    "title": "Distribuie cursul",
+    "copy": "Copiază linkul cursului",
+    "copied": "Copiat",
+    "note": "Oricine are acest link poate citi cursul. Distribuie-l doar dacă ai voie să distribui materialul din care a fost făcut."
   }
 }
