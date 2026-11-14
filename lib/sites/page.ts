@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import type { SiteData } from "@core/site";
+import type { SiteData, SiteHost } from "@core/site";
 import { loadSite } from "./load";
+
+/** Brand and make-your-own link shown on every portal-hosted course. */
+export const COURSE_HOST: SiteHost = { brand: { name: "Study with AI", homeUrl: "/" } };
 
 export interface CourseParams {
   params: Promise<{ key: string }>;

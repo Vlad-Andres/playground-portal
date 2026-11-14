@@ -5,7 +5,7 @@ import "@site/site.css";
 import { themeBootstrapScript } from "@site/lib/theme";
 import { themeCss } from "@site/lib/theme-css";
 import { SiteShell } from "@site/screens/SiteShell";
-import { courseBase, courseMetadata, courseOr404, type CourseParams } from "@/lib/sites/page";
+import { COURSE_HOST, courseBase, courseMetadata, courseOr404, type CourseParams } from "@/lib/sites/page";
 
 export async function generateMetadata({ params }: CourseParams) {
   return courseMetadata(params);
@@ -20,7 +20,7 @@ export default async function CourseLayout({ children, params }: CourseParams & 
       <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript(data.key) }} />
       {accentCss ? <style dangerouslySetInnerHTML={{ __html: accentCss }} /> : null}
       {/* Many courses share this origin, so none of them registers an offline service worker. */}
-      <SiteShell data={data} base={courseBase(key)} offline={false}>
+      <SiteShell data={data} base={courseBase(key)} offline={false} host={COURSE_HOST}>
         {children}
       </SiteShell>
     </div>

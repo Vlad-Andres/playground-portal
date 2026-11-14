@@ -90,3 +90,16 @@ describe("course layout", () => {
     expect(source).toMatch(/<SiteShell[^>]*offline=\{false\}/);
   });
 });
+
+describe("course host", () => {
+  it("brands portal courses as Study with AI and links home for make-your-own", async () => {
+    const { COURSE_HOST } = await import("@/lib/sites/page");
+    expect(COURSE_HOST).toEqual({ brand: { name: "Study with AI", homeUrl: "/" } });
+  });
+
+  it("is passed to every course page", async () => {
+    const fs = await import("node:fs");
+    const layout = fs.readFileSync("app/courses/[key]/layout.tsx", "utf8");
+    expect(layout).toMatch(/<SiteShell[^>]*host=\{COURSE_HOST\}/);
+  });
+});
