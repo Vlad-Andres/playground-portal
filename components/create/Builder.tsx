@@ -32,6 +32,7 @@ export function Builder({ announcement }: { announcement?: string }) {
   const router = useRouter();
   const t = useTranslations("create");
   const tm = useTranslations("materials");
+  const tl = useTranslations("legal");
   const format = useFormatter();
   const locale = useLocale();
   const errorText = useErrorText();
@@ -121,7 +122,7 @@ export function Builder({ announcement }: { announcement?: string }) {
       response = await fetch("/api/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessCode: String(form.get("accessCode") ?? ""), request, materials: ready, ...(signedIn && form.get("keepSources") === "on" ? { keepSources: true } : {}) }),
+        body: JSON.stringify({ accessCode: String(form.get("accessCode") ?? ""), request, materials: ready, rightsConfirmed: true, ...(signedIn && form.get("keepSources") === "on" ? { keepSources: true } : {}) }),
       });
     } catch {
       setBusy(false);
@@ -283,6 +284,10 @@ export function Builder({ announcement }: { announcement?: string }) {
           <div className="review-row"><span className="review-icon">◈</span><span><b>{t("reviewFirst")}</b><small>{t("reviewHint")}</small></span></div>
           <label className="field-label review-label" htmlFor="accessCode">{t("accessCode")}</label>
           <input id="accessCode" name="accessCode" type="password" autoComplete="off" required />
+          <label className="option-card rights-card">
+            <input name="rightsConfirmed" type="checkbox" required />
+            <span><b>{t("rightsTitle")}</b><small>{t("rightsHint")}</small></span>
+          </label>
           <button className="primary-button" type="submit" disabled={busy || reading || !overall?.ok || bytes > MAX_TEXT_BYTES}>
             {t("submit")} <span>→</span>
           </button>
@@ -290,7 +295,7 @@ export function Builder({ announcement }: { announcement?: string }) {
         </section>
       </form>
 
-      <footer>{t("footer")}</footer>
+      <footer>{t("footer")} <span className="legal-links"><a href="/privacy">{tl("footer.privacy")}</a><a href="/terms">{tl("footer.terms")}</a></span></footer>
     </>
   );
 }

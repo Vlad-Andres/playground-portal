@@ -11,6 +11,7 @@ import { TopBar } from "@/components/TopBar";
 import { useErrorText } from "@/components/useErrorText";
 import type { PublicJob } from "@/lib/api/handlers";
 import { shouldAdvance } from "@/lib/jobs/poll";
+import { ShareCard } from "@/components/course/ShareCard";
 
 const POLL_MS = 3000;
 
@@ -213,6 +214,7 @@ export default function JobPage() {
             <div className="finished">
               {job.summary ? <p className="helper">{job.summary}</p> : null}
               {job.siteUrl ? <CoursePreview siteUrl={job.siteUrl} /> : null}
+              {job.siteUrl ? <ShareCard siteUrl={job.siteUrl} /> : null}
               {refining ? <a className="helper" href="/my">{t("restoreHint")}</a> : null}
               {job.manageUrl ? (
                 <div className="edit-link">

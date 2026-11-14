@@ -14,12 +14,29 @@ const materials = [
   { name: "b.txt", pages: [{ n: 1, text: "Animals eat plants for energy. ".repeat(20) }] },
 ];
 
+/** Creators confirm their right to use the material; a test that checks the refusal passes rightsConfirmed itself. */
 function post(body: unknown): Request {
-  return new Request("http://x/api/jobs", { method: "POST", body: typeof body === "string" ? body : JSON.stringify(body), headers: { "content-type": "application/json" } });
+  const withRights = typeof body === "object" && body !== null && !("rightsConfirmed" in body) ? { ...body, rightsConfirmed: true } : body;
+  return new Request("http://x/api/jobs", { method: "POST", body: typeof withRights === "string" ? withRights : JSON.stringify(withRights), headers: { "content-type": "application/json" } });
 }
 const valid = () => post({ accessCode: CODE, brief, materials });
 
 describe("POST /api/jobs", () => {
+  it("400 rights-not-confirmed unless the creator confirmed the right to use the material", async () => {
+    for (const rightsConfirmed of [undefined, false]) {
+      const response = await createJobHandler(post({ accessCode: CODE, brief, materials, rightsConfirmed }), memoryStore(), env);
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({ code: "rights-not-confirmed" });
+    }
+  });
+
+  it("the create form asks for the confirmation and sends it", async () => {
+    const fs = await import("node:fs");
+    const builder = fs.readFileSync("components/create/Builder.tsx", "utf8");
+    expect(builder).toMatch(/name="rightsConfirmed" type="checkbox" required/);
+    expect(builder).toMatch(/rightsConfirmed: true/);
+  });
+
   it("503 when generation is disabled", async () => {
     expect((await createJobHandler(valid(), memoryStore(), { ...env, PORTAL_ENABLE_GENERATION: "false" })).status).toBe(503);
   });
@@ -239,7 +256,7 @@ describe("keep my files at creation", () => {
   it("accepts keepSources from a signed-in creator and ignores it for a guest", async () => {
     const store = memoryStore();
     const request = { language: "auto", level: "auto", depth: "cram", examMode: false, quizzes: true, widgets: true, context: "", locale: "en" };
-    const send = () => new Request("http://x/api/jobs", { method: "POST", body: JSON.stringify({ accessCode: CODE, request, materials, keepSources: true }), headers: { "content-type": "application/json" } });
+    const send = () => new Request("http://x/api/jobs", { method: "POST", body: JSON.stringify({ accessCode: CODE, request, materials, keepSources: true, rightsConfirmed: true }), headers: { "content-type": "application/json" } });
     const signed = await createJobHandler(send(), store, { ...env, PORTAL_DAILY_JOB_LIMIT: "10" }, new Date(), { uid: "a".repeat(32), name: "A" });
     expect(signed.status).toBe(202);
     const { id } = await signed.json();

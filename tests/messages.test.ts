@@ -23,7 +23,7 @@ function flatten(tree: Tree | (string | Tree)[], prefix = ""): Record<string, st
 const en = flatten(load("en"));
 const ro = flatten(load("ro"));
 
-const API_CODES = ["generation-off", "too-large", "bad-request", "wrong-code", "daily-limit", "group-limit", "bad-id", "not-found", "wrong-state", "bad-outline"];
+const API_CODES = ["generation-off", "too-large", "bad-request", "wrong-code", "daily-limit", "group-limit", "rights-not-confirmed", "bad-id", "not-found", "wrong-state", "bad-outline"];
 const JOB_CODES = ["course-too-big", "plan-failed", "lecture-failed", "busy", "material-gone", "step-failed"];
 const MATERIAL_CODES = ["empty", "too-many-files", "too-many-pages", "too-long", "scanned"];
 

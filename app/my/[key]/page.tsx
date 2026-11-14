@@ -14,6 +14,7 @@ import { listVersions, resolveAccess, ROUNDS_MAX, roundsUsed, sourceUsage } from
 import { readSite } from "@/lib/sites/store";
 import styles from "../../manage/manage.module.css";
 import { removeMyCourse, restoreMyVersion, saveMyCourse, setKeep } from "./actions";
+import { ShareCard } from "@/components/course/ShareCard";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -35,6 +36,7 @@ export default async function MyCoursePage({ params }: { params: Promise<{ key: 
       <TopBar />
       <h1 className={styles.title}>{site.course.title}</h1>
       <p className={styles.lead}>{t("lead")}</p>
+      <ShareCard siteUrl={`/courses/${access.key}/`} />
       <Refine courseKey={access.key} roundsLeft={Math.max(0, ROUNDS_MAX - used)} />
       <AddMaterial courseKey={access.key} />
       <Editor model={editorModel(site)} save={saveMyCourse.bind(null, access.key)} remove={removeMyCourse.bind(null, access.key)} />

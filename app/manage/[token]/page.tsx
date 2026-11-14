@@ -12,6 +12,7 @@ import { Versions } from "@/components/course/Versions";
 import { listVersions } from "@/lib/sites/library";
 import { removeCourse, restore, saveCourse } from "./actions";
 import styles from "../manage.module.css";
+import { ShareCard } from "@/components/course/ShareCard";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -34,6 +35,7 @@ export default async function ManagePage({ params }: { params: Promise<{ token: 
       <TopBar />
       <h1 className={styles.title}>{t("title")}</h1>
       <p className={styles.lead}>{t("lead")}</p>
+      <ShareCard siteUrl={`/courses/${key}/`} />
       {showClaim ? <ClaimBox token={token} signedIn={signedIn} /> : null}
       <Editor model={editorModel(site)} save={saveCourse.bind(null, token)} remove={removeCourse.bind(null, token)} />
       <Versions versions={await listVersions(store, key)} restore={restore.bind(null, token)} />
