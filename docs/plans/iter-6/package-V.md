@@ -16,7 +16,7 @@ Visual language: cream background, navy ink, lilac and lime accents, coral for t
 ## V1 — Refine in Figma (owner + agent, before any build)
 
 Done when the owner marks the file "approved for build". Checklist:
-- [ ] **Replace Data Intensive Systems content** in every mock-up with the demo topic (Electricity basics, Ohm's law) so screenshots, Figma and demo match.
+- [ ] **Replace Data Intensive Systems content** in every mock-up with the demo topic (Energy on the move: Newton's cradle to the Tesla coil) so screenshots, Figma and demo match.
 - [ ] **Fix copy that over-promises** per H2: "Get a final grade" on the exam card → "Practice under time pressure"; "No account required for learners" stays; "First course free" → "Free during the beta — invite code".
 - [ ] **Add course screens** (desktop + 375 px): course home with *Study next*, *Due today*, exam history (Package B); lecture page with Ask AI answer showing section links; practice-exam result with per-lecture breakdown.
 - [ ] **Add flow screens:** create step 3 (build progress), finished screen with the share card (D1), group-limit and error states, privacy page layout.

@@ -37,7 +37,7 @@
 | Selling features | Built in the browser from data the course already has (quiz scores, exam breakdown, review schedule). **No new model calls** except the Ask AI citation change. |
 | Exam | On by default. Generated only when a course has **≥ 5 valid quiz questions across ≥ 2 lectures** (`EXAM_MIN_QUESTIONS = 5`, `EXAM_MIN_LECTURES = 2`). It is labelled practice built from the lecture questions. |
 | Footer link | Every portal-hosted course shows a plain link "Made with Study with AI — make your own" to the landing page. No tracking parameters except a fixed `?from=course`. |
-| Demo | Two **real** generations (EN, RO) of our own notes on *Electricity basics: circuits and Ohm's law*, school level. Not the hand-made `examples/showcase`. |
+| Demo | Two **real** generations (EN, RO) of our own notes on *Energy on the move: from Newton's cradle to the Tesla coil*, school level. Not the hand-made `examples/showcase`. |
 | Visual design | The Figma file *Learning Playground — Website Concept* is the source of truth for landing, create and course screens **after** the owner approves the refined version (Package V). Until then, keep current styling. |
 | Measurement | Server-side daily counts only (no cookies, no personal identifiers, no consent banner). Consent-based per-user analytics is deferred to the public launch. |
 | Deferred to after the beta | Open creation without codes, job-link authorization, atomic spend reservations, consent analytics, referral codes, pricing/payments, collaborative editing, newly generated practice. These live in [`../launch/pr-plan.md`](../launch/pr-plan.md) as reference. |
