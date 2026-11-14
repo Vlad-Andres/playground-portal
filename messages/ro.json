@@ -378,5 +378,23 @@
       ]
     },
     "back": "Înapoi la Study with AI"
+  },
+  "report": {
+    "title": "Raportează o problemă",
+    "lead": "Spune-ne ce nu e în regulă cu „{title}”.",
+    "category": "Ce fel de problemă?",
+    "categories": {
+      "wrong-content": "Ceva din curs e greșit",
+      "copyright": "Folosește material fără permisiune",
+      "other": "Altceva"
+    },
+    "message": "Ce ai găsit? (opțional)",
+    "email": "E-mailul tău, dacă vrei un răspuns (opțional)",
+    "send": "Trimite raportul",
+    "sent": "Mulțumim. Ne uităm.",
+    "error": "Raportul nu a putut fi trimis. Încearcă din nou.",
+    "busy": "Cursul a primit multe rapoarte în ultima oră. Încearcă mai târziu.",
+    "note": "Păstrăm doar ce scrii aici, linkul cursului și ora.",
+    "link": "Raportează o problemă"
   }
 }

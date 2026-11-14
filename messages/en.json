@@ -378,5 +378,23 @@
       ]
     },
     "back": "Back to Study with AI"
+  },
+  "report": {
+    "title": "Report a problem",
+    "lead": "Tell us what is wrong with “{title}”.",
+    "category": "What kind of problem?",
+    "categories": {
+      "wrong-content": "Something in the course is wrong",
+      "copyright": "It uses material without permission",
+      "other": "Something else"
+    },
+    "message": "What did you find? (optional)",
+    "email": "Your email, if you want an answer (optional)",
+    "send": "Send report",
+    "sent": "Thank you. We will look at it.",
+    "error": "The report could not be sent. Try again.",
+    "busy": "This course got many reports in the last hour. Try again later.",
+    "note": "We only store what you write here, the course link and the time.",
+    "link": "Report a problem"
   }
 }

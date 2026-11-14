@@ -6,6 +6,7 @@ import { removeCourseAsAdmin } from "@/lib/admin/overview";
 import { adminConfigured, getAdminSession, requireAdmin, tokenMatches } from "@/lib/admin/session";
 import { defaultStore } from "@/lib/jobs/store";
 import { logEvent } from "@/lib/log";
+import { setReportStatus } from "@/lib/reports";
 import { newInviteCode, readSettings, withCodeLimit, writeSettings } from "@/lib/settings";
 import { courseTag } from "@/lib/sites/load";
 import { MESSAGES_TAG, updateOverrides, type TranslationChange } from "@/lib/translations";
@@ -120,6 +121,15 @@ export async function deleteCourse(key: string): Promise<ActionResult> {
   if (!(await removeCourseAsAdmin(defaultStore(), String(key)))) return { ok: false, error: "That course does not exist." };
   // A takedown must reach the cached page at once.
   updateTag(courseTag(String(key)));
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+/** Closes a report without acting on the course. */
+export async function dismissReport(id: string): Promise<ActionResult> {
+  await requireAdmin();
+  if (!(await setReportStatus(defaultStore(), String(id), "dismissed"))) return { ok: false, error: "That report does not exist." };
+  logEvent("admin.settings", { action: "report-dismissed" });
   revalidatePath("/admin");
   return { ok: true };
 }

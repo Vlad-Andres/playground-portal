@@ -106,3 +106,6 @@ html { scroll-behavior:smooth; }
 .legal .legal-beta { color: var(--muted); font-size: .9rem; }
 .legal-links { display: inline-flex; gap: 14px; margin-left: 10px; }
 .legal-links a { color: inherit; }
+.report-form { display: grid; gap: 10px; }
+.report-form fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.report-form textarea { resize: vertical; }

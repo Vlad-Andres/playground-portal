@@ -6,6 +6,8 @@ import { defaultStore } from "@/lib/jobs/store";
 import { codeJobsThisMonth, readSettings } from "@/lib/settings";
 import { logout } from "./actions";
 import { CourseTable } from "./CourseTable";
+import { ReportQueue } from "./ReportQueue";
+import { listOpenReports } from "@/lib/reports";
 import { InviteCodes } from "./InviteCodes";
 import { LoginForm } from "./LoginForm";
 import { SettingsForm } from "./SettingsForm";
@@ -40,7 +42,7 @@ export default async function AdminPage() {
 
   const store = defaultStore();
   const now = new Date();
-  const [settings, data] = await Promise.all([readSettings(store), overview(store, now)]);
+  const [settings, data, reports] = await Promise.all([readSettings(store), overview(store, now), listOpenReports(store)]);
   const codeUsage = Object.fromEntries(await Promise.all(settings.codes.map(async (code) => [code.id, await codeJobsThisMonth(store, code.id, now)] as const)));
   const limit = settings.dailyJobLimit ?? dailyJobLimit(process.env);
   const codeLabels = new Map(settings.codes.map((code) => [code.id, code.label]));
@@ -98,6 +100,9 @@ export default async function AdminPage() {
 
       <h2 className={styles.section}>Invite codes</h2>
       <InviteCodes codes={settings.codes} usage={codeUsage} />
+
+      <h2 className={styles.section}>Reports ({reports.length})</h2>
+      <ReportQueue reports={reports} />
 
       <h2 className={styles.section}>Courses</h2>
       <CourseTable rows={courseRows} />
