@@ -16,6 +16,7 @@ const FEATURES = [
 export default async function LandingPage({ searchParams }: { searchParams: Promise<{ signin?: string }> }) {
   const t = await getTranslations("landing");
   const errors = await getTranslations("errors");
+  const tl = await getTranslations("legal");
   const signinFailed = (await searchParams).signin === "failed";
   return (
     <main className={styles.page}>
@@ -67,7 +68,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
         <a className={styles.primary} href="/create">{t("cta")} <ArrowRight size={18} aria-hidden="true" /></a>
       </section>
 
-      <footer>{t("footer")}</footer>
+      <footer>{t("footer")} <span className="legal-links"><a href="/privacy">{tl("footer.privacy")}</a><a href="/terms">{tl("footer.terms")}</a></span></footer>
     </main>
   );
 }

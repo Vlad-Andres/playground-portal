@@ -310,5 +310,73 @@
     "copy": "Copy course link",
     "copied": "Copied",
     "note": "Anyone with this link can read the course. Share it only if you may share the material it was made from."
+  },
+  "legal": {
+    "footer": {
+      "privacy": "Privacy",
+      "terms": "Terms"
+    },
+    "contactFallback": "the person who gave you your invite code",
+    "privacy": {
+      "title": "Privacy",
+      "beta": "Beta version for invited students. This page describes what the site does today and will be reviewed before a public launch.",
+      "sections": [
+        {
+          "heading": "Your files",
+          "body": "PDF, TXT and Markdown files are read in your browser. Only the extracted text is sent to our server, never the original file."
+        },
+        {
+          "heading": "Writing the course",
+          "body": "The text is sent to an AI provider, which writes the course from it. The uploaded text is deleted when the course is published, and job records are deleted after 7 days."
+        },
+        {
+          "heading": "Keep my files",
+          "body": "If you are signed in and switch on Keep my files, the text is kept privately with your course so you can add material or reorganise it later. It is deleted when you switch it off or delete the course or your account."
+        },
+        {
+          "heading": "Your course link",
+          "body": "A course is stored privately and shown at an unlisted link that search engines are asked not to index. Anyone with the link can read the course. The edit link is private: anyone who has it can change or delete the course."
+        },
+        {
+          "heading": "Studying",
+          "body": "Your progress, quiz answers, practice exam results and the parts you mark as difficult are stored only in your browser. When you use Ask AI, your question and the course text are sent to the AI provider to write the answer; we do not store them."
+        },
+        {
+          "heading": "Accounts and cookies",
+          "body": "Signing in with Google is optional. We keep a hashed account id, your name and the list of courses you own. We use only the cookies the site needs: your sign-in, your language, and a marker that this browser already made a guest course."
+        },
+        {
+          "heading": "Deleting",
+          "body": "You can delete a course from its edit link or from My courses, and delete your account with everything it owns from My courses. Deleted courses stop being served right away."
+        },
+        {
+          "heading": "Questions",
+          "body": "Write to {contact}."
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms",
+      "beta": "Beta version for invited students. These terms will be reviewed before a public launch.",
+      "sections": [
+        {
+          "heading": "The beta",
+          "body": "Study with AI is free during the beta and open to people with an invite code. Features and limits may change, and the service may pause or stop."
+        },
+        {
+          "heading": "Your material",
+          "body": "Upload only material you are allowed to use. Share a course link only if you may share the material it was made from. You stay responsible for what you upload and share."
+        },
+        {
+          "heading": "Generated content",
+          "body": "Courses, quizzes, practice exams and Ask AI answers are written by AI and can contain mistakes. Check them against your own material. Practice scores are feedback for studying, not an assessment."
+        },
+        {
+          "heading": "Removal",
+          "body": "We may remove a course that breaks these terms or that is reported for copyright or harmful content. Use Report a problem on any course to tell us."
+        }
+      ]
+    },
+    "back": "Back to Study with AI"
   }
 }

@@ -310,5 +310,73 @@
     "copy": "Copiază linkul cursului",
     "copied": "Copiat",
     "note": "Oricine are acest link poate citi cursul. Distribuie-l doar dacă ai voie să distribui materialul din care a fost făcut."
+  },
+  "legal": {
+    "footer": {
+      "privacy": "Confidențialitate",
+      "terms": "Termeni"
+    },
+    "contactFallback": "persoana care ți-a dat codul de invitație",
+    "privacy": {
+      "title": "Confidențialitate",
+      "beta": "Versiune beta pentru studenți invitați. Pagina descrie ce face site-ul azi și va fi revizuită înainte de lansarea publică.",
+      "sections": [
+        {
+          "heading": "Fișierele tale",
+          "body": "Fișierele PDF, TXT și Markdown sunt citite în browserul tău. Doar textul extras este trimis serverului nostru, niciodată fișierul original."
+        },
+        {
+          "heading": "Scrierea cursului",
+          "body": "Textul este trimis unui furnizor de AI, care scrie cursul pe baza lui. Textul încărcat este șters când cursul este publicat, iar înregistrările lucrărilor sunt șterse după 7 zile."
+        },
+        {
+          "heading": "Păstrează fișierele",
+          "body": "Dacă ești conectat și activezi Păstrează fișierele, textul este păstrat privat împreună cu cursul, ca să poți adăuga material sau reorganiza cursul mai târziu. Este șters când dezactivezi opțiunea sau ștergi cursul ori contul."
+        },
+        {
+          "heading": "Linkul cursului",
+          "body": "Un curs este stocat privat și afișat la un link nelistat, pe care motoarele de căutare sunt rugate să nu îl indexeze. Oricine are linkul poate citi cursul. Linkul de editare este privat: oricine îl are poate modifica sau șterge cursul."
+        },
+        {
+          "heading": "Studiul",
+          "body": "Progresul, răspunsurile la quiz, rezultatele examenelor de exersare și părțile marcate ca dificile sunt stocate doar în browserul tău. Când folosești Ask AI, întrebarea și textul cursului sunt trimise furnizorului de AI ca să scrie răspunsul; noi nu le stocăm."
+        },
+        {
+          "heading": "Conturi și cookie-uri",
+          "body": "Conectarea cu Google este opțională. Păstrăm un id de cont criptat (hash), numele tău și lista cursurilor tale. Folosim doar cookie-urile de care site-ul are nevoie: conectarea, limba și un semn că acest browser a creat deja un curs ca invitat."
+        },
+        {
+          "heading": "Ștergerea",
+          "body": "Poți șterge un curs din linkul de editare sau din Cursurile mele, iar contul, cu tot ce îi aparține, din Cursurile mele. Cursurile șterse nu mai sunt afișate imediat."
+        },
+        {
+          "heading": "Întrebări",
+          "body": "Scrie la {contact}."
+        }
+      ]
+    },
+    "terms": {
+      "title": "Termeni",
+      "beta": "Versiune beta pentru studenți invitați. Acești termeni vor fi revizuiți înainte de lansarea publică.",
+      "sections": [
+        {
+          "heading": "Versiunea beta",
+          "body": "Study with AI este gratuit în perioada beta și deschis celor cu cod de invitație. Funcțiile și limitele se pot schimba, iar serviciul poate fi pus pe pauză sau oprit."
+        },
+        {
+          "heading": "Materialul tău",
+          "body": "Încarcă doar material pe care ai voie să îl folosești. Distribuie linkul unui curs doar dacă ai voie să distribui materialul din care a fost făcut. Tu răspunzi pentru ce încarci și distribui."
+        },
+        {
+          "heading": "Conținut generat",
+          "body": "Cursurile, quiz-urile, examenele de exersare și răspunsurile Ask AI sunt scrise de AI și pot conține greșeli. Verifică-le cu materialul tău. Scorurile de exersare sunt doar pentru studiu, nu o evaluare."
+        },
+        {
+          "heading": "Eliminarea",
+          "body": "Putem elimina un curs care încalcă acești termeni sau care este raportat pentru drepturi de autor ori conținut dăunător. Folosește Raportează o problemă pe orice curs ca să ne spui."
+        }
+      ]
+    },
+    "back": "Înapoi la Study with AI"
   }
 }

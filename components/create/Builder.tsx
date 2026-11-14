@@ -32,6 +32,7 @@ export function Builder({ announcement }: { announcement?: string }) {
   const router = useRouter();
   const t = useTranslations("create");
   const tm = useTranslations("materials");
+  const tl = useTranslations("legal");
   const format = useFormatter();
   const locale = useLocale();
   const errorText = useErrorText();
@@ -294,7 +295,7 @@ export function Builder({ announcement }: { announcement?: string }) {
         </section>
       </form>
 
-      <footer>{t("footer")}</footer>
+      <footer>{t("footer")} <span className="legal-links"><a href="/privacy">{tl("footer.privacy")}</a><a href="/terms">{tl("footer.terms")}</a></span></footer>
     </>
   );
 }
