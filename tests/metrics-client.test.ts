@@ -25,6 +25,8 @@ describe("sendMetric", () => {
     const counter = fs.readFileSync("components/course/StudyCounter.tsx", "utf8");
     expect(counter).toContain('sendMetric("course_open"');
     expect(counter).toContain("STUDY_EVENT");
+    // The creator's preview frame on the job page is not a visit.
+    expect(counter).toMatch(/window\.self !== window\.top/);
     expect(fs.readFileSync("components/course/ShareCard.tsx", "utf8")).toContain('sendMetric("share_copied"');
   });
 });
