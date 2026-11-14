@@ -22,7 +22,7 @@
 | 7 | [`package-F.md`](package-F.md) — beta measurement | `PORTAL` (+ small `TEMPLATE` hook) | after D |
 | 8 | [`package-R.md`](package-R.md) — run the beta and decide | — | after E and F |
 
-**Branches:** `TEMPLATE`: `iteration-6` from `origin/iteration-5`. `PORTAL`: `iteration-6` from `origin/main`. One package = one PR, as in iteration 5. Package V's build tasks get their own branch `iteration-6-visual` so design work never blocks feature PRs.
+**Branches:** `TEMPLATE`: `iteration-6` from `origin/service-worker-only` (`125a13b`, the commit the portal vendors today; it contains iteration 5 plus the course-wide Ask AI — `iteration-5` does not). `PORTAL`: `iteration-6` from `origin/main`. One package = one PR, as in iteration 5. Package V's build tasks get their own branch `iteration-6-visual` so design work never blocks feature PRs.
 
 ---
 
