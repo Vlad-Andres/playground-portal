@@ -109,3 +109,5 @@ html { scroll-behavior:smooth; }
 .report-form { display: grid; gap: 10px; }
 .report-form fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 .report-form textarea { resize: vertical; }
+.brand { white-space: nowrap; }
+@media (max-width:560px) { .topbar { flex-wrap: wrap; gap: 10px; } .topbar-right { flex-wrap: wrap; } }
