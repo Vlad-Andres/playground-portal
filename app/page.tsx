@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { HeroBackground } from "@/components/landing/HeroBackground";
 import { TopBar } from "@/components/TopBar";
 import styles from "./landing.module.css";
+import { defaultStore } from "@/lib/jobs/store";
+import { recordMetric } from "@/lib/metrics";
 
 const FEATURES = [
   { key: "f1", Icon: BookOpen },
@@ -14,6 +16,7 @@ const FEATURES = [
 ] as const;
 
 export default async function LandingPage({ searchParams }: { searchParams: Promise<{ signin?: string }> }) {
+  await recordMetric(defaultStore(), "landing_view", new Date());
   const t = await getTranslations("landing");
   const errors = await getTranslations("errors");
   const tl = await getTranslations("legal");
