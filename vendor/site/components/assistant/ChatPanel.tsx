@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, Quote, RotateCcw, Square, X } from "lucide-react";
 import { Markdown } from "@site/components/content/Markdown";
 import type { ChatTurn } from "@site/hooks/useAssistantChat";
+import { linkCitations } from "@site/lib/assistant/citations";
 import type { AssistantSelection } from "@site/lib/assistant/prompt";
+import { useSite } from "@site/site/context";
 
 const SUGGESTIONS = ["Explain this simply", "Walk me through an example", "Why does this matter?"];
 
@@ -30,7 +32,13 @@ function SelectionQuote({ selection }: { selection: AssistantSelection }) {
 }
 
 function AssistantTurn({ turn }: { turn: ChatTurn }) {
+  const { data, paths } = useSite();
   const waiting = turn.status === "thinking" && turn.text.length === 0;
+  const lectures = useMemo(
+    () => data.lectures.map((lecture) => ({ slug: lecture.meta.slug, number: lecture.meta.number, sections: lecture.sections })),
+    [data.lectures],
+  );
+  const text = useMemo(() => linkCitations(turn.text, lectures, paths), [turn.text, lectures, paths]);
 
   return (
     <div className="grid gap-2">
@@ -40,7 +48,7 @@ function AssistantTurn({ turn }: { turn: ChatTurn }) {
           Thinking…
         </p>
       ) : null}
-      {turn.text ? <Markdown className="text-sm [&_p]:text-ink">{turn.text}</Markdown> : null}
+      {text ? <Markdown className="text-sm [&_p]:text-ink">{text}</Markdown> : null}
       {turn.status === "truncated" ? (
         <p className="text-xs text-warning">The answer reached the length limit and was cut off.</p>
       ) : null}

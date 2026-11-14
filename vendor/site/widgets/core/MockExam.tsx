@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, Clock, Play, RotateCcw, Send, X } from "lucide-react";
 import type { QuizQuestion } from "@site/content/types";
@@ -11,7 +11,10 @@ import { Badge } from "@site/components/ui/Badge";
 import { ProgressBar } from "@site/components/ui/ProgressBar";
 import { Stat } from "@site/components/ui/Stat";
 import { cn } from "@site/lib/cn";
+import type { ExamAttempt } from "@site/lib/examHistory";
+import { useExamHistory } from "@site/hooks/useExamHistory";
 import { useSite } from "@site/site/context";
+import { quizHref } from "@site/site/paths";
 
 interface PoolQuestion {
   key: string;
@@ -52,7 +55,7 @@ export function MockExam({ questionCount, minutes }: MockExamProps = {}) {
           key: `${entry.meta.slug}:${question.id}`,
           source: entry.meta.slug,
           sourceLabel: `L${entry.meta.number} · ${entry.meta.title}`,
-          href: `${paths.lecture(entry.meta.slug)}#quiz`,
+          href: quizHref(paths, entry.meta, entry.meta.slug),
           question,
         })),
       ),
@@ -85,6 +88,9 @@ export function MockExam({ questionCount, minutes }: MockExamProps = {}) {
   const [questions, setQuestions] = useState<PoolQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [remaining, setRemaining] = useState(0);
+  const { history, recordAttempt } = useExamHistory();
+  const [previous, setPrevious] = useState<ExamAttempt | null>(null);
+  const recorded = useRef(false);
 
   const available = useMemo(() => pool.filter((entry) => selected.includes(entry.source)), [pool, selected]);
 
@@ -110,6 +116,8 @@ export function MockExam({ questionCount, minutes }: MockExamProps = {}) {
     setQuestions(drawn);
     setAnswers({});
     setRemaining(drawn.length * secondsPerQuestion);
+    setPrevious(history[0] ?? null);
+    recorded.current = false;
     setPhase("running");
   }
 
@@ -119,6 +127,19 @@ export function MockExam({ questionCount, minutes }: MockExamProps = {}) {
 
   const correct = questions.filter((entry) => answers[entry.key] === entry.question.answerId).length;
   const answered = Object.keys(answers).length;
+
+  useEffect(() => {
+    if (phase !== "done" || recorded.current) return;
+    recorded.current = true;
+    const byLecture = sources
+      .filter((source) => source.id !== MIXED_SOURCE)
+      .map((source) => {
+        const ofSource = questions.filter((entry) => entry.source === source.id);
+        return { slug: source.id, total: ofSource.length, right: ofSource.filter((entry) => answers[entry.key] === entry.question.answerId).length };
+      })
+      .filter((row) => row.total > 0);
+    recordAttempt({ at: Date.now(), score: correct, total: questions.length, byLecture });
+  }, [phase, sources, questions, answers, correct, recordAttempt]);
 
   if (phase === "setup") {
     return (
@@ -236,6 +257,11 @@ export function MockExam({ questionCount, minutes }: MockExamProps = {}) {
             />
             <Stat label="Unanswered" value={String(questions.length - answered)} />
           </div>
+          {previous ? (
+            <p className="text-sm text-muted" data-exam-trend>
+              {`Last time: ${previous.score} / ${previous.total} → now ${correct} / ${questions.length}`}
+            </p>
+          ) : null}
           <DataTable
             headers={["Lecture", "Correct", "Revise?"]}
             rows={breakdown.map((row) => [
