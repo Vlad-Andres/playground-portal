@@ -1,5 +1,6 @@
 import { Sparkles, Target } from "lucide-react";
 import { cn } from "@site/lib/cn";
+import { InlineMarkdown } from "@site/components/content/Markdown";
 
 interface HighlightListProps {
   variant: "objectives" | "takeaways";
@@ -26,7 +27,9 @@ export function HighlightList({ variant, items }: HighlightListProps) {
             className={cn("mt-0.5 shrink-0", variant === "objectives" ? "text-brand" : "text-accent")}
             aria-hidden
           />
-          <span className="text-ink">{item}</span>
+          <span className="text-ink">
+            <InlineMarkdown>{item}</InlineMarkdown>
+          </span>
         </li>
       ))}
     </ul>

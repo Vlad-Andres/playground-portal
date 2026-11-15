@@ -213,6 +213,7 @@ function customPart(limit: number): string {
 - Use at most ${limit} in this lecture, in the sections the plan marks with "custom". Use it there instead of a catalogue widget.
 - Build a real simulation or interactive model of the idea from the pages: use their actual quantities, rules and values, let the learner change something (sliders, buttons, dragging) and see the result move or update, and label what is shown.
 - It must work 360 px wide and in light and dark mode (use the CSS media query prefers-color-scheme).
+- The HTML is shown as it is: write plain text and Unicode symbols (→, ², ×, ½), never LaTeX.
 - "html" holds self-contained HTML, CSS and JS (at most 60,000 characters). No network, no storage, no links to other sites.
 - Call pg.done(score) with a number from 0 to 1 when the learner succeeds.
   ${JSON.stringify(example.example)}`;

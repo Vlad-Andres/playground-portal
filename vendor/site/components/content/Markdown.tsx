@@ -109,6 +109,17 @@ const components: Components = {
   ),
 };
 
+const inlineComponents: Components = { ...components, p: ({ children }) => <>{children}</> };
+
+/** Short text (a table cell, a list item): Markdown and $…$ maths, without a wrapping paragraph. */
+export function InlineMarkdown({ children }: { children: string }) {
+  return (
+    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]} components={inlineComponents}>
+      {children}
+    </ReactMarkdown>
+  );
+}
+
 interface MarkdownProps {
   children: string;
   className?: string;
