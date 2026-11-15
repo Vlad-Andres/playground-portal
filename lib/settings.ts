@@ -5,11 +5,16 @@ import { logEvent } from "@/lib/log";
 
 const SETTINGS_KEY = "config/settings.json";
 const MIN_ENV_CODE_LENGTH = 12;
+/** Invite codes: 4–40 letters, digits or dashes. */
+export const CODE_PATTERN = /^[A-Za-z0-9-]{4,40}$/;
 
 export interface InviteCode {
   id: string;
   label: string;
-  hash: string;
+  /** The code people type, in plain text (the admin chooses it). */
+  code?: string;
+  /** Older codes only: the SHA-256 of a generated code that was shown once. */
+  hash?: string;
   active: boolean;
   createdAt: string;
   /** Jobs this code may start per UTC month (a beta group's allowance); missing or null = no extra cap. */
@@ -32,12 +37,14 @@ const inviteCodeSchema = z
   .object({
     id: z.string().regex(/^[0-9a-f]{8}$/),
     label: z.string().trim().min(1).max(60),
-    hash: z.string().regex(/^[0-9a-f]{64}$/),
+    code: z.string().regex(CODE_PATTERN).optional(),
+    hash: z.string().regex(/^[0-9a-f]{64}$/).optional(),
     active: z.boolean(),
     createdAt: z.string().max(40),
     monthlyJobLimit: z.number().int().min(1).max(1000).nullable().optional(),
   })
-  .strict();
+  .strict()
+  .refine((entry) => entry.code !== undefined || entry.hash !== undefined, { message: "A code needs its text or an older hash." });
 
 export const settingsSchema: z.ZodType<Settings> = z
   .object({
@@ -85,18 +92,27 @@ function digest(value: string): Buffer {
   return createHash("sha256").update(value, "utf8").digest();
 }
 
-/** A new invite code (shown once; only its hash is kept) and the entry to store. */
-export function newInviteCode(label: string, now: Date): { code: string; entry: InviteCode } {
-  const code = randomBytes(12).toString("base64url");
-  return {
-    code,
-    entry: { id: randomBytes(4).toString("hex"), label: label.trim(), hash: createHash("sha256").update(code, "utf8").digest("hex"), active: true, createdAt: now.toISOString() },
-  };
+/** A new invite code entry with the code the admin typed, kept in plain text. */
+export function newInviteCode(label: string, code: string, now: Date): InviteCode {
+  return { id: randomBytes(4).toString("hex"), label: label.trim(), code: code.trim(), active: true, createdAt: now.toISOString() };
+}
+
+/** Invite codes match ignoring case and surrounding spaces. */
+function normalizeCode(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+/** Settings with a new invite code added, or "taken" when another code already uses that text. */
+export function addInviteCode(settings: Settings, label: string, code: string, now: Date): Settings | "taken" {
+  const wanted = normalizeCode(code);
+  if (settings.codes.some((entry) => entry.code !== undefined && normalizeCode(entry.code) === wanted)) return "taken";
+  return { ...settings, codes: [...settings.codes, newInviteCode(label, code, now)] };
 }
 
 /**
- * "env" when the code is PORTAL_ACCESS_CODE (12+ characters); the id of an active invite code whose hash
- * matches; otherwise null. Every candidate is compared in constant time and none returns early.
+ * "env" when the code is PORTAL_ACCESS_CODE (12+ characters, exact); the id of an active invite code whose text
+ * matches ignoring case and surrounding spaces (or, for an older code, whose hash matches); otherwise null.
+ * Every candidate is compared in constant time and none returns early.
  */
 export function matchCode(given: string, env: NodeJS.ProcessEnv, settings: Settings): string | null {
   const given256 = digest(given);
@@ -104,8 +120,11 @@ export function matchCode(given: string, env: NodeJS.ProcessEnv, settings: Setti
   const envCode = env.PORTAL_ACCESS_CODE ?? "";
   const envMatches = timingSafeEqual(given256, digest(envCode)) && envCode.length >= MIN_ENV_CODE_LENGTH;
   if (envMatches) found = "env";
+  const plain256 = digest(normalizeCode(given));
   for (const entry of settings.codes) {
-    const matches = timingSafeEqual(given256, Buffer.from(entry.hash, "hex")) && entry.active;
+    const stored = entry.code !== undefined ? digest(normalizeCode(entry.code)) : Buffer.from(entry.hash ?? "", "hex");
+    const candidate = entry.code !== undefined ? plain256 : given256;
+    const matches = stored.length === candidate.length && timingSafeEqual(candidate, stored) && entry.active;
     if (matches && found === null) found = entry.id;
   }
   return found;
