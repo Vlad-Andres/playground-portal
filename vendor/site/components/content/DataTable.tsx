@@ -1,3 +1,5 @@
+import { InlineMarkdown } from "@site/components/content/Markdown";
+
 interface DataTableProps {
   headers: string[];
   rows: string[][];
@@ -17,7 +19,7 @@ export function DataTable({ headers, rows, caption }: DataTableProps) {
                   scope="col"
                   className="px-3 py-2 text-left font-semibold whitespace-nowrap text-ink"
                 >
-                  {header}
+                  <InlineMarkdown>{header}</InlineMarkdown>
                 </th>
               ))}
             </tr>
@@ -27,7 +29,7 @@ export function DataTable({ headers, rows, caption }: DataTableProps) {
               <tr key={rowIndex} className="border-t border-line">
                 {row.map((cell, cellIndex) => (
                   <td key={cellIndex} className="px-3 py-2 align-top text-muted">
-                    {cell}
+                    <InlineMarkdown>{cell}</InlineMarkdown>
                   </td>
                 ))}
               </tr>

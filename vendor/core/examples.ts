@@ -157,7 +157,7 @@ export const blockExamples: { [K in Block["kind"]]: BlockExample & { example: Ex
     },
   },
   custom: {
-    use: "A self-contained HTML/CSS/JS exercise the widget catalogue does not cover, rendered in a sandboxed frame.",
+    use: "A self-contained HTML/CSS/JS simulation or interactive model written for this material, rendered in a sandboxed frame.",
     avoid: "Anything that needs the network, storage, another page or the course's own JavaScript.",
     example: {
       kind: "custom",
