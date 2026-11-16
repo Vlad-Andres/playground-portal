@@ -13,7 +13,7 @@ vi.mock("next/headers", () => ({
 }));
 
 import { adminConfigured, ADMIN_COOKIE, requireAdmin, sessionPassword, tokenMatches } from "@/lib/admin/session";
-import { createCode, deleteCode, deleteCourse, login, logout, saveSettings, saveTranslations, setCodeActive } from "@/app/admin/actions";
+import { createCode, deleteCode, deleteCourse, importCourse, login, logout, saveSettings, saveTranslations, setCodeActive } from "@/app/admin/actions";
 
 const TOKEN = "local-admin-token-0123456789";
 const env = { ADMIN_TOKEN: TOKEN } as unknown as NodeJS.ProcessEnv;
@@ -92,6 +92,7 @@ describe("admin session", () => {
     const form = new FormData();
     await expect(saveSettings(form)).rejects.toThrow("Not authorised.");
     await expect(createCode("x", "CODE-1")).rejects.toThrow("Not authorised.");
+    await expect(importCourse(new FormData())).rejects.toThrow("Not authorised.");
     await expect(setCodeActive("00000000", true)).rejects.toThrow("Not authorised.");
     await expect(deleteCode("00000000")).rejects.toThrow("Not authorised.");
     await expect(deleteCourse("demo-aaaaaaaa")).rejects.toThrow("Not authorised.");
