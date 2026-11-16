@@ -84,7 +84,7 @@ export function LectureToc({ meta, progressLabel }: { meta: LectureMeta; progres
                 >
                   {isDone ? <Check size={10} strokeWidth={3} aria-hidden /> : index + 1}
                 </span>
-                <span className="truncate"><StudyText>{section.title}</StudyText></span>
+                <span className="min-w-0"><StudyText>{section.title}</StudyText></span>
               </a>
             </li>
           );

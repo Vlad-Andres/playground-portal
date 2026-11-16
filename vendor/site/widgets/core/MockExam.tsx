@@ -194,7 +194,7 @@ export function MockExam({ questionCount, minutes }: MockExamProps = {}) {
               {value}
             </button>
           ))}
-          <label className="ml-2 flex items-center gap-2 text-sm text-muted">
+          <label className="flex items-center gap-2 text-sm text-muted sm:ml-2">
             <input type="checkbox" checked={timed} onChange={(event) => setTimed(event.target.checked)} className="accent-brand" />
             Timed ({secondsPerQuestion} s per question)
           </label>
@@ -228,7 +228,7 @@ export function MockExam({ questionCount, minutes }: MockExamProps = {}) {
   return (
     <div className="grid gap-5">
       {phase === "running" ? (
-        <div className="sticky top-20 z-10 grid gap-2 rounded-xl border border-line bg-elevated/95 px-4 py-3 backdrop-blur">
+        <div className="sticky top-2 z-10 grid gap-2 rounded-xl border border-line bg-elevated/95 px-4 py-3 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Badge tone={timed && remaining < 60 ? "danger" : "neutral"}>
               <Clock size={12} aria-hidden />
@@ -250,7 +250,7 @@ export function MockExam({ questionCount, minutes }: MockExamProps = {}) {
         </div>
       ) : (
         <div className="grid gap-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-2 sm:grid-cols-3 sm:gap-3">
             <Stat label="Score" value={`${correct} / ${questions.length}`} tone="brand" />
             <Stat
               label="Percentage"

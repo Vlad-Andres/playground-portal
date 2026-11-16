@@ -81,7 +81,7 @@ export function QuizCard({ lectureSlug, sectionId, questions, sourceLabel }: Qui
               )}
             >
               <span className={cn(
-                "grid size-8 shrink-0 place-items-center font-mono text-sm",
+                "grid size-7 shrink-0 sm:size-8 place-items-center font-mono text-sm",
                 correct ? "bg-brand text-brand-ink" : "bg-canvas text-ink",
               )} aria-hidden>
                 {String.fromCharCode(65 + index)}
@@ -109,13 +109,13 @@ export function QuizCard({ lectureSlug, sectionId, questions, sourceLabel }: Qui
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4 text-sm">
         <span className="font-mono text-xs text-muted">{answeredCount} / {questions.length} answered</span>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {position > 0 ? (
-            <button type="button" onClick={() => setPosition(position - 1)} className="border border-line px-3 py-1.5 hover:border-brand">Previous</button>
+            <button type="button" onClick={() => setPosition(position - 1)} className="min-h-11 border border-line px-3 py-1.5 hover:border-brand">Previous</button>
           ) : null}
           {position < questions.length - 1 ? (
             <button type="button" onClick={() => setPosition(position + 1)} disabled={!isAnswered}
-              className="border border-line px-3 py-1.5 hover:border-brand disabled:opacity-45">
+              className="min-h-11 border border-line px-3 py-1.5 hover:border-brand disabled:opacity-45">
               Next question
             </button>
           ) : null}

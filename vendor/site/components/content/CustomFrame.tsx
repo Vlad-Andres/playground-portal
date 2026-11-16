@@ -54,7 +54,7 @@ export function CustomFrame({ title, description, html, height, scriptOrigins }:
   }, []);
 
   return (
-    <section className="grid gap-3 rounded-2xl border border-line bg-surface p-4">
+    <section className="grid min-w-0 gap-3 rounded-2xl border border-line bg-surface p-2.5 sm:p-4">
       <div className="grid gap-1">
         <h3 className="text-base font-semibold text-ink"><StudyText>{title}</StudyText></h3>
         <p className="text-sm text-muted"><StudyText>{description}</StudyText></p>
@@ -67,7 +67,7 @@ export function CustomFrame({ title, description, html, height, scriptOrigins }:
         srcDoc={srcDoc}
         onLoad={(event) => sendTheme(event.currentTarget)}
         referrerPolicy="no-referrer"
-        className="w-full rounded-xl border border-line bg-surface"
+        className="block w-full min-w-0 rounded-xl border border-line bg-surface"
         style={{ height: frameHeight }}
       />
 

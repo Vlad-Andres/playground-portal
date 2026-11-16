@@ -19,7 +19,7 @@ export function HomeScreen({ data }: { data: SiteData }) {
   const metas = data.index.map((entry) => entry.meta);
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-12 px-4 py-10 sm:px-6 sm:py-14">
+    <div className="course-reading grid min-w-0 gap-8 sm:gap-12">
       <ExamCountdown examDate={data.course.examDate} />
       <CourseOverview course={data.course} entries={data.index} />
 
