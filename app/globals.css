@@ -40,11 +40,6 @@ footer { color:var(--faint); font-size:.68rem; padding:28px 3px 0; } footer span
 .field-set { border:0; padding:0; margin:0 0 16px; min-width:0; }
 .field-set legend { color:#46425f; font-size:.74rem; font-weight:800; margin-bottom:9px; }
 .option-grid.three { grid-template-columns:repeat(3, 1fr); }
-.swatches { display:flex; flex-wrap:wrap; gap:9px; }
-.swatch, .swatch-custom { width:30px; height:30px; border:2px solid transparent; border-radius:50%; cursor:pointer; }
-.swatch.selected { border-color:var(--deep); box-shadow:0 0 0 3px var(--paper); }
-.swatch-custom { background:conic-gradient(#f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00); }
-.swatch-custom input { opacity:0; width:100%; height:100%; cursor:pointer; }
 .helper-error, .file-error .file-name small { color:#b45345; }
 .file-error { border-color:#e4b7ae !important; background:#fff8f6 !important; }
 .review-label { color:#a9a5c7; text-transform:uppercase; letter-spacing:.12em; font-size:.65rem; font-weight:900; }

@@ -5,7 +5,6 @@
 .field { display: grid; gap: 6px; font-weight: 800; font-size: .8rem; color: #52645b; }
 .field input[type="text"], .field textarea, .blockText { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: inherit; background: #fbfdfb; min-width: 0; width: 100%; }
 .field textarea, .blockText { min-height: 96px; line-height: 1.55; font-size: .85rem; }
-.color { width: 56px; height: 36px; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: #fff; cursor: pointer; }
 .heading { font-size: 1.1rem; letter-spacing: -.02em; color: var(--deep); margin: 28px 0 12px; }
 .lecture { background: #fff; border: 1px solid var(--line); border-radius: 14px; margin-bottom: 10px; }
 .lecture summary { cursor: pointer; padding: 14px 18px; font-weight: 800; color: var(--deep); }

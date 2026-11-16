@@ -133,7 +133,7 @@ function prepare(raw: unknown, brief: Brief): unknown {
   if (typeof course.title === "string" && typeof course.shortTitle !== "string") course.shortTitle = course.title.slice(0, 16);
   if (typeof course.shortTitle === "string" && course.shortTitle.length > 24) course.shortTitle = course.shortTitle.slice(0, 24);
   course.id = slugify(typeof course.id === "string" ? course.id : typeof course.title === "string" ? course.title : "", "course");
-  if (brief.accent) course.theme = { ...(typeof course.theme === "object" && course.theme ? course.theme : {}), accent: brief.accent };
+  delete course.theme;
   if (!Array.isArray(course.domains)) course.domains = ["core"];
   for (const key of ["overviewBadge", "overviewTitle", "overviewMd", "footerText", "examDate", "features"]) delete course[key];
   const home = cleanHome(course.home);

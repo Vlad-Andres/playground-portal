@@ -19,6 +19,7 @@ export const briefSchema = z
     quizzes: z.boolean(),
     widgets: z.boolean(),
     title: z.string().trim().min(1).max(120).optional(),
+    // Accepted for requests and jobs saved before the shared theme. Generation ignores it.
     accent: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
     context: z.string().max(LIMITS.contextCharacters),
   })
@@ -53,6 +54,7 @@ export const requestSchema: z.ZodType<CourseRequest> = z
     quizzes: z.boolean(),
     widgets: z.boolean(),
     title: z.string().trim().min(1).max(120).optional(),
+    // Accepted for requests and jobs saved before the shared theme. Generation ignores it.
     accent: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
     context: z.string().max(LIMITS.contextCharacters),
     locale: z.string().regex(/^[a-z]{2}$/),

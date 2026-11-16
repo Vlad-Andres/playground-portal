@@ -126,7 +126,6 @@ export function resolveBrief(request: CourseRequest, context: CourseContext): Br
     quizzes: request.quizzes,
     widgets: request.widgets,
     ...(request.title ? { title: request.title } : {}),
-    ...(request.accent ? { accent: request.accent } : {}),
     context: request.context,
   };
 }

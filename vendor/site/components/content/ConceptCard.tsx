@@ -16,7 +16,7 @@ export function ConceptCard({ concept }: ConceptCardProps) {
     >
       <div className="grid gap-1.5">
         <h3 className="text-base font-semibold text-ink">{concept.term}</h3>
-        <p className="text-sm text-muted">{concept.short}</p>
+        <Markdown className="text-sm">{concept.short}</Markdown>
       </div>
 
       {concept.detail ? <Markdown className="text-sm">{concept.detail}</Markdown> : null}

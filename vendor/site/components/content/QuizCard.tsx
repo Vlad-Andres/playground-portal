@@ -91,17 +91,17 @@ export function QuizCard({ lectureSlug, sectionId, questions }: QuizCardProps) {
                         setAnswers((previous) => ({ ...previous, [question.id]: option.id }))
                       }
                       className={cn(
-                        "flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-left text-sm transition-colors",
+                        "flex items-start gap-2.5 rounded-sm border px-3.5 py-2.5 text-left text-sm transition-colors",
                         "disabled:cursor-default",
                         !isAnswered && "border-line bg-surface hover:border-brand/50 hover:bg-brand-soft/40",
-                        reveal && isCorrect && "border-positive/40 bg-positive-soft text-ink",
+                        reveal && isCorrect && "border-brand bg-brand-soft text-ink",
                         reveal && !isCorrect && "border-danger/40 bg-danger-soft text-ink",
                         isAnswered && !reveal && "border-line bg-surface text-faint",
                       )}
                     >
                       <span className="mt-0.5 shrink-0">
                         {reveal && isCorrect ? (
-                          <Check size={16} className="text-positive" aria-hidden />
+                          <Check size={16} className="text-brand" aria-hidden />
                         ) : reveal ? (
                           <X size={16} className="text-danger" aria-hidden />
                         ) : (
@@ -117,8 +117,13 @@ export function QuizCard({ lectureSlug, sectionId, questions }: QuizCardProps) {
               </div>
 
               {isAnswered ? (
-                <div className="animate-rise rounded-xl border border-line bg-sunken px-3.5 py-3">
-                  <Markdown className="text-sm">{question.explanation}</Markdown>
+                <div className={cn(
+                  "animate-rise rounded-sm border px-3.5 py-3",
+                  selected === question.answerId ? "border-transparent bg-highlight text-[#1d1a36]" : "border-line bg-sunken",
+                )}>
+                  <Markdown className={cn("text-sm", selected === question.answerId && "[&_.text-muted]:text-[#1d1a36] [&_.text-ink]:text-[#1d1a36]")}>
+                    {question.explanation}
+                  </Markdown>
                 </div>
               ) : null}
             </li>
