@@ -72,6 +72,13 @@ const BOOTSTRAP = `<script>
       else send({ pg: "done" });
     }
   };
+  window.addEventListener("message", function (event) {
+    var data = event.data;
+    if (event.source !== parent || !data || data.pg !== "theme") return;
+    if (data.value !== "light" && data.value !== "dark") return;
+    document.documentElement.dataset.pgTheme = data.value;
+    document.documentElement.style.colorScheme = data.value;
+  });
   var reportHeight = function () {
     var height = Math.max(
       document.documentElement ? document.documentElement.scrollHeight : 0,

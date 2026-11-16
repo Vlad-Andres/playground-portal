@@ -12,6 +12,11 @@ interface CustomFrameProps {
   scriptOrigins?: string[];
 }
 
+function sendTheme(frame: HTMLIFrameElement | null) {
+  const value = document.documentElement.classList.contains("dark") ? "dark" : "light";
+  frame?.contentWindow?.postMessage({ pg: "theme", value }, "*");
+}
+
 /** A custom component from the course, isolated in a frame that cannot touch the page. */
 export function CustomFrame({ title, description, html, height, scriptOrigins }: CustomFrameProps) {
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -37,8 +42,14 @@ export function CustomFrame({ title, description, html, height, scriptOrigins }:
       else if (message.pg === "done") setDone(true);
     };
 
+    const themeObserver = new MutationObserver(() => sendTheme(frameRef.current));
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    sendTheme(frameRef.current);
     window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
+    return () => {
+      themeObserver.disconnect();
+      window.removeEventListener("message", onMessage);
+    };
   }, []);
 
   return (
@@ -53,8 +64,9 @@ export function CustomFrame({ title, description, html, height, scriptOrigins }:
         title={title}
         sandbox="allow-scripts"
         srcDoc={srcDoc}
+        onLoad={(event) => sendTheme(event.currentTarget)}
         referrerPolicy="no-referrer"
-        className="w-full rounded-xl border border-line bg-white"
+        className="w-full rounded-xl border border-line bg-surface"
         style={{ height: frameHeight }}
       />
 
