@@ -12,6 +12,7 @@ import { FeedbackList } from "./FeedbackList";
 import { listFeedback, summariseFeedback } from "@/lib/feedback";
 import { groupRows, metricsSummary } from "@/lib/metrics";
 import { listOpenReports } from "@/lib/reports";
+import { ImportCourse } from "./ImportCourse";
 import { InviteCodes } from "./InviteCodes";
 import { LoginForm } from "./LoginForm";
 import { SettingsForm } from "./SettingsForm";
@@ -102,6 +103,9 @@ export default async function AdminPage() {
 
       <h2 className={styles.section}>Settings</h2>
       <SettingsForm settings={settings} courses={data.courses.map(({ key, meta }) => ({ key, title: meta.title }))} />
+
+      <h2 className={styles.section}>Import a course</h2>
+      <ImportCourse />
 
       <h2 className={styles.section}>Invite codes</h2>
       <InviteCodes codes={settings.codes} usage={codeUsage} />

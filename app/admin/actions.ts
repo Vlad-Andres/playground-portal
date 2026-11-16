@@ -9,6 +9,7 @@ import { logEvent } from "@/lib/log";
 import { setReportStatus } from "@/lib/reports";
 import { addInviteCode, readSettings, withCodeLimit, withDemoCourses, writeSettings } from "@/lib/settings";
 import { courseTag } from "@/lib/sites/load";
+import { importBundle, type ImportResult } from "@/lib/sites/import";
 import { listCourses } from "@/lib/sites/store";
 import { MESSAGES_TAG, updateOverrides, type TranslationChange } from "@/lib/translations";
 
@@ -119,6 +120,17 @@ export async function deleteCode(id: string): Promise<ActionResult> {
   logEvent("admin.settings", { action: "code-deleted" });
   revalidatePath("/admin");
   return { ok: true };
+}
+
+/** Publishes an uploaded course bundle (e.g. a demo generated locally) with the site's own storage access. */
+export async function importCourse(formData: FormData): Promise<ImportResult> {
+  await requireAdmin();
+  const file = formData.get("bundle");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose a bundle file." };
+  const result = await importBundle(defaultStore(), await file.text(), new Date());
+  logEvent("admin.import", { ok: result.ok, ...(result.ok ? { key: result.key } : {}) });
+  if (result.ok) revalidatePath("/admin");
+  return result;
 }
 
 export async function deleteCourse(key: string): Promise<ActionResult> {
