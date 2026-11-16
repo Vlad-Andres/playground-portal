@@ -24,7 +24,6 @@ export function Editor({
   const router = useRouter();
   const [title, setTitle] = useState(model.title);
   const [description, setDescription] = useState(model.description);
-  const [accent, setAccent] = useState(model.accent);
   const [lectures, setLectures] = useState(() => Object.fromEntries(model.lectures.map((lecture) => [lecture.slug, { title: lecture.title, remove: false }])));
   const [blocks, setBlocks] = useState<Record<string, BlockState>>(() =>
     Object.fromEntries(
@@ -43,7 +42,6 @@ export function Editor({
     const patch: CoursePatch = {};
     if (title.trim() !== model.title) patch.title = title.trim();
     if (description !== model.description) patch.description = description;
-    if (accent.toLowerCase() !== model.accent.toLowerCase()) patch.accent = accent;
     const lecturePatches: NonNullable<CoursePatch["lectures"]> = [];
     const blockPatches: NonNullable<CoursePatch["blocks"]> = [];
     for (const lecture of model.lectures) {
@@ -105,10 +103,6 @@ export function Editor({
         <label className={styles.field}>
           {t("description")}
           <textarea value={description} maxLength={400} onChange={(event) => setDescription(event.target.value)} />
-        </label>
-        <label className={styles.field}>
-          {t("accent")}
-          <input className={styles.color} type="color" value={accent} onChange={(event) => setAccent(event.target.value)} />
         </label>
       </section>
 

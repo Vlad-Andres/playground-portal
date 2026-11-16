@@ -1,6 +1,6 @@
 import { AlertTriangle, Info, Lightbulb, OctagonAlert } from "lucide-react";
 import type { InfoVariant } from "@site/content/types";
-import { Markdown } from "@site/components/content/Markdown";
+import { Markdown, StudyText } from "@site/components/content/Markdown";
 import { cn } from "@site/lib/cn";
 
 const VARIANTS = {
@@ -23,7 +23,7 @@ export function InfoBox({ variant, title, children }: InfoBoxProps) {
     <aside className={cn("grid gap-2 rounded-xl border p-4 sm:p-5", shell)}>
       <p className={cn("flex items-center gap-2 text-sm font-semibold", accent)}>
         <Icon size={16} aria-hidden />
-        {title}
+        <StudyText>{title}</StudyText>
       </p>
       <Markdown className="text-sm">{children}</Markdown>
     </aside>

@@ -72,6 +72,13 @@ const BOOTSTRAP = `<script>
       else send({ pg: "done" });
     }
   };
+  window.addEventListener("message", function (event) {
+    var data = event.data;
+    if (event.source !== parent || !data || data.pg !== "theme") return;
+    if (data.value !== "light" && data.value !== "dark") return;
+    document.documentElement.dataset.pgTheme = data.value;
+    document.documentElement.style.colorScheme = data.value;
+  });
   var reportHeight = function () {
     var height = Math.max(
       document.documentElement ? document.documentElement.scrollHeight : 0,
@@ -107,6 +114,21 @@ export function wrapCustomHtml(html: string, options: { scriptOrigins?: string[]
 <head>
 <meta http-equiv="Content-Security-Policy" content="${csp}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root {
+  color-scheme: light dark;
+  --pg-canvas: light-dark(#f3efe6, #17152b);
+  --pg-surface: light-dark(#fbf9f4, #1f1c38);
+  --pg-ink: light-dark(#1d1a36, #f3efe6);
+  --pg-muted: light-dark(#55516e, #c4c0dc);
+  --pg-line: light-dark(#ded7c9, #46427a);
+  --pg-indigo: light-dark(#4a3fd0, #b7affa);
+  --pg-lilac: light-dark(#e6e2fb, #2e2a5c);
+  --pg-coral: light-dark(#a13c28, #f59a80);
+  --pg-lime: #e3f36a;
+}
+body { background: var(--pg-canvas); color: var(--pg-ink); font-family: system-ui, sans-serif; }
+</style>
 </head>
 <body>
 ${BOOTSTRAP}

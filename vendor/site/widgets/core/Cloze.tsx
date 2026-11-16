@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo, useState } from "react";
 import { Check, RotateCcw } from "lucide-react";
+import { StudyText } from "@site/components/content/Markdown";
 import type { ClozeProps } from "@core/widgets";
 import { cn } from "@site/lib/cn";
 import { buttonClass, primaryButtonClass } from "./ui";
@@ -28,6 +29,7 @@ export function Cloze({ text, distractors = [] }: ClozeProps) {
     const answers = parts.flatMap((part) => ("gap" in part ? [part.answer] : []));
     return [...new Set([...answers, ...distractors])].sort((a, b) => a.localeCompare(b));
   }, [parts, distractors]);
+  const mathOptions = options.some((option) => /\$[^$]+\$/.test(option));
   const gapCount = parts.filter((part) => "gap" in part).length;
   const [chosen, setChosen] = useState<Record<number, string>>({});
   const [checked, setChecked] = useState(false);
@@ -37,7 +39,24 @@ export function Cloze({ text, distractors = [] }: ClozeProps) {
     <div className="grid gap-3">
       <p className="text-base leading-9 text-ink">
         {parts.map((part, index) =>
-          "gap" in part ? (
+          "gap" in part ? mathOptions ? (
+            <span key={index} role="group" aria-label={`Gap ${part.gap + 1}`} className="mx-1 inline-flex flex-wrap gap-1 align-middle">
+              {options.map((option) => {
+                const selected = chosen[part.gap] === option;
+                return (
+                  <button key={option} type="button" aria-pressed={selected}
+                    className={cn(buttonClass, selected && (checked ? (option === part.answer ? "bg-positive-soft text-positive" : "bg-danger-soft text-danger") : "bg-brand-soft text-ink"))}
+                    onClick={() => {
+                      setChosen((current) => ({ ...current, [part.gap]: option }));
+                      setChecked(false);
+                    }}
+                  >
+                    <StudyText>{option}</StudyText>
+                  </button>
+                );
+              })}
+            </span>
+          ) : (
             <select
               key={index}
               aria-label={`Gap ${part.gap + 1}`}
@@ -63,7 +82,7 @@ export function Cloze({ text, distractors = [] }: ClozeProps) {
               ))}
             </select>
           ) : (
-            <Fragment key={index}>{part.text}</Fragment>
+            <Fragment key={index}><StudyText>{part.text}</StudyText></Fragment>
           ),
         )}
       </p>

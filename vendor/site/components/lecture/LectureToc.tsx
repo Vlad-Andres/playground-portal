@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import { useEffect, useState } from "react";
 import { Check, ChevronDown, List } from "lucide-react";
 import type { LectureMeta } from "@site/content/types";
@@ -83,7 +84,7 @@ export function LectureToc({ meta, progressLabel }: { meta: LectureMeta; progres
                 >
                   {isDone ? <Check size={10} strokeWidth={3} aria-hidden /> : index + 1}
                 </span>
-                <span className="truncate">{section.title}</span>
+                <span className="min-w-0"><StudyText>{section.title}</StudyText></span>
               </a>
             </li>
           );

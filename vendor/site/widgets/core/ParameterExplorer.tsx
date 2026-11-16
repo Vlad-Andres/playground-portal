@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import { useMemo, useState } from "react";
 import { parseExpr } from "@core/expr";
 import type { ParameterExplorerProps } from "@core/widgets";
@@ -39,10 +40,10 @@ export function ParameterExplorer({ inputs, outputs }: ParameterExplorerProps) {
           const value = parsed.ok ? parsed.evaluate(values) : Number.NaN;
           return (
             <div key={index} className="grid gap-1 rounded-xl border border-line bg-surface px-4 py-3">
-              <dt className="text-xs font-medium tracking-wide text-faint uppercase">{output.label}</dt>
+              <dt className="text-xs font-medium tracking-wide text-faint uppercase"><StudyText>{output.label}</StudyText></dt>
               <dd className="font-mono text-2xl font-semibold text-brand tabular-nums">
                 {formatNumber(value, output.decimals ?? 2)}
-                {output.unit ? <span className="ml-1 text-sm font-normal text-muted">{output.unit}</span> : null}
+                {output.unit ? <span className="ml-1 text-sm font-normal text-muted"><StudyText>{output.unit}</StudyText></span> : null}
               </dd>
               <dd className="font-mono text-xs text-faint">= {output.expr}</dd>
             </div>

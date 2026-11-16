@@ -10,7 +10,6 @@ import { extractMaterial } from "@/lib/extract-pdf.client";
 const LANGUAGE_CODES = ["en", "nl", "de", "fr", "es", "it", "pt", "ro", "pl"] as const;
 const DEPTHS = ["cram", "standard", "deep"] as const;
 const DEPTH_KEYS = { cram: ["depthCram", "depthCramHint"], standard: ["depthStandard", "depthStandardHint"], deep: ["depthDeep", "depthDeepHint"] } as const;
-const SWATCHES = ["#237b55", "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#0f766e"];
 const MAX_TEXT_BYTES = 4 * 1024 * 1024;
 
 type MaterialCode = "empty" | "too-many-files" | "too-many-pages" | "too-long" | "scanned";
@@ -39,7 +38,6 @@ export function Builder({ announcement }: { announcement?: string }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
-  const [accent, setAccent] = useState(SWATCHES[0]);
   const [context, setContext] = useState("");
   const [signedIn, setSignedIn] = useState(false);
   const tc = useTranslations("course");
@@ -112,7 +110,6 @@ export function Builder({ announcement }: { announcement?: string }) {
       widgets: form.get("widgets") === "on",
       examMode: form.get("examMode") === "on",
       context: context.slice(0, LIMITS.contextCharacters),
-      accent,
       ...(title ? { title: title.slice(0, 120) } : {}),
     };
     setBusy(true);
@@ -247,26 +244,6 @@ export function Builder({ announcement }: { announcement?: string }) {
                   <span><b>{t(DEPTH_KEYS[value][0])}</b><small>{t(DEPTH_KEYS[value][1])}</small></span>
                 </label>
               ))}
-            </div>
-          </fieldset>
-          <fieldset className="field-set">
-            <legend className="field-label">{t("accent")}</legend>
-            <div className="swatches">
-              {SWATCHES.map((color) => (
-                <button
-                  type="button"
-                  key={color}
-                  className={`swatch ${accent === color ? "selected" : ""}`}
-                  style={{ background: color }}
-                  onClick={() => setAccent(color)}
-                  aria-label={t("accentAria", { color })}
-                  aria-pressed={accent === color}
-                />
-              ))}
-              <label className="swatch-custom">
-                <input type="color" value={accent} onChange={(event) => setAccent(event.target.value)} aria-label={t("accentCustomAria")} />
-                {t("accentCustom")}
-              </label>
             </div>
           </fieldset>
           <div className="option-grid">

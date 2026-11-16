@@ -1,4 +1,4 @@
-import { InlineMarkdown } from "@site/components/content/Markdown";
+import { InlineMarkdown, StudyText } from "@site/components/content/Markdown";
 
 interface DataTableProps {
   headers: string[];
@@ -8,8 +8,8 @@ interface DataTableProps {
 
 export function DataTable({ headers, rows, caption }: DataTableProps) {
   return (
-    <figure className="grid gap-2">
-      <div className="overflow-x-auto rounded-xl border border-line">
+    <figure className="grid min-w-0 gap-2">
+      <div className="min-w-0 max-w-full overflow-x-auto rounded-xl border border-line">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-sunken">
@@ -17,7 +17,7 @@ export function DataTable({ headers, rows, caption }: DataTableProps) {
                 <th
                   key={header}
                   scope="col"
-                  className="px-3 py-2 text-left font-semibold whitespace-nowrap text-ink"
+                  className="px-3 py-2 text-left font-semibold text-ink"
                 >
                   <InlineMarkdown>{header}</InlineMarkdown>
                 </th>
@@ -37,7 +37,7 @@ export function DataTable({ headers, rows, caption }: DataTableProps) {
           </tbody>
         </table>
       </div>
-      {caption ? <figcaption className="text-xs text-faint">{caption}</figcaption> : null}
+      {caption ? <figcaption className="text-xs text-faint"><StudyText>{caption}</StudyText></figcaption> : null}
     </figure>
   );
 }

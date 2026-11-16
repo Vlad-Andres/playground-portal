@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import Link from "next/link";
 import { ArrowRight, BookOpen, Clock, ListChecks, PencilRuler } from "lucide-react";
 import type { LectureMeta } from "@site/content/types";
@@ -40,15 +41,15 @@ export function LectureCard({ meta, conceptCount, quizCount, exerciseCount }: Le
           </div>
           <h3 className="text-lg font-semibold text-ink">
             <Link href={paths.lecture(meta.slug)} className="after:absolute after:inset-0">
-              {meta.title}
+              <StudyText>{meta.title}</StudyText>
             </Link>
           </h3>
-          <p className="text-sm text-muted">{meta.subtitle}</p>
+          <p className="text-sm text-muted"><StudyText>{meta.subtitle}</StudyText></p>
         </div>
         <ProgressRing value={stats.ratio} label={`Lecture ${meta.number} progress`} />
       </header>
 
-      <p className="line-clamp-3 text-sm text-muted">{meta.summary}</p>
+      <p className="line-clamp-3 text-sm text-muted"><StudyText>{meta.summary}</StudyText></p>
 
       <div className="flex flex-wrap gap-1.5">
         {meta.topics.slice(0, 4).map((topic) => (

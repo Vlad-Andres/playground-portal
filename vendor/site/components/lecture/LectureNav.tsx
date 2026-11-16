@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { LectureMeta } from "@site/content/types";
@@ -18,28 +19,28 @@ export function LectureNav({ previous, next }: LectureNavProps) {
       {previous ? (
         <Link
           href={paths.lecture(previous.slug)}
-          className="group grid gap-1 rounded-xl border border-line bg-surface p-4 transition-colors hover:border-brand/40"
+          className="group grid min-w-0 gap-1 rounded-xl border border-line bg-surface p-4 transition-colors hover:border-brand/40"
         >
           <span className="flex items-center gap-1.5 text-xs text-faint">
             <ArrowLeft size={13} className="transition-transform group-hover:-translate-x-0.5" aria-hidden />
             Lecture {previous.number}
           </span>
-          <span className="text-sm font-medium text-ink">{previous.title}</span>
+          <span className="text-sm font-medium text-ink"><StudyText>{previous.title}</StudyText></span>
         </Link>
       ) : (
-        <span />
+        <span className="hidden sm:block" />
       )}
 
       {next ? (
         <Link
           href={paths.lecture(next.slug)}
-          className="group grid justify-items-end gap-1 rounded-xl border border-line bg-surface p-4 text-right transition-colors hover:border-brand/40 sm:col-start-2"
+          className="group grid min-w-0 justify-items-end gap-1 rounded-xl border border-line bg-surface p-4 text-right transition-colors hover:border-brand/40 sm:col-start-2"
         >
           <span className="flex items-center gap-1.5 text-xs text-faint">
             Lecture {next.number}
             <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" aria-hidden />
           </span>
-          <span className="text-sm font-medium text-ink">{next.title}</span>
+          <span className="text-sm font-medium text-ink"><StudyText>{next.title}</StudyText></span>
         </Link>
       ) : (
         <span className="rounded-xl border border-dashed border-line p-4 text-center text-sm text-faint sm:col-start-2">

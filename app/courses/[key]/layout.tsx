@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import "katex/dist/katex.min.css";
 import "@site/site.css";
 import { themeBootstrapScript } from "@site/lib/theme";
-import { themeCss } from "@site/lib/theme-css";
 import { SiteShell } from "@site/screens/SiteShell";
 import { getTranslations } from "next-intl/server";
 import { StudyCounter } from "@/components/course/StudyCounter";
@@ -16,13 +15,11 @@ export async function generateMetadata({ params }: CourseParams) {
 
 export default async function CourseLayout({ children, params }: CourseParams & { children: ReactNode }) {
   const { key, data } = await courseOr404(params);
-  const accentCss = themeCss(data.course.theme);
   const t = await getTranslations("report");
 
   return (
-    <div lang={data.course.language} className="flex min-h-screen flex-col">
+    <div data-course-page lang={data.course.language} className="flex min-h-screen flex-col">
       <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript(data.key) }} />
-      {accentCss ? <style dangerouslySetInnerHTML={{ __html: accentCss }} /> : null}
       {/* Many courses share this origin, so none of them registers an offline service worker. */}
       <SiteShell data={data} base={courseBase(key)} offline={false} host={COURSE_HOST}>
         {children}

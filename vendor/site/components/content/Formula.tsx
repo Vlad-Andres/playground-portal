@@ -1,3 +1,4 @@
+import { StudyText } from "@site/components/content/Markdown";
 import katex from "katex";
 
 interface FormulaProps {
@@ -11,7 +12,7 @@ export function Formula({ tex, caption }: FormulaProps) {
   return (
     <figure className="grid justify-items-center gap-2 rounded-xl border border-line bg-sunken px-4 py-5">
       <div className="w-full overflow-x-auto text-center" dangerouslySetInnerHTML={{ __html: html }} />
-      {caption ? <figcaption className="text-center text-xs text-faint">{caption}</figcaption> : null}
+      {caption ? <figcaption className="text-center text-xs text-faint"><StudyText>{caption}</StudyText></figcaption> : null}
     </figure>
   );
 }

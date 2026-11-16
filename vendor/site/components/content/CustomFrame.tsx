@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, TriangleAlert } from "lucide-react";
 import { acceptSandboxMessage, clampHeight, wrapCustomHtml } from "@core/sandbox";
@@ -10,6 +11,11 @@ interface CustomFrameProps {
   html: string;
   height?: number;
   scriptOrigins?: string[];
+}
+
+function sendTheme(frame: HTMLIFrameElement | null) {
+  const value = document.documentElement.classList.contains("dark") ? "dark" : "light";
+  frame?.contentWindow?.postMessage({ pg: "theme", value }, "*");
 }
 
 /** A custom component from the course, isolated in a frame that cannot touch the page. */
@@ -37,15 +43,21 @@ export function CustomFrame({ title, description, html, height, scriptOrigins }:
       else if (message.pg === "done") setDone(true);
     };
 
+    const themeObserver = new MutationObserver(() => sendTheme(frameRef.current));
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    sendTheme(frameRef.current);
     window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
+    return () => {
+      themeObserver.disconnect();
+      window.removeEventListener("message", onMessage);
+    };
   }, []);
 
   return (
-    <section className="grid gap-3 rounded-2xl border border-line bg-surface p-4">
+    <section className="grid min-w-0 gap-3 rounded-2xl border border-line bg-surface p-2.5 sm:p-4">
       <div className="grid gap-1">
-        <h3 className="text-base font-semibold text-ink">{title}</h3>
-        <p className="text-sm text-muted">{description}</p>
+        <h3 className="text-base font-semibold text-ink"><StudyText>{title}</StudyText></h3>
+        <p className="text-sm text-muted"><StudyText>{description}</StudyText></p>
       </div>
 
       <iframe
@@ -53,8 +65,9 @@ export function CustomFrame({ title, description, html, height, scriptOrigins }:
         title={title}
         sandbox="allow-scripts"
         srcDoc={srcDoc}
+        onLoad={(event) => sendTheme(event.currentTarget)}
         referrerPolicy="no-referrer"
-        className="w-full rounded-xl border border-line bg-white"
+        className="block w-full min-w-0 rounded-xl border border-line bg-surface"
         style={{ height: frameHeight }}
       />
 

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Check, RotateCcw, X } from "lucide-react";
 import type { OrderItemsProps } from "@core/widgets";
-import { Markdown } from "@site/components/content/Markdown";
+import { Markdown, StudyText } from "@site/components/content/Markdown";
 import { cn } from "@site/lib/cn";
 import { seededShuffle } from "./shuffle";
 import { buttonClass, correctClass, iconButtonClass, primaryButtonClass, promptClass, wrongClass } from "./ui";
@@ -26,7 +26,7 @@ export function OrderItems({ prompt, items, explanation }: OrderItemsProps) {
 
   return (
     <div className="grid gap-3">
-      <p className={promptClass}>{prompt}</p>
+      <p className={promptClass}><StudyText>{prompt}</StudyText></p>
       <ol className="grid gap-2">
         {order.map((item, index) => {
           const right = item === items[index];
@@ -39,7 +39,7 @@ export function OrderItems({ prompt, items, explanation }: OrderItemsProps) {
               )}
             >
               <span className="w-6 shrink-0 text-center font-mono text-xs text-faint tabular-nums">{index + 1}</span>
-              <span className="min-w-0 flex-1 text-sm break-words text-ink">{item}</span>
+              <span className="min-w-0 flex-1 text-sm break-words text-ink"><StudyText>{item}</StudyText></span>
               {checked ? (
                 right ? (
                   <Check size={16} className="shrink-0 text-positive" aria-label="Correct position" />

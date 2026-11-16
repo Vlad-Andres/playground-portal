@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import { useState, type KeyboardEvent } from "react";
 import { AlertTriangle, CheckCircle2, Database, Loader2, Pencil, Play, RotateCcw } from "lucide-react";
 import { ENGINE_LABEL, GRAPH_CONTENTS, GREMLIN_CONTENTS, SQL_TABLES } from "@site/lib/runner/datasets";
@@ -233,7 +234,7 @@ export function RunnableCode({ lang, code, runCode, note, hint, html, caption }:
         </p>
       ) : null}
       {hint ? <p className="text-xs text-muted">💡 Try: {hint}</p> : null}
-      {caption ? <figcaption className="text-xs text-faint">{caption}</figcaption> : null}
+      {caption ? <figcaption className="text-xs text-faint"><StudyText>{caption}</StudyText></figcaption> : null}
       {showData ? <DataInfo lang={lang} /> : null}
       {status ? (
         <p className="flex items-center gap-2 text-xs text-muted">

@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import { useEffect, useMemo, useState } from "react";
 import { PartyPopper, RotateCcw } from "lucide-react";
 import type { MatchPairsProps } from "@core/widgets";
@@ -39,7 +40,7 @@ export function MatchPairs({ prompt, pairs }: MatchPairsProps) {
 
   return (
     <div className="grid gap-3">
-      {prompt ? <p className={promptClass}>{prompt}</p> : null}
+      {prompt ? <p className={promptClass}><StudyText>{prompt}</StudyText></p> : null}
       <p className="text-xs text-faint">Pick an item on the left, then its partner on the right.</p>
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <div className="grid content-start gap-2">
@@ -60,7 +61,7 @@ export function MatchPairs({ prompt, pairs }: MatchPairsProps) {
                 wrong?.left === left && "animate-shake border-danger/60",
               )}
             >
-              {left}
+              <StudyText>{left}</StudyText>
             </button>
           ))}
         </div>
@@ -79,7 +80,7 @@ export function MatchPairs({ prompt, pairs }: MatchPairsProps) {
                 wrong?.right === right && "animate-shake border-danger/60 bg-danger-soft",
               )}
             >
-              {right}
+              <StudyText>{right}</StudyText>
             </button>
           ))}
         </div>

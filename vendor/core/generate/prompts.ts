@@ -212,7 +212,7 @@ function customPart(limit: number): string {
   return `CUSTOM EXERCISE (block kind "custom"): ${example.use}
 - Use at most ${limit} in this lecture, in the sections the plan marks with "custom". Use it there instead of a catalogue widget.
 - Build a real simulation or interactive model of the idea from the pages: use their actual quantities, rules and values, let the learner change something (sliders, buttons, dragging) and see the result move or update, and label what is shown.
-- It must work 360 px wide and in light and dark mode (use the CSS media query prefers-color-scheme).
+- It must work 360 px wide and in both colour schemes. Use the built-in palette: var(--pg-canvas), var(--pg-surface), var(--pg-ink), var(--pg-muted), var(--pg-line), var(--pg-indigo), var(--pg-lilac), var(--pg-coral) and var(--pg-lime). For lime action buttons, use dark ink (#1d1a36). The palette follows the course theme toggle. Use these tokens in place of a separate prefers-color-scheme palette. Use thin borders and small corner radii. Prefer a visibly different interaction when the lesson calls for it: a prediction and reveal, a target game, a sequence to assemble, or an instrument with measurable readings.
 - The HTML is shown as it is: write plain text and Unicode symbols (→, ², ×, ½), never LaTeX.
 - "html" holds self-contained HTML, CSS and JS (at most 60,000 characters). No network, no storage, no links to other sites.
 - Call pg.done(score) with a number from 0 to 1 when the learner succeeds.

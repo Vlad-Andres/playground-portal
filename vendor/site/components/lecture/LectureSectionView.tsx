@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import type { Block, Lecture, LectureSection, SectionKind } from "@site/content/types";
 import { BlockRenderer } from "@site/components/content/BlockRenderer";
 import { QuizCard } from "@site/components/content/QuizCard";
@@ -35,20 +36,32 @@ interface LectureSectionViewProps {
 export function LectureSectionView({ lecture, section }: LectureSectionViewProps) {
   const { data } = useSite();
   const features = siteFeatures(data.course);
+  const isQuiz = section.kind === "quiz" && lecture.quiz.length > 0;
 
   return (
     <section id={section.id} className="grid scroll-mt-24 gap-6">
-      <header className="flex items-end justify-between gap-3">
+      <header className={isQuiz ? "flex items-end justify-between gap-3 border-b border-line pb-4" : "flex items-end justify-between gap-3"}>
         <div className="grid gap-1">
-          <p className="text-xs font-semibold tracking-wide text-brand uppercase">
-            {KIND_LABEL[section.kind]}
+          <p className="course-editorial-label">
+            {isQuiz ? `Lecture ${String(lecture.meta.number).padStart(2, "0")} / ${lecture.meta.topics[0] ?? lecture.meta.title}` : KIND_LABEL[section.kind]}
           </p>
-          <h2 className="text-2xl font-semibold tracking-tight">{section.title}</h2>
+          <h2 className={isQuiz ? "text-3xl leading-tight font-semibold tracking-tight sm:text-4xl" : "text-2xl font-semibold tracking-tight"}><StudyText>{section.title}</StudyText></h2>
+          {isQuiz ? <p className="mt-2 text-base text-muted">Choose an answer to reveal the explanation.</p> : null}
         </div>
         {features.difficult && section.kind !== "objectives" ? (
           <DifficultSectionToggle lectureSlug={lecture.meta.slug} sectionId={section.id} />
         ) : null}
       </header>
+
+      {isQuiz ? (
+        <QuizCard
+          key={`${lecture.meta.slug}:${section.id}`}
+          lectureSlug={lecture.meta.slug}
+          sectionId={section.id}
+          questions={lecture.quiz}
+          sourceLabel={lecture.meta.sources.length ? `Lecture ${String(lecture.meta.number).padStart(2, "0")}` : undefined}
+        />
+      ) : null}
 
       {section.blocks.map((block, index) =>
         features.difficult && FLAGGABLE.has(block.kind) ? (
@@ -59,14 +72,6 @@ export function LectureSectionView({ lecture, section }: LectureSectionViewProps
           <BlockRenderer key={index} block={block} concepts={lecture.concepts} />
         ),
       )}
-
-      {section.kind === "quiz" ? (
-        <QuizCard
-          lectureSlug={lecture.meta.slug}
-          sectionId={section.id}
-          questions={lecture.quiz}
-        />
-      ) : null}
 
       <div className="flex justify-end border-t border-line pt-4">
         <SectionCompleteToggle lectureSlug={lecture.meta.slug} sectionId={section.id} />
