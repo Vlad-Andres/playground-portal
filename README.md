@@ -85,7 +85,7 @@ Key ideas:
 **For the owner** (`/admin`, English only; needs `ADMIN_TOKEN`)
 - Pause generation, set the daily job limit, override the model, post an announcement (EN/RO).
 - Edit any portal text in English and Romanian at `/admin/translations` (search, see the default, reset).
-- Invite codes: create (shown once, stored only as a hash), disable, enable, delete.
+- Invite codes: add a code you choose (4–40 letters, digits or dashes; shown in the table, matched ignoring case), disable, enable, delete.
 - Overview: jobs today, all courses, tokens and an **estimated** cost, recent jobs with the invite code used.
 - Take a course down: the page and its owner link return 404 immediately.
 
@@ -139,7 +139,7 @@ One `Store` interface (`lib/jobs/store.ts`) with three adapters: Vercel Blob (pr
 | `days/<YYYY-MM-DD>/<id>` | one marker per job, for the daily limit | 7 days |
 | `courses/<key>/site.json`, `meta.json` | the course and its metadata (title, usage, owner hash) | kept until deleted |
 | `owners/<sha256>.json` | owner-token lookup (only the hash of the token is stored) | with the course |
-| `config/settings.json` | admin settings and hashed invite codes | kept |
+| `config/settings.json` | admin settings and invite codes (plain text) | kept |
 | `config/messages.json` | text overrides from `/admin/translations` | kept |
 | `courses/<key>/versions/<n>.json` | the three previous versions | with the course |
 | `courses/<key>/sources/`, `brief.json` | kept files (opt-in) and the options the course was built with | with the course, or until switched off |
@@ -154,7 +154,8 @@ A course key is `<slug>-<first 8 hex of the job id>`.
   (`/courses/*`): the template's policy (in-browser PostgreSQL needs `wasm-unsafe-eval`), no framing.
 - **Custom exercises** run only in `<iframe sandbox="allow-scripts">` with an opaque origin and no
   network or storage; they must also pass a static scan (`scanCustomHtml`) at generation time.
-- **Secrets**: the owner token and invite codes are stored only as SHA-256 hashes and compared in constant
+- **Secrets**: the owner token is stored only as a SHA-256 hash; invite codes are kept in plain text so the
+  owner can read and share them (delete one if it leaks). Codes are compared in constant
   time; `/admin` uses an `iron-session` cookie (8 h, httpOnly, sameSite strict); settings changes apply on the
   next request. The fake model only works outside production.
 - Uploaded text is sent only to the model provider for generation, then deleted.
