@@ -101,7 +101,7 @@ export default async function AdminPage() {
       </div>
 
       <h2 className={styles.section}>Settings</h2>
-      <SettingsForm settings={settings} />
+      <SettingsForm settings={settings} courses={data.courses.map(({ key, meta }) => ({ key, title: meta.title }))} />
 
       <h2 className={styles.section}>Invite codes</h2>
       <InviteCodes codes={settings.codes} usage={codeUsage} />

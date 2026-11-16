@@ -2,6 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import type { Store } from "@/lib/jobs/store";
 import { logEvent } from "@/lib/log";
+import { COURSE_KEY } from "@/lib/sites/store";
 
 const SETTINGS_KEY = "config/settings.json";
 const MIN_ENV_CODE_LENGTH = 12;
@@ -31,6 +32,8 @@ export interface Settings {
   /** Shown above the builder, per language; "" = none. */
   announcement: { en: string; ro: string };
   codes: InviteCode[];
+  /** The course the landing links to as a demo, per page language; null = no demo button. */
+  demoCourseKey: { en: string | null; ro: string | null };
 }
 
 const inviteCodeSchema = z
@@ -53,6 +56,11 @@ export const settingsSchema: z.ZodType<Settings> = z
     model: z.string().regex(/^[a-z0-9][a-z0-9.-]{2,60}$/).nullable(),
     announcement: z.object({ en: z.string().max(300), ro: z.string().max(300) }).strict(),
     codes: z.array(inviteCodeSchema).max(50),
+    // Settings saved before this field existed load with no demo.
+    demoCourseKey: z
+      .object({ en: z.string().regex(COURSE_KEY).nullable(), ro: z.string().regex(COURSE_KEY).nullable() })
+      .strict()
+      .default({ en: null, ro: null }),
   })
   .strict();
 
@@ -62,7 +70,27 @@ export const DEFAULT_SETTINGS: Settings = {
   model: null,
   announcement: { en: "", ro: "" },
   codes: [],
+  demoCourseKey: { en: null, ro: null },
 };
+
+/** Settings with the demo course per language set ("" clears one); null when a key is not an existing course. */
+export function withDemoCourses(settings: Settings, picked: { en: string; ro: string }, knownKeys: string[]): Settings | null {
+  const pick = (value: string): string | null | undefined => {
+    const key = value.trim();
+    if (key === "") return null;
+    return knownKeys.includes(key) ? key : undefined;
+  };
+  const en = pick(picked.en);
+  const ro = pick(picked.ro);
+  if (en === undefined || ro === undefined) return null;
+  return { ...settings, demoCourseKey: { en, ro } };
+}
+
+/** The demo course link for a page language, or null when none is set. */
+export function demoCourseUrl(settings: Settings, locale: string): string | null {
+  const key = locale === "en" || locale === "ro" ? settings.demoCourseKey[locale] : null;
+  return key ? `/courses/${key}/` : null;
+}
 
 function defaults(): Settings {
   return structuredClone(DEFAULT_SETTINGS);

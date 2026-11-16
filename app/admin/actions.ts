@@ -7,8 +7,9 @@ import { adminConfigured, getAdminSession, requireAdmin, tokenMatches } from "@/
 import { defaultStore } from "@/lib/jobs/store";
 import { logEvent } from "@/lib/log";
 import { setReportStatus } from "@/lib/reports";
-import { addInviteCode, readSettings, withCodeLimit, writeSettings } from "@/lib/settings";
+import { addInviteCode, readSettings, withCodeLimit, withDemoCourses, writeSettings } from "@/lib/settings";
 import { courseTag } from "@/lib/sites/load";
+import { listCourses } from "@/lib/sites/store";
 import { MESSAGES_TAG, updateOverrides, type TranslationChange } from "@/lib/translations";
 
 const WRONG_TOKEN_DELAY_MS = 500;
@@ -47,9 +48,12 @@ export async function saveSettings(formData: FormData): Promise<ActionResult> {
   const current = await readSettings(store);
   const limit = String(formData.get("dailyJobLimit") ?? "").trim();
   const model = String(formData.get("model") ?? "").trim();
+  const knownKeys = (await listCourses(store)).map((course) => course.key);
+  const withDemo = withDemoCourses(current, { en: String(formData.get("demoEn") ?? ""), ro: String(formData.get("demoRo") ?? "") }, knownKeys);
+  if (!withDemo) return { ok: false, error: "Pick the demo course from the list of existing courses." };
   try {
     await writeSettings(store, {
-      ...current,
+      ...withDemo,
       generationPaused: formData.get("generationPaused") === "on",
       dailyJobLimit: limit === "" ? null : Number(limit),
       model: model === "" ? null : model,
@@ -60,6 +64,7 @@ export async function saveSettings(formData: FormData): Promise<ActionResult> {
   }
   logEvent("admin.settings", { action: "save" });
   revalidatePath("/admin");
+  revalidatePath("/");
   return { ok: true };
 }
 

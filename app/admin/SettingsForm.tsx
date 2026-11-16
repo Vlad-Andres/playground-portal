@@ -5,7 +5,16 @@ import type { Settings } from "@/lib/settings";
 import { saveSettings } from "./actions";
 import styles from "./admin.module.css";
 
-export function SettingsForm({ settings }: { settings: Settings }) {
+export function SettingsForm({ settings, courses }: { settings: Settings; courses: { key: string; title: string }[] }) {
+  const demoSelect = (name: string, value: string | null) => (
+    <select name={name} defaultValue={value ?? ""}>
+      <option value="">None (no demo button)</option>
+      {courses.map((course) => (
+        <option key={course.key} value={course.key}>{course.title || course.key} ({course.key})</option>
+      ))}
+    </select>
+  );
+
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -37,6 +46,14 @@ export function SettingsForm({ settings }: { settings: Settings }) {
       <label className={styles.field}>
         Announcement (Romanian)
         <textarea name="announcementRo" defaultValue={settings.announcement.ro} maxLength={300} rows={2} />
+      </label>
+      <label className={styles.field}>
+        Demo course (English landing) <small>the landing page shows a button to it</small>
+        {demoSelect("demoEn", settings.demoCourseKey.en)}
+      </label>
+      <label className={styles.field}>
+        Demo course (Romanian landing)
+        {demoSelect("demoRo", settings.demoCourseKey.ro)}
       </label>
       <div className={styles.row}>
         <button type="submit" disabled={pending}>Save settings</button>

@@ -1,9 +1,10 @@
 import { ArrowRight, ArrowUpRight, CalendarClock, Check, Compass, MessageSquareText } from "lucide-react";
 import type { ReactNode } from "react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { TopBar } from "@/components/TopBar";
 import { defaultStore } from "@/lib/jobs/store";
 import { recordMetric } from "@/lib/metrics";
+import { demoCourseUrl, readSettings } from "@/lib/settings";
 import styles from "./landing.module.css";
 
 const LOOP = [
@@ -13,7 +14,9 @@ const LOOP = [
 ] as const;
 
 export default async function LandingPage({ searchParams }: { searchParams: Promise<{ signin?: string }> }) {
-  await recordMetric(defaultStore(), "landing_view", new Date());
+  const store = defaultStore();
+  await recordMetric(store, "landing_view", new Date());
+  const demoUrl = demoCourseUrl(await readSettings(store), await getLocale());
   const t = await getTranslations("landing");
   const errors = await getTranslations("errors");
   const tl = await getTranslations("legal");
@@ -39,7 +42,11 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
           <p className={styles.lead}>{t("lead")}</p>
           <div className={styles.actions}>
             <a className={styles.primary} href="/create">{t("cta")} <ArrowUpRight size={18} aria-hidden="true" /></a>
-            <a className={styles.secondary} href="#how">{t("ctaSecondary")}</a>
+            {demoUrl ? (
+              <a className={styles.secondary} href={demoUrl}>{t("demo")} <ArrowRight size={18} aria-hidden="true" /></a>
+            ) : (
+              <a className={styles.secondary} href="#how">{t("ctaSecondary")}</a>
+            )}
           </div>
           <ul className={styles.meta}>
             <li><b>{t("meta1")}</b></li>
