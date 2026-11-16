@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import { useEffect, useState, type MouseEvent } from "react";
 import { Play, Timer, Trophy } from "lucide-react";
 import type { Concept } from "@site/content/types";
@@ -138,7 +139,7 @@ export function MatchGame({ concepts }: { concepts: Concept[] }) {
                   !done && selected?.id !== tile.id && !wrong.includes(tile.id) && "border-line bg-surface hover:border-brand/50",
                 )}
               >
-                {tile.text}
+                <StudyText>{tile.text}</StudyText>
               </button>
             );
           })}

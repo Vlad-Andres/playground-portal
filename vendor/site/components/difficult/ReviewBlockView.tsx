@@ -9,7 +9,7 @@ import { FigureImage } from "@site/components/content/FigureImage";
 import { Formula } from "@site/components/content/Formula";
 import { HighlightList } from "@site/components/content/HighlightList";
 import { InfoBox } from "@site/components/content/InfoBox";
-import { Markdown } from "@site/components/content/Markdown";
+import { Markdown, StudyText } from "@site/components/content/Markdown";
 import { MemoryCards } from "@site/components/content/MemoryCards";
 import { PracticeSet } from "@site/components/content/PracticeSet";
 import { Timeline } from "@site/components/content/Timeline";
@@ -59,7 +59,7 @@ export function ReviewBlockView({ block, concepts, href }: ReviewBlockViewProps)
           <pre className="overflow-x-auto rounded-xl border border-line bg-sunken p-4 font-mono text-xs leading-relaxed text-ink">
             {block.code}
           </pre>
-          {block.caption ? <figcaption className="text-xs text-faint">{block.caption}</figcaption> : null}
+          {block.caption ? <figcaption className="text-xs text-faint"><StudyText>{block.caption}</StudyText></figcaption> : null}
         </figure>
       );
     }
@@ -87,7 +87,7 @@ export function ReviewBlockView({ block, concepts, href }: ReviewBlockViewProps)
         >
           <MousePointerClick size={18} className="mt-0.5 shrink-0 text-brand" aria-hidden />
           <span className="grid gap-0.5">
-            <span className="font-semibold text-ink">{block.title}</span>
+            <span className="font-semibold text-ink"><StudyText>{block.title}</StudyText></span>
             <span className="text-muted">
               {block.kind === "widget"
                 ? (block.description ?? "Interactive playground")

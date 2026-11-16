@@ -1,4 +1,4 @@
-import { InlineMarkdown } from "@site/components/content/Markdown";
+import { InlineMarkdown, StudyText } from "@site/components/content/Markdown";
 
 interface DataTableProps {
   headers: string[];
@@ -37,7 +37,7 @@ export function DataTable({ headers, rows, caption }: DataTableProps) {
           </tbody>
         </table>
       </div>
-      {caption ? <figcaption className="text-xs text-faint">{caption}</figcaption> : null}
+      {caption ? <figcaption className="text-xs text-faint"><StudyText>{caption}</StudyText></figcaption> : null}
     </figure>
   );
 }

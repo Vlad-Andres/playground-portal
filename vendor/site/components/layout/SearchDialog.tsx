@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CornerDownLeft, Search, X } from "lucide-react";
@@ -83,8 +84,8 @@ export function SearchDialog({ records, onClose }: SearchDialogProps) {
                     className="group flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-brand-soft/50"
                   >
                     <div className="grid min-w-0 flex-1 gap-0.5">
-                      <span className="truncate text-sm font-medium text-ink">{record.title}</span>
-                      <span className="truncate text-xs text-faint">{record.excerpt}</span>
+                      <span className="truncate text-sm font-medium text-ink"><StudyText>{record.title}</StudyText></span>
+                      <span className="truncate text-xs text-faint"><StudyText>{record.excerpt}</StudyText></span>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       <Badge tone={TYPE_TONE[record.type]}>{record.type}</Badge>

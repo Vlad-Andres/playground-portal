@@ -1,3 +1,4 @@
+import { StudyText } from "@site/components/content/Markdown";
 import { BookMarked, Clock, FileText, StickyNote } from "lucide-react";
 import type { LectureMeta, LectureSource } from "@site/content/types";
 import { Badge } from "@site/components/ui/Badge";
@@ -22,9 +23,9 @@ export function LectureHeader({ meta, badge }: { meta: LectureMeta; badge?: stri
       </div>
 
       <div className="grid max-w-3xl gap-3">
-        <h1 className="text-4xl font-medium tracking-tight text-balance sm:text-5xl">{meta.title}</h1>
-        <p className="text-lg text-muted">{meta.subtitle}</p>
-        <p className="text-pretty text-muted">{meta.summary}</p>
+        <h1 className="text-4xl font-medium tracking-tight text-balance sm:text-5xl"><StudyText>{meta.title}</StudyText></h1>
+        <p className="text-lg text-muted"><StudyText>{meta.subtitle}</StudyText></p>
+        <p className="text-pretty text-muted"><StudyText>{meta.summary}</StudyText></p>
       </div>
 
       <div className="flex flex-wrap gap-1.5">

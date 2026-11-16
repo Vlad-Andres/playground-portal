@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { LectureMeta } from "@site/content/types";
@@ -24,7 +25,7 @@ export function LectureNav({ previous, next }: LectureNavProps) {
             <ArrowLeft size={13} className="transition-transform group-hover:-translate-x-0.5" aria-hidden />
             Lecture {previous.number}
           </span>
-          <span className="text-sm font-medium text-ink">{previous.title}</span>
+          <span className="text-sm font-medium text-ink"><StudyText>{previous.title}</StudyText></span>
         </Link>
       ) : (
         <span />
@@ -39,7 +40,7 @@ export function LectureNav({ previous, next }: LectureNavProps) {
             Lecture {next.number}
             <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" aria-hidden />
           </span>
-          <span className="text-sm font-medium text-ink">{next.title}</span>
+          <span className="text-sm font-medium text-ink"><StudyText>{next.title}</StudyText></span>
         </Link>
       ) : (
         <span className="rounded-xl border border-dashed border-line p-4 text-center text-sm text-faint sm:col-start-2">

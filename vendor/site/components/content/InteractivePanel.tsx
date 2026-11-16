@@ -1,3 +1,4 @@
+import { StudyText } from "@site/components/content/Markdown";
 import type { ReactNode } from "react";
 import { MousePointerClick } from "lucide-react";
 
@@ -13,9 +14,9 @@ export function InteractivePanel({ title, description, children }: InteractivePa
       <header className="grid gap-1 border-b border-line bg-brand-soft/40 px-5 py-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-brand-strong">
           <MousePointerClick size={16} aria-hidden />
-          {title}
+          <StudyText>{title}</StudyText>
         </h3>
-        {description ? <p className="text-sm text-muted">{description}</p> : null}
+        {description ? <p className="text-sm text-muted"><StudyText>{description}</StudyText></p> : null}
       </header>
       <div className="p-4 sm:p-5">{children}</div>
     </section>

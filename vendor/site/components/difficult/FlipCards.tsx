@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, RotateCw } from "lucide-react";
 import type { Flashcard } from "@site/components/difficult/kit";
-import { Markdown } from "@site/components/content/Markdown";
+import { Markdown, StudyText } from "@site/components/content/Markdown";
 import { cn } from "@site/lib/cn";
 
 /** A deck of flip cards: answer in your head, flip, then mark whether you knew it. */
@@ -45,7 +45,7 @@ export function FlipCards({ cards }: { cards: Flashcard[] }) {
           )}
         >
           <div className="col-start-1 row-start-1 grid place-items-center rounded-2xl border border-brand/30 bg-brand-soft/50 p-6 text-center [backface-visibility:hidden]">
-            <span className="text-base font-semibold text-ink">{card.front}</span>
+            <span className="text-base font-semibold text-ink"><StudyText>{card.front}</StudyText></span>
             <span className="mt-2 flex items-center gap-1 text-xs text-faint">
               <RotateCw size={12} aria-hidden /> Tap to flip
             </span>

@@ -1,3 +1,4 @@
+import { StudyText } from "@site/components/content/Markdown";
 import { codeToHtml } from "shiki";
 import { RunnableCode } from "@site/components/content/RunnableCode";
 import type { RunConfig } from "@site/content/types";
@@ -39,7 +40,7 @@ export async function CodeBlock({ code, lang, caption, run }: CodeBlockProps) {
         className="overflow-x-auto rounded-xl border border-line bg-sunken p-4 text-sm [&_pre]:bg-transparent!"
         dangerouslySetInnerHTML={{ __html: html }}
       />
-      {caption ? <figcaption className="text-xs text-faint">{caption}</figcaption> : null}
+      {caption ? <figcaption className="text-xs text-faint"><StudyText>{caption}</StudyText></figcaption> : null}
     </figure>
   );
 }

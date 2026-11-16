@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import type { Block, Lecture, LectureSection, SectionKind } from "@site/content/types";
 import { BlockRenderer } from "@site/components/content/BlockRenderer";
 import { QuizCard } from "@site/components/content/QuizCard";
@@ -43,7 +44,7 @@ export function LectureSectionView({ lecture, section }: LectureSectionViewProps
           <p className="text-xs font-semibold tracking-wide text-brand uppercase">
             {KIND_LABEL[section.kind]}
           </p>
-          <h2 className="text-2xl font-semibold tracking-tight">{section.title}</h2>
+          <h2 className="text-2xl font-semibold tracking-tight"><StudyText>{section.title}</StudyText></h2>
         </div>
         {features.difficult && section.kind !== "objectives" ? (
           <DifficultSectionToggle lectureSlug={lecture.meta.slug} sectionId={section.id} />

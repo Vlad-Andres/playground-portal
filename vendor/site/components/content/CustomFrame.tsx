@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, TriangleAlert } from "lucide-react";
 import { acceptSandboxMessage, clampHeight, wrapCustomHtml } from "@core/sandbox";
@@ -55,8 +56,8 @@ export function CustomFrame({ title, description, html, height, scriptOrigins }:
   return (
     <section className="grid gap-3 rounded-2xl border border-line bg-surface p-4">
       <div className="grid gap-1">
-        <h3 className="text-base font-semibold text-ink">{title}</h3>
-        <p className="text-sm text-muted">{description}</p>
+        <h3 className="text-base font-semibold text-ink"><StudyText>{title}</StudyText></h3>
+        <p className="text-sm text-muted"><StudyText>{description}</StudyText></p>
       </div>
 
       <iframe

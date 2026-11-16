@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ListChecks } from "lucide-react";
 import type { WorkedStep } from "@site/content/types";
-import { Markdown } from "@site/components/content/Markdown";
+import { Markdown, StudyText } from "@site/components/content/Markdown";
 import { Card } from "@site/components/ui/Card";
 import { cn } from "@site/lib/cn";
 
@@ -22,7 +22,7 @@ export function WorkedExample({ title, intro, steps }: WorkedExampleProps) {
       <div className="grid gap-2">
         <h3 className="flex items-center gap-2 text-base font-semibold text-ink">
           <ListChecks size={18} className="text-brand" aria-hidden />
-          {title}
+          <StudyText>{title}</StudyText>
         </h3>
         {intro ? <Markdown className="text-sm">{intro}</Markdown> : null}
       </div>
@@ -34,7 +34,7 @@ export function WorkedExample({ title, intro, steps }: WorkedExampleProps) {
               {index + 1}
             </span>
             <div className="grid gap-1.5">
-              <p className="text-sm font-medium text-ink">{step.title}</p>
+              <p className="text-sm font-medium text-ink"><StudyText>{step.title}</StudyText></p>
               <Markdown className="text-sm">{step.md}</Markdown>
             </div>
           </li>

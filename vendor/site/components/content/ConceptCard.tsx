@@ -1,7 +1,7 @@
 import type { Concept } from "@site/content/types";
 import { Badge } from "@site/components/ui/Badge";
 import { Card } from "@site/components/ui/Card";
-import { Markdown } from "@site/components/content/Markdown";
+import { Markdown, StudyText } from "@site/components/content/Markdown";
 
 interface ConceptCardProps {
   concept: Concept;
@@ -15,7 +15,7 @@ export function ConceptCard({ concept }: ConceptCardProps) {
       className="scroll-mt-24 grid content-start gap-3 p-5"
     >
       <div className="grid gap-1.5">
-        <h3 className="text-base font-semibold text-ink">{concept.term}</h3>
+        <h3 className="text-base font-semibold text-ink"><StudyText>{concept.term}</StudyText></h3>
         <Markdown className="text-sm">{concept.short}</Markdown>
       </div>
 

@@ -3,7 +3,7 @@
 import { RotateCcw } from "lucide-react";
 import type { ExerciseSheet } from "@site/content/types";
 import { ExerciseAnswer } from "@site/components/content/ExerciseAnswer";
-import { Markdown } from "@site/components/content/Markdown";
+import { Markdown, StudyText } from "@site/components/content/Markdown";
 import { Badge } from "@site/components/ui/Badge";
 import { Card } from "@site/components/ui/Card";
 import { ProgressBar } from "@site/components/ui/ProgressBar";
@@ -19,7 +19,7 @@ export function ExerciseSheetView({ sheet }: { sheet: ExerciseSheet }) {
       <Card className="grid gap-3 p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="grid gap-1">
-            <h3 className="text-base font-semibold text-ink">{sheet.title}</h3>
+            <h3 className="text-base font-semibold text-ink"><StudyText>{sheet.title}</StudyText></h3>
             <p className="text-sm text-muted">{sheet.description}</p>
           </div>
           <Badge tone={progress.answered === progress.total ? "positive" : "neutral"}>
@@ -57,7 +57,7 @@ export function ExerciseSheetView({ sheet }: { sheet: ExerciseSheet }) {
             <p className="text-xs font-semibold tracking-wide text-brand uppercase">
               Exercise {exerciseIndex + 1}
             </p>
-            <h4 className="text-base font-semibold text-ink">{exercise.title}</h4>
+            <h4 className="text-base font-semibold text-ink"><StudyText>{exercise.title}</StudyText></h4>
             {exercise.intro ? <Markdown className="text-sm">{exercise.intro}</Markdown> : null}
           </header>
 

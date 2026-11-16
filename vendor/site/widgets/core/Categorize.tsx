@@ -1,5 +1,6 @@
 "use client";
 
+import { StudyText } from "@site/components/content/Markdown";
 import { useMemo, useState } from "react";
 import { Check, RotateCcw, X } from "lucide-react";
 import type { CategorizeProps } from "@core/widgets";
@@ -16,7 +17,7 @@ export function Categorize({ prompt, categories, items }: CategorizeProps) {
 
   return (
     <div className="grid gap-3">
-      {prompt ? <p className={promptClass}>{prompt}</p> : null}
+      {prompt ? <p className={promptClass}><StudyText>{prompt}</StudyText></p> : null}
       <ul className="grid gap-2">
         {order.map((item) => {
           const answer = answers[item.text];
@@ -56,7 +57,7 @@ export function Categorize({ prompt, categories, items }: CategorizeProps) {
                         : "border-line bg-surface text-muted hover:border-brand/50 hover:text-brand",
                     )}
                   >
-                    {category}
+                    <StudyText>{category}</StudyText>
                   </button>
                 ))}
               </div>

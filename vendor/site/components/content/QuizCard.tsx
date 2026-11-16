@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, RotateCcw, Trophy, X } from "lucide-react";
 import type { QuizQuestion } from "@site/content/types";
-import { Markdown } from "@site/components/content/Markdown";
+import { Markdown, StudyText } from "@site/components/content/Markdown";
 import { Badge } from "@site/components/ui/Badge";
 import { Card } from "@site/components/ui/Card";
 import { ProgressBar } from "@site/components/ui/ProgressBar";
@@ -73,7 +73,7 @@ export function QuizCard({ lectureSlug, sectionId, questions }: QuizCardProps) {
             <li key={question.id} className="grid gap-3">
               <p className="text-sm font-medium text-ink">
                 <span className="mr-2 text-faint tabular-nums">{index + 1}.</span>
-                {question.prompt}
+                <StudyText>{question.prompt}</StudyText>
               </p>
 
               <div className="grid gap-2">
@@ -110,7 +110,7 @@ export function QuizCard({ lectureSlug, sectionId, questions }: QuizCardProps) {
                           </span>
                         )}
                       </span>
-                      <span>{option.text}</span>
+                      <span><StudyText>{option.text}</StudyText></span>
                     </button>
                   );
                 })}

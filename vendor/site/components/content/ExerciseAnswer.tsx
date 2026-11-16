@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { Check, Eye, Lightbulb, X } from "lucide-react";
 import type { ExerciseTask } from "@site/content/types";
-import { Markdown } from "@site/components/content/Markdown";
+import { Markdown, StudyText } from "@site/components/content/Markdown";
 import { useExerciseState } from "@site/hooks/useExerciseState";
 import { emptyTaskState, gradeTask, taskKey, type SelfMark } from "@site/lib/exercises";
 import { cn } from "@site/lib/cn";
@@ -93,7 +93,7 @@ export function ExerciseAnswer({ sheetId, task, index }: ExerciseAnswerProps) {
                       : "border-line bg-surface text-muted hover:border-brand/40",
                   )}
                 >
-                  {option}
+                  <StudyText>{option}</StudyText>
                 </button>
               );
             })}

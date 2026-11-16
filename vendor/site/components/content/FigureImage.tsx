@@ -1,3 +1,4 @@
+import { StudyText } from "@site/components/content/Markdown";
 import Image from "next/image";
 
 interface FigureImageProps {
@@ -20,7 +21,7 @@ export function FigureImage({ src, alt, width, height, caption }: FigureImagePro
           className="mx-auto h-auto max-h-[30rem] w-auto max-w-full"
         />
       </div>
-      {caption ? <figcaption className="text-xs text-faint">{caption}</figcaption> : null}
+      {caption ? <figcaption className="text-xs text-faint"><StudyText>{caption}</StudyText></figcaption> : null}
     </figure>
   );
 }

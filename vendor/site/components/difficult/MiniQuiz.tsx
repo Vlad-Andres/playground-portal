@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, X } from "lucide-react";
 import type { QuizQuestion } from "@site/content/types";
-import { Markdown } from "@site/components/content/Markdown";
+import { Markdown, StudyText } from "@site/components/content/Markdown";
 import { cn } from "@site/lib/cn";
 
 /** Lecture quiz questions linked to the flagged part, answered without touching lecture progress. */
@@ -22,7 +22,7 @@ export function MiniQuiz({ questions }: { questions: QuizQuestion[] }) {
           <li key={question.id} className="grid gap-2">
             <p className="text-sm font-medium text-ink">
               <span className="mr-2 text-faint">{index + 1}.</span>
-              {question.prompt}
+              <StudyText>{question.prompt}</StudyText>
             </p>
             {question.options.map((option) => {
               const isCorrect = option.id === question.answerId;
@@ -44,7 +44,7 @@ export function MiniQuiz({ questions }: { questions: QuizQuestion[] }) {
                   {reveal ? (
                     isCorrect ? <Check size={15} className="mt-0.5 text-positive" aria-hidden /> : <X size={15} className="mt-0.5 text-danger" aria-hidden />
                   ) : null}
-                  {option.text}
+                  <StudyText>{option.text}</StudyText>
                 </button>
               );
             })}

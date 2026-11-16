@@ -120,6 +120,22 @@ export function InlineMarkdown({ children }: { children: string }) {
   );
 }
 
+/** Math in short labels and choices. Keep links and block markup out of controls. */
+export function StudyText({ children }: { children: string }) {
+  if (!children.includes("$")) return <>{children}</>;
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkMath]}
+      rehypePlugins={[rehypeKatex]}
+      disallowedElements={["a", "img", "pre", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "blockquote", "hr", "div"]}
+      unwrapDisallowed
+      components={{ p: ({ children }) => <>{children}</> }}
+    >
+      {children}
+    </ReactMarkdown>
+  );
+}
+
 interface MarkdownProps {
   children: string;
   className?: string;
