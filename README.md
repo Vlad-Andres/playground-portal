@@ -106,6 +106,7 @@ Key ideas:
 - **Beta numbers**: daily counters (landing views, demo opens, jobs submitted/published/failed, course
   opens, quizzes, reviews, exams, Ask AI questions, shares, reports, feedback) per day, group and course.
 - Edit any portal text in English and Romanian at `/admin/translations` (search, see the default, reset).
+- Demo course per landing language, picked from the published courses.
 - Invite codes: add a code you choose (4–40 letters, digits or dashes; shown in the table, matched ignoring case), disable, enable, delete.
 - Overview: jobs today, all courses, tokens and an **estimated** cost, recent jobs with the invite code used.
 - Take a course down: the page and its owner link return 404 immediately.
@@ -250,8 +251,9 @@ The demo course (*Energy on the Move: from Newton's Cradle to the Tesla Coil*, E
 notes in [playground-template `examples/demo-energy/`](https://github.com/Vlad-Andres/playground-template/tree/iteration-6/examples/demo-energy),
 adapted from Siyavula *Everything Science* (CC BY 3.0, credited in the notes) plus our own sections on the
 pendulum, Newton's cradle, transformers and the Tesla coil. It is generated at depth "deep" so each lecture
-gets a simulation (pendulum energy, Newton's cradle, coupled LC resonance). The landing page links to it
-once the admin demo setting (plan task G3) exists.
+gets a simulation (pendulum energy, Newton's cradle, coupled LC resonance). In `/admin` → Settings, pick
+the demo course for each language; the landing page in that language then shows a "Try a demo course"
+button to it (no button when none is picked).
 
 ## Privacy
 
