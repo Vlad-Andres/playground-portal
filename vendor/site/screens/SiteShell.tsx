@@ -4,8 +4,7 @@ import { DEFAULT_HOST, siteFeatures } from "@core/site";
 import { CourseAssistant } from "@site/components/assistant/CourseAssistant";
 import { SiteFooter } from "@site/components/layout/SiteFooter";
 import { ServiceWorkerRegistration } from "@site/components/layout/ServiceWorkerRegistration";
-import { SiteHeader } from "@site/components/layout/SiteHeader";
-import { indexMetas } from "@site/content/registry";
+import { CourseWorkspace } from "@site/components/layout/SiteHeader";
 import { buildSearchRecords } from "@site/lib/search";
 import { siteToContext } from "@site/lib/assistant/courseContext";
 import { SiteProvider } from "@site/site/context";
@@ -45,10 +44,7 @@ export function SiteShell({
       >
         Skip to content
       </a>
-      <SiteHeader metas={indexMetas(data.index)} records={records} />
-      <main id="main" className="flex-1" data-assistant-scope>
-        {children}
-      </main>
+      <CourseWorkspace records={records}>{children}</CourseWorkspace>
       <SiteFooter course={data.course} host={host} />
       {enableOffline ? <ServiceWorkerRegistration /> : null}
       {showAssistant ? <CourseAssistant context={assistantContext} /> : null}

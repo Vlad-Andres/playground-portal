@@ -4,9 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, RotateCcw, Trophy, X } from "lucide-react";
 import type { QuizQuestion } from "@site/content/types";
 import { Markdown, StudyText } from "@site/components/content/Markdown";
-import { Badge } from "@site/components/ui/Badge";
-import { Card } from "@site/components/ui/Card";
-import { ProgressBar } from "@site/components/ui/ProgressBar";
 import { useProgress } from "@site/hooks/useProgress";
 import { QUIZ_PASS_RATIO } from "@site/lib/progress";
 import { cn } from "@site/lib/cn";
@@ -16,18 +13,21 @@ interface QuizCardProps {
   lectureSlug: string;
   sectionId: string;
   questions: QuizQuestion[];
+  sourceLabel?: string;
 }
 
-export function QuizCard({ lectureSlug, sectionId, questions }: QuizCardProps) {
+export function QuizCard({ lectureSlug, sectionId, questions, sourceLabel }: QuizCardProps) {
   const { recordQuizResult } = useProgress();
   const [answers, setAnswers] = useState<Record<string, string>>({});
+
+  const [position, setPosition] = useState(0);
 
   const answeredCount = Object.keys(answers).length;
   const correctCount = useMemo(
     () => questions.filter((question) => answers[question.id] === question.answerId).length,
     [answers, questions],
   );
-  const finished = answeredCount === questions.length;
+  const finished = questions.length > 0 && answeredCount === questions.length;
   const passed = finished && correctCount / questions.length >= QUIZ_PASS_RATIO;
 
   useEffect(() => {
@@ -46,109 +46,95 @@ export function QuizCard({ lectureSlug, sectionId, questions }: QuizCardProps) {
     announceStudyEvent("quiz_completed");
   }, [finished]);
 
+  const question = questions[position];
+  if (!question) return null;
+
+  const selected = answers[question.id];
+  const isAnswered = selected !== undefined;
+  const isRight = selected === question.answerId;
+
   return (
-    <Card className="grid gap-5 p-5 sm:p-6">
-      <header className="grid gap-3 sm:flex sm:items-center sm:justify-between">
-        <p className="text-sm text-muted">
-          Pick an answer to reveal the explanation. {Math.round(QUIZ_PASS_RATIO * 100)}% clears the
-          lecture.
-        </p>
-        <Badge tone={finished ? (passed ? "positive" : "warning") : "neutral"}>
-          {correctCount} / {questions.length} correct
-        </Badge>
-      </header>
+    <div className="grid min-w-0 gap-4">
+      <span aria-live="polite" className="course-quiz-counter w-fit px-3 py-1.5 font-mono text-xs tracking-widest uppercase">
+        Quiz / {String(position + 1).padStart(2, "0")} of {String(questions.length).padStart(2, "0")}
+      </span>
 
-      <ProgressBar
-        value={answeredCount / questions.length}
-        label="Quiz progress"
-        tone={passed ? "positive" : "brand"}
-      />
+      <p className="text-xl leading-snug font-semibold text-ink sm:text-2xl">
+        <StudyText>{question.prompt}</StudyText>
+      </p>
 
-      <ol className="grid gap-5">
-        {questions.map((question, index) => {
-          const selected = answers[question.id];
-          const isAnswered = selected !== undefined;
-
+      <div className="grid gap-3">
+        {question.options.map((option, index) => {
+          const correct = isAnswered && option.id === question.answerId;
+          const wrong = selected === option.id && !correct;
           return (
-            <li key={question.id} className="grid gap-3">
-              <p className="text-sm font-medium text-ink">
-                <span className="mr-2 text-faint tabular-nums">{index + 1}.</span>
-                <StudyText>{question.prompt}</StudyText>
-              </p>
-
-              <div className="grid gap-2">
-                {question.options.map((option) => {
-                  const isCorrect = option.id === question.answerId;
-                  const isChosen = selected === option.id;
-                  const reveal = isAnswered && (isChosen || isCorrect);
-
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      disabled={isAnswered}
-                      onClick={() =>
-                        setAnswers((previous) => ({ ...previous, [question.id]: option.id }))
-                      }
-                      className={cn(
-                        "flex items-start gap-2.5 rounded-sm border px-3.5 py-2.5 text-left text-sm transition-colors",
-                        "disabled:cursor-default",
-                        !isAnswered && "border-line bg-surface hover:border-brand/50 hover:bg-brand-soft/40",
-                        reveal && isCorrect && "border-brand bg-brand-soft text-ink",
-                        reveal && !isCorrect && "border-danger/40 bg-danger-soft text-ink",
-                        isAnswered && !reveal && "border-line bg-surface text-faint",
-                      )}
-                    >
-                      <span className="mt-0.5 shrink-0">
-                        {reveal && isCorrect ? (
-                          <Check size={16} className="text-brand" aria-hidden />
-                        ) : reveal ? (
-                          <X size={16} className="text-danger" aria-hidden />
-                        ) : (
-                          <span className="grid size-4 place-items-center rounded-full border border-line-strong text-[10px] font-semibold text-faint">
-                            {option.id.toUpperCase()}
-                          </span>
-                        )}
-                      </span>
-                      <span><StudyText>{option.text}</StudyText></span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {isAnswered ? (
-                <div className={cn(
-                  "animate-rise rounded-sm border px-3.5 py-3",
-                  selected === question.answerId ? "border-transparent bg-highlight text-[#1d1a36]" : "border-line bg-sunken",
-                )}>
-                  <Markdown className={cn("text-sm", selected === question.answerId && "[&_.text-muted]:text-[#1d1a36] [&_.text-ink]:text-[#1d1a36]")}>
-                    {question.explanation}
-                  </Markdown>
-                </div>
-              ) : null}
-            </li>
+            <button
+              key={option.id}
+              type="button"
+              disabled={isAnswered}
+              data-result={correct ? "correct" : wrong ? "wrong" : undefined}
+              onClick={() => setAnswers((previous) => ({ ...previous, [question.id]: option.id }))}
+              className={cn(
+                "course-quiz-choice flex w-full items-center gap-3 border px-3.5 py-2.5 text-left text-base transition-colors disabled:cursor-default",
+                correct ? "border-brand text-ink" : wrong ? "border-danger bg-danger-soft text-ink" : "border-line text-ink",
+                !isAnswered && "hover:border-brand hover:bg-brand-soft/40",
+              )}
+            >
+              <span className={cn(
+                "grid size-8 shrink-0 place-items-center font-mono text-sm",
+                correct ? "bg-brand text-brand-ink" : "bg-canvas text-ink",
+              )} aria-hidden>
+                {String.fromCharCode(65 + index)}
+              </span>
+              <span className="min-w-0 flex-1 break-words"><StudyText>{option.text}</StudyText></span>
+              {correct ? <Check size={20} className="shrink-0 text-brand" aria-label="Correct answer" /> : null}
+              {wrong ? <X size={20} className="shrink-0 text-danger" aria-label="Incorrect answer" /> : null}
+            </button>
           );
         })}
-      </ol>
+      </div>
+
+      {isAnswered ? (
+        <div role="status" className={cn("animate-rise grid gap-1.5 px-4 py-3", isRight ? "course-quiz-feedback text-[#1d1a36]" : "border border-line bg-sunken")}>
+          <p className="font-bold">{isRight ? "Exactly." : "Review the correct answer."}</p>
+          <Markdown className={cn("text-sm", isRight && "[&_.text-muted]:text-[#1d1a36] [&_.text-ink]:text-[#1d1a36]")}>
+            {question.explanation}
+          </Markdown>
+        </div>
+      ) : null}
+
+      {isAnswered && sourceLabel ? (
+        <a href="#lecture-sources" className="course-editorial-label w-fit hover:underline">Source / {sourceLabel} ↗</a>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4 text-sm">
+        <span className="font-mono text-xs text-muted">{answeredCount} / {questions.length} answered</span>
+        <div className="flex gap-2">
+          {position > 0 ? (
+            <button type="button" onClick={() => setPosition(position - 1)} className="border border-line px-3 py-1.5 hover:border-brand">Previous</button>
+          ) : null}
+          {position < questions.length - 1 ? (
+            <button type="button" onClick={() => setPosition(position + 1)} disabled={!isAnswered}
+              className="border border-line px-3 py-1.5 hover:border-brand disabled:opacity-45">
+              Next question
+            </button>
+          ) : null}
+        </div>
+      </div>
 
       {finished ? (
-        <footer className="animate-rise flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-sunken px-4 py-3">
+        <footer className="animate-rise flex flex-wrap items-center justify-between gap-3 border border-line bg-sunken px-4 py-3">
           <p className="flex items-center gap-2 text-sm font-medium text-ink">
             <Trophy size={16} className={passed ? "text-accent" : "text-faint"} aria-hidden />
-            {passed
-              ? `Cleared with ${correctCount} of ${questions.length}.`
+            {passed ? `Cleared with ${correctCount} of ${questions.length}.`
               : `${correctCount} of ${questions.length}. Review the explanations and retry.`}
           </p>
-          <button
-            type="button"
-            onClick={() => setAnswers({})}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-medium transition-colors hover:border-brand/40 hover:bg-brand-soft"
-          >
-            <RotateCcw size={14} aria-hidden />
-            Retry
+          <button type="button" className="inline-flex items-center gap-1.5 border border-line bg-surface px-3 py-1.5 text-sm font-medium"
+            onClick={() => { setAnswers({}); setPosition(0); }}>
+            <RotateCcw size={14} aria-hidden /> Retry
           </button>
         </footer>
       ) : null}
-    </Card>
+    </div>
   );
 }

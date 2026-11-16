@@ -1,243 +1,96 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Flag, GraduationCap, Menu, Search, Target, X } from "lucide-react";
-import type { LectureMeta } from "@site/content/types";
-import type { SearchRecord } from "@site/lib/search";
+import { Ellipsis, Search, X } from "lucide-react";
+import { siteFeatures } from "@core/site";
+import { StudyText } from "@site/components/content/Markdown";
 import { SearchDialog } from "@site/components/layout/SearchDialog";
 import { ThemeToggle } from "@site/components/layout/ThemeToggle";
-import { useDifficult } from "@site/hooks/useDifficult";
-import { cn } from "@site/lib/cn";
-import { siteFeatures } from "@core/site";
+import type { SearchRecord } from "@site/lib/search";
 import { useSite } from "@site/site/context";
 
-interface SiteHeaderProps {
-  metas: LectureMeta[];
-  records: SearchRecord[];
-}
-
-export function SiteHeader({ metas, records }: SiteHeaderProps) {
+export function CourseWorkspace({ records, children }: { records: SearchRecord[]; children: ReactNode }) {
   const { data, host, paths } = useSite();
-  const course = data.course;
-  const features = siteFeatures(course);
+  const { course, lectures } = data;
+  const { search, difficult } = siteFeatures(course);
   const pathname = usePathname();
+  const [menuFor, setMenuFor] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [lecturesOpen, setLecturesOpen] = useState(false);
-  const lecturesRef = useRef<HTMLDivElement>(null);
-  const { state: difficult } = useDifficult();
-  const difficultCount = Object.keys(difficult.items).length;
-  const hasExam = data.exam !== null;
-  const hasExpected = data.expected.length > 0;
-  const lecturesRoot = paths.lecture("");
-
-  const closeMenus = useCallback(() => {
-    setMenuOpen(false);
-    setLecturesOpen(false);
-  }, []);
+  const menuId = useId();
+  const menuOpen = menuFor !== null && menuFor === pathname;
+  const matches = (href: string) => pathname?.replace(/\/$/, "") === href.replace(/\/$/, "");
+  const current = lectures.find(({ meta }) => matches(paths.lecture(meta.slug)));
+  const studyLectures = current ? [current, ...lectures.filter((lecture) => lecture !== current)] : lectures;
+  const recallLecture = studyLectures.find((lecture) => lecture.sections.some((section) => section.blocks.some((block) => block.kind === "recall")));
+  const recallSection = recallLecture?.sections.find((section) => section.blocks.some((block) => block.kind === "recall"));
+  const quizLecture = studyLectures.find((lecture) => lecture.quiz.length && lecture.sections.some((section) => section.kind === "quiz"));
+  const quizSection = quizLecture?.sections.find((section) => section.kind === "quiz");
+  const navClick = () => setMenuFor(null);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (features.search && event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey)) {
+      if (search && event.key.toLowerCase() === "k" && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
+        setMenuFor(null);
         setSearchOpen(true);
       }
     };
-    const onPointerDown = (event: PointerEvent) => {
-      if (!lecturesRef.current?.contains(event.target as Node)) setLecturesOpen(false);
-    };
-
     document.addEventListener("keydown", onKeyDown);
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("pointerdown", onPointerDown);
-    };
-  }, [features.search]);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [search]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line-strong bg-canvas/90 backdrop-blur-md">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-4 sm:px-6">
-        <Link href={paths.home} onClick={closeMenus} className="flex items-center gap-2.5 font-semibold">
-          <span className="grid size-8 place-items-center rounded-lg bg-brand text-sm text-brand-ink">
-            {course.shortTitle.slice(0, 3).toUpperCase()}
-          </span>
-          <span className="hidden sm:inline">{host.brand.name}</span>
-        </Link>
-
-        <nav className="ml-4 hidden items-center gap-1 md:flex">
-          {hasExam ? <Link
-            href={paths.home}
-            onClick={closeMenus}
-            className={cn(
-              "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors hover:bg-sunken",
-              pathname === paths.home ? "text-brand" : "text-muted",
-            )}
-          >
-            Overview
-          </Link> : null}
-
-          <div className="relative" ref={lecturesRef}>
-            <button
-              type="button"
-              onClick={() => setLecturesOpen((open) => !open)}
-              aria-expanded={lecturesOpen}
-              className={cn(
-                "flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors hover:bg-sunken",
-                pathname.startsWith(lecturesRoot) ? "text-brand" : "text-muted",
-              )}
-            >
-              Lectures
-              <ChevronDown
-                size={14}
-                className={cn("transition-transform", lecturesOpen && "rotate-180")}
-                aria-hidden
-              />
-            </button>
-
-            {lecturesOpen ? (
-              <div className="animate-rise absolute left-0 top-full mt-2 w-80 overflow-hidden rounded-xl border border-line bg-surface p-1.5 shadow-[var(--shadow-card)]">
-                {metas.map((meta) => (
-                  <Link
-                    key={meta.slug}
-                    href={paths.lecture(meta.slug)}
-                    onClick={closeMenus}
-                    className="grid gap-0.5 rounded-lg px-3 py-2 hover:bg-brand-soft/50"
-                  >
-                    <span className="text-sm font-medium text-ink">
-                      {meta.number}. {meta.title}
-                    </span>
-                    <span className="truncate text-xs text-faint">{meta.subtitle}</span>
-                  </Link>
-                ))}
-              </div>
-            ) : null}
-          </div>
-
-          {hasExam ? <Link
-            href={paths.exam}
-            onClick={closeMenus}
-            className={cn(
-              "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors hover:bg-sunken",
-              pathname.startsWith(paths.exam) ? "text-brand" : "text-muted",
-            )}
-          >
-            <GraduationCap size={15} aria-hidden />
-            Practice exam
-          </Link> : null}
-
-          {hasExpected ? <Link
-            href={paths.expected}
-            onClick={closeMenus}
-            className={cn(
-              "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors hover:bg-sunken",
-              pathname.startsWith(paths.expected) ? "text-brand" : "text-muted",
-            )}
-          >
-            <Target size={15} aria-hidden />
-            Expected
-          </Link> : null}
-
-          {features.difficult ? (
-            <Link
-              href={paths.difficult}
-              onClick={closeMenus}
-              className={cn(
-                "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors hover:bg-sunken",
-                pathname.startsWith(paths.difficult) ? "text-brand" : "text-muted",
-              )}
-            >
-              <Flag size={15} aria-hidden />
-              Difficult
-              {difficultCount > 0 ? (
-                <span className="rounded-full bg-warning-soft px-1.5 text-xs font-semibold text-warning tabular-nums">{difficultCount}</span>
-              ) : null}
-            </Link>
-          ) : null}
-        </nav>
-
-        <div className="ml-auto flex items-center gap-2">
-          {features.search ? (
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2.5 py-2 text-sm text-faint transition-colors hover:border-brand/40 hover:text-brand sm:px-3"
-            >
-              <Search size={16} aria-hidden />
-              <span className="hidden lg:inline">Search</span>
-              <kbd className="hidden rounded border border-line bg-sunken px-1.5 py-0.5 font-sans text-[10px] lg:inline">
-                ⌘K
-              </kbd>
+    <div className="course-workspace" data-menu-open={menuOpen}>
+      <header className="course-workspace-masthead">
+        <Link href={paths.home} onClick={navClick} className="course-workspace-wordmark">{host.brand.name === "Study with AI" ? "study / with ai" : host.brand.name}</Link>
+        <button type="button" className="course-workspace-menu-toggle" aria-label={menuOpen ? "Close course menu" : "Open course menu"}
+          aria-expanded={menuOpen} aria-controls={menuId} onClick={() => setMenuFor(menuOpen ? null : pathname)}>
+          {menuOpen ? <X size={22} aria-hidden /> : <Ellipsis size={26} aria-hidden />}
+        </button>
+        <div id={menuId} className="course-workspace-menu" hidden={!menuOpen}>
+          {search ? (
+            <button type="button" onClick={() => { navClick(); setSearchOpen(true); }}>
+              <Search size={16} aria-hidden /> Search course
             </button>
           ) : null}
-
           <ThemeToggle />
-
-          <button
-            type="button"
-            onClick={() => setMenuOpen((open) => !open)}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={menuOpen}
-            className="grid size-9 place-items-center rounded-lg border border-line bg-surface text-muted md:hidden"
-          >
-            {menuOpen ? <X size={17} aria-hidden /> : <Menu size={17} aria-hidden />}
-          </button>
         </div>
-      </div>
+      </header>
 
-      {menuOpen ? (
-        <nav className="animate-rise border-t border-line bg-surface px-4 py-3 md:hidden">
-          <Link
-            href={paths.home}
-            onClick={closeMenus}
-            className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-sunken"
-          >
-            Overview
+      <div className="course-workspace-body">
+        <nav className="course-workspace-rail" aria-label="Course navigation">
+          <p className="course-workspace-label">Your course</p>
+          <Link href={paths.home} className="course-workspace-title" onClick={navClick} aria-current={matches(paths.home) ? "page" : undefined}>
+            <StudyText>{course.title}</StudyText>
           </Link>
-          {hasExam ? <Link
-            href={paths.exam}
-            onClick={closeMenus}
-            className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-sunken"
-          >
-            Practice exam
-          </Link> : null}
-          {hasExpected ? <Link
-            href={paths.expected}
-            onClick={closeMenus}
-            className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-sunken"
-          >
-            Expected at the exam
-          </Link> : null}
-          {features.difficult ? (
-            <Link
-              href={paths.difficult}
-              onClick={closeMenus}
-              className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-sunken"
-            >
-              Difficult parts{difficultCount > 0 ? ` (${difficultCount})` : ""}
-            </Link>
-          ) : null}
-          <p className="px-3 pb-1 pt-3 text-xs font-semibold tracking-wide text-faint uppercase">
-            Lectures
-          </p>
-          {metas.map((meta) => (
-            <Link
-              key={meta.slug}
-              href={paths.lecture(meta.slug)}
-              onClick={closeMenus}
-              className="block rounded-lg px-3 py-2 text-sm hover:bg-sunken"
-            >
-              {meta.number}. {meta.title}
-            </Link>
-          ))}
+          <p className="course-workspace-label course-workspace-lecture-label">Lectures</p>
+          <ol className="course-workspace-lectures">
+            {lectures.map(({ meta }) => {
+              const href = paths.lecture(meta.slug);
+              return (
+                <li key={meta.slug}>
+                  <Link href={href} onClick={navClick} aria-current={matches(href) ? "page" : undefined}>
+                    <span className="tabular-nums">{String(meta.number).padStart(2, "0")}</span>
+                    <span><StudyText>{meta.title}</StudyText></span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+          <div className="course-workspace-study">
+            {recallLecture && recallSection ? <Link onClick={navClick} href={`${paths.lecture(recallLecture.meta.slug)}#${recallSection.id}`}>Recall cards</Link> : null}
+            {quizLecture && quizSection ? <Link onClick={navClick} href={`${paths.lecture(quizLecture.meta.slug)}#${quizSection.id}`}>Quiz practice</Link> : null}
+            {data.exam ? <Link href={paths.exam} onClick={navClick} aria-current={matches(paths.exam) ? "page" : undefined}>Practice exam</Link> : null}
+            {data.expected.length > 0 ? <Link href={paths.expected} onClick={navClick} aria-current={matches(paths.expected) ? "page" : undefined}>Expected at the exam</Link> : null}
+            {difficult ? <Link href={paths.difficult} onClick={navClick} aria-current={matches(paths.difficult) ? "page" : undefined}>Difficult parts</Link> : null}
+          </div>
+          {host.brand.homeUrl ? <a href={host.brand.homeUrl} className="course-workspace-back">← Study with AI</a> : null}
         </nav>
-      ) : null}
-
-      {features.search && searchOpen ? (
-        <SearchDialog records={records} onClose={() => setSearchOpen(false)} />
-      ) : null}
-    </header>
+        <main id="main" className="course-workspace-content" data-assistant-scope>{children}</main>
+      </div>
+      {search && searchOpen ? <SearchDialog records={records} onClose={() => setSearchOpen(false)} /> : null}
+    </div>
   );
 }
