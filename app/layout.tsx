@@ -17,7 +17,7 @@ export async function generateMetadata() {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const locale = await getLocale();
   return (
-    <html lang={locale} className={`${sans.variable} ${serif.variable} ${mono.variable}`}>
+    <html suppressHydrationWarning lang={locale} className={`${sans.variable} ${serif.variable} ${mono.variable}`}>
       <body>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>

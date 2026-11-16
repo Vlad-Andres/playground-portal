@@ -20,7 +20,7 @@ export default async function CourseLayout({ children, params }: CourseParams & 
   const t = await getTranslations("report");
 
   return (
-    <div lang={data.course.language} className="flex min-h-screen flex-col">
+    <div data-course-page lang={data.course.language} className="flex min-h-screen flex-col">
       <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript(data.key) }} />
       {accentCss ? <style dangerouslySetInnerHTML={{ __html: accentCss }} /> : null}
       {/* Many courses share this origin, so none of them registers an offline service worker. */}
