@@ -1,6 +1,7 @@
-# Learning Playground Portal
+# Study with AI — Learning Playground Portal
 
 Turn lecture slides or notes into an interactive study website, in English or Romanian.
+Currently an invite-only beta ("Study with AI") for small student groups.
 A person uploads PDFs, text or Markdown; the portal plans the course, lets them review the outline,
 writes every lecture with a language model, validates it, and **hosts the finished site itself** at
 `/courses/<course>-<id>/`. Nothing is published to GitHub and no repository is created per course.
@@ -15,7 +16,7 @@ Browser                                   Server (Next.js on Vercel)            
 1. pick PDF / .txt / .md
 2. extract text in the browser
    (pdf.js); only text leaves the PC ───▶ POST /api/jobs  (access code, options,       jobs/<id>/brief.json
-                                          text) → checks, daily limit, new job ─────▶  jobs/<id>/materials.json
+   confirm the right to use it            rights confirmed, text) → checks, limits ─▶  jobs/<id>/materials.json
 3. job page polls and calls          ───▶ POST /api/jobs/<id>/advance  (one step      jobs/<id>/state.json
    "advance" until done                    per request, atomic claim)
       context   language decided by code; model → subject, level, goals ───────────────▶  jobs/<id>/context.json
@@ -34,8 +35,14 @@ Key ideas:
 
 - **Content is data, not code.** A course is strict, schema-validated JSON (`vendor/core`): lectures,
   concepts, quiz questions and 15 block kinds (prose, table, steps, timeline, formula, code, recall
-  cards, practice, interactive widgets, and a sandboxed `custom` exercise). The model never writes
+  cards, practice, exercises, catalogue widgets, and a sandboxed `custom` block). The model never writes
   React or routes. Invalid output is repaired once, then dropped, never published.
+- **Content-driven simulations.** Besides the fixed widget catalogue (order, match, categorize, cloze,
+  charts, function plot, parameter explorer, concept map, flow stepper), the model may write its own
+  interactive simulation as a `custom` block whenever an idea is better shown than told — something that
+  moves, changes over time or reacts to the learner (a pendulum, Newton's cradle, a resonant circuit). It
+  is built from the material's own values, runs in a sandbox and must work on phones and in dark mode.
+  Depth sets the cap: none at cram, 1 per lecture at standard, 2 at deep.
 - **One renderer, two hosts.** The course UI and the generator live in
   [playground-template](https://github.com/Vlad-Andres/playground-template). The portal holds a vendored
   copy in `vendor/core` (`@core/*`) and `vendor/site` (`@site/*`), refreshed only by `npm run sync:core`
@@ -45,7 +52,7 @@ Key ideas:
   a step is retried up to 3 times, then the job fails with a stable error code. State is persisted after
   every step, so a user can close the tab and come back to the same link.
 - **Code decides, the model proposes.** The course language, whether to ask a question, which alternatives
-  survive, where a custom exercise is allowed and every limit are rules in code; the model only fills
+  survive, how many simulations a lecture may keep and every limit are rules in code; the model only fills
   validated JSON, with at most one retry per call.
 - **Budget guards.** Each job has a token budget (600k input / 120k output); limits on files (12), pages
   (400), characters (600k) and request size (4 MB); an access code; a daily job limit.
@@ -53,7 +60,8 @@ Key ideas:
 ## Features
 
 **For people creating a course**
-- Landing page (`/`) with an animated background; builder at `/create`; job page at `/jobs/<id>`.
+- Landing page (`/`), builder at `/create` and job page at `/jobs/<id>` in the "Study with AI" look.
+- A required checkbox confirms the right to use and share the material (`rights-not-confirmed` otherwise).
 - English and Romanian everywhere (language switch in the top bar; stored in a cookie, URLs do not change).
 - Just files and an optional note. Language, level and structure are worked out from the files; the old
   options (title, language, level, depth, colour, quizzes, widgets, exam mode) sit under a closed "Advanced".
@@ -62,7 +70,8 @@ Key ideas:
   with its approach and why; rename or remove lectures.
 - Honest progress (a real bar during the lectures) with optional jokes, and a preview of the finished
   course that grows into the real site.
-- A private **edit link** (`/manage/<token>`) shown when the course is done: rename the site and lectures,
+- When the course is done: a **share card** that copies only the public course link, and a private
+  **edit link** (`/manage/<token>`): rename the site and lectures,
   change the description and accent colour, edit paragraph/note text, remove blocks or lectures, or delete
   the site. Changes are live at once. A wrong link is a plain 404.
 
@@ -77,13 +86,25 @@ Key ideas:
 - Limits: guests one course per browser; signed-in users five jobs a day (refinements count, the round
   limit is separate).
 
-**For people studying**
-- Lectures with explanations, tables, worked steps, quizzes, flashcards, interactive exercises (ordering,
-  matching, sorting, charts), a "difficult parts" review and an optional timed mock exam. Works on phones,
-  light and dark mode. No account needed.
+**For people studying** (no account needed; progress stays in the browser)
+- Lectures with explanations, formulas, tables (with rendered maths), worked steps, quizzes, flashcards,
+  interactive exercises (ordering, matching, sorting, cloze, charts, parameter explorers) and
+  model-written simulations.
+- **Study next** suggestions from your own answers, a **due today** review counter, a "difficult parts"
+  review, and a timed **practice exam** (on by default) whose results are remembered in this browser
+  with per-lecture links back to the quiz.
+- **Ask AI** about the course or a selected passage; answers link to the sections they use (needs
+  `ASSISTANT_API_KEY`).
+- Honest course pages: the host brand, a "make your own" footer link, **Report a problem**
+  (`/report?course=<key>`) and private 1–5 **feedback** under every course.
+- Works on phones, in light and dark mode, in English and Romanian.
 
 **For the owner** (`/admin`, English only; needs `ADMIN_TOKEN`)
 - Pause generation, set the daily job limit, override the model, post an announcement (EN/RO).
+- Invite codes per beta group, each with an optional **monthly job limit** (`group-limit` when reached).
+- **Reports queue**: open reports with Dismiss and Take down. **Feedback** list (ratings and comments).
+- **Beta numbers**: daily counters (landing views, demo opens, jobs submitted/published/failed, course
+  opens, quizzes, reviews, exams, Ask AI questions, shares, reports, feedback) per day, group and course.
 - Edit any portal text in English and Romanian at `/admin/translations` (search, see the default, reset).
 - Invite codes: add a code you choose (4–40 letters, digits or dashes; shown in the table, matched ignoring case), disable, enable, delete.
 - Overview: jobs today, all courses, tokens and an **estimated** cost, recent jobs with the invite code used.
@@ -99,7 +120,9 @@ server logs and on `/admin`.
 | `/` | Landing page |
 | `/create` | Upload form and options |
 | `/jobs/<id>` | Progress, outline review, result and edit link |
-| `/courses/<key>/…` | The published course (own CSP, Tailwind-styled template UI) |
+| `/courses/<key>/…` | The published course (own CSP, template UI): home, `lectures/<slug>`, `exam`, `difficult`, `expected`, `review-data.json` |
+| `/privacy`, `/terms` | Privacy notice and terms (EN/RO, marked beta) |
+| `/report?course=<key>` | Report a problem with a course |
 | `/manage/<token>` | Owner editor (404 for any wrong token) |
 | `/admin` | Owner dashboard (404 until `ADMIN_TOKEN` is set) |
 | `/admin/translations` | Edit the portal's English and Romanian texts |
@@ -111,11 +134,16 @@ server logs and on `/admin`.
 | `POST /api/jobs` | Create a job |
 | `GET /api/jobs/<id>` | Public job state (progress, outline, result; no internals) |
 | `POST /api/jobs/<id>/advance` | Run the next step |
+| `POST /api/assistant` | Ask AI about a course (server-side key; answers cite course sections) |
+| `POST /api/reports`, `POST /api/feedback` | Report a problem (5 per course per hour); private 1–5 feedback (10 per course per hour) |
+| `POST /api/metrics` | Allow-listed study events from course pages (no cookies, no identifiers) |
+| `/api/auth/dev` | Development sign-in, only with the fake model outside production |
 | `GET /api/cron/cleanup` | Daily cleanup, protected by `CRON_SECRET` (`vercel.json`, 03:00 UTC) |
 
 Every API error is `{ "error": "<English sentence>", "code": "<code>" }`; the browser translates the code
-(`generation-off`, `too-large`, `bad-request`, `wrong-code`, `daily-limit`, `bad-id`, `not-found`,
-`wrong-state`, `bad-outline`, plus material codes `empty`, `too-many-files`, `too-many-pages`, `too-long`,
+(`generation-off`, `too-large`, `bad-request`, `wrong-code`, `daily-limit`, `group-limit`,
+`rights-not-confirmed`, `bad-id`, `not-found`, `wrong-state`, `bad-outline`, `bad-answer`, `guest-limit`,
+`user-daily-limit`, `sign-in-required`, `course-busy`, plus material codes `empty`, `too-many-files`, `too-many-pages`, `too-long`,
 `scanned`). A failed job carries `course-too-big`, `plan-failed`, `lecture-failed`, `busy`, `material-gone`
 or `step-failed`.
 
@@ -145,6 +173,9 @@ One `Store` interface (`lib/jobs/store.ts`) with three adapters: Vercel Blob (pr
 | `courses/<key>/sources/`, `brief.json` | kept files (opt-in) and the options the course was built with | with the course, or until switched off |
 | `courses/<key>/rounds/<1-3>.json`, `busy.json` | used refinement rounds; the lock while a job changes the course | with the course |
 | `users/<uid>/courses/<key>.json`, `users/<uid>/days/…` | which courses an account owns; its jobs per day | with the account |
+| `metrics/<day>/…` | one marker per event: day, event name, beta group, course key — nothing else | kept |
+| `reports/<id>.json` | category (`wrong-content`, `copyright`, `other`), message, status | kept |
+| `feedback/<id>.json` | rating, optional comment, where it was given | kept |
 
 A course key is `<slug>-<first 8 hex of the job id>`.
 
@@ -152,8 +183,11 @@ A course key is `<slug>-<first 8 hex of the job id>`.
 
 - **Two content security policies.** Portal pages: `default-src 'self'`, no eval. Course pages
   (`/courses/*`): the template's policy (in-browser PostgreSQL needs `wasm-unsafe-eval`), no framing.
-- **Custom exercises** run only in `<iframe sandbox="allow-scripts">` with an opaque origin and no
-  network or storage; they must also pass a static scan (`scanCustomHtml`) at generation time.
+- **Model-written simulations** (`custom` blocks) run only in `<iframe sandbox="allow-scripts">` with an
+  opaque origin and their own CSP (no network, no storage, no forms); they must also pass a static scan
+  (`scanCustomHtml`) at generation time.
+- **Measurement without tracking**: metric markers carry no cookie, person, browser identifier, course
+  text, title or answer; the browser may send only an allow-listed set of events.
 - **Secrets**: the owner token is stored only as a SHA-256 hash; invite codes are kept in plain text so the
   owner can read and share them (delete one if it leaks). Codes are compared in constant
   time; `/admin` uses an `iron-session` cookie (8 h, httpOnly, sameSite strict); settings changes apply on the
@@ -171,6 +205,7 @@ Do not commit `.env.local`; see `.env.example`.
 | `PORTAL_DAILY_JOB_LIMIT` | jobs per UTC day, default `10` (overridable in `/admin`) |
 | `GEMINI_API_KEY` | server-side model key |
 | `GEMINI_MODEL` | model id, default `gemini-3.1-flash-lite` (overridable in `/admin`) |
+| `ASSISTANT_API_KEY` | model key for Ask AI on course pages; unset means Ask AI is off |
 | `BLOB_READ_WRITE_TOKEN` | private Vercel Blob store; without it local files are used |
 | `CRON_SECRET` | protects the daily cleanup |
 | `ADMIN_TOKEN` | password for `/admin`, 24+ characters; unset means `/admin` is a 404 |
@@ -209,10 +244,21 @@ are set. The server writes one JSON line per event to stdout (`job.step`, `job.f
 `course.updated`, `course.deleted`, `admin.login`, `request.error`, …) without material text, tokens or
 codes; read them in the Vercel logs.
 
+## Demo course
+
+The demo course (*Energy on the Move: from Newton's Cradle to the Tesla Coil*, EN and RO) is built from
+notes in [playground-template `examples/demo-energy/`](https://github.com/Vlad-Andres/playground-template/tree/iteration-6/examples/demo-energy),
+adapted from Siyavula *Everything Science* (CC BY 3.0, credited in the notes) plus our own sections on the
+pendulum, Newton's cradle, transformers and the Tesla coil. It is generated at depth "deep" so each lecture
+gets a simulation (pendulum energy, Newton's cradle, coupled LC resonance). The landing page links to it
+once the admin demo setting (plan task G3) exists.
+
 ## Privacy
 
 Files are read in the browser; only their text is sent. That text is used to generate the course and is
 deleted from the job when the course is published (jobs themselves are deleted after 7 days). It is kept
 only when a signed-in owner switches on "Keep my files" for that course, and it is deleted when they
 switch it off, delete the course or delete the account. Accounts store a hashed user id and a display
-name, nothing else from Google.
+name, nothing else from Google. Ask AI sends the question, the course text it needs and any selected
+passage to the model provider; only a question counter is stored. Reports and feedback keep only what the person typed
+and where; beta counters keep no personal or browser identifiers.
