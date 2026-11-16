@@ -6,28 +6,22 @@ import { createCode, deleteCode, setCodeActive, setCodeLimit } from "./actions";
 import styles from "./admin.module.css";
 
 export function InviteCodes({ codes, usage }: { codes: InviteCode[]; usage: Record<string, number> }) {
-  const [fresh, setFresh] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   return (
     <div className={styles.card}>
-      {fresh ? (
-        <div className={styles.fresh} role="status">
-          <code>{fresh}</code>
-          <p>Copy it now. It is not stored and cannot be shown again.</p>
-        </div>
-      ) : null}
       <div className={styles.scroll}><table className={styles.table}>
         <thead>
-          <tr><th>Label</th><th>Created</th><th>Active</th><th>This month</th><th>Monthly limit</th><th /></tr>
+          <tr><th>Label</th><th>Code</th><th>Created</th><th>Active</th><th>This month</th><th>Monthly limit</th><th /></tr>
         </thead>
         <tbody>
           <tr>
-            <td>From the environment (PORTAL_ACCESS_CODE)</td><td /><td>always</td><td /><td>none</td><td />
+            <td>From the environment (PORTAL_ACCESS_CODE)</td><td>not shown</td><td /><td>always</td><td /><td>none</td><td />
           </tr>
           {codes.map((code) => (
             <tr key={code.id}>
               <td>{code.label}</td>
+              <td>{code.code ? <code>{code.code}</code> : "hidden (older code)"}</td>
               <td>{code.createdAt.slice(0, 10)}</td>
               <td>{code.active ? "yes" : "no"}</td>
               <td>{usage[code.id] ?? 0}</td>
@@ -72,13 +66,13 @@ export function InviteCodes({ codes, usage }: { codes: InviteCode[]; usage: Reco
         className={styles.row}
         action={async (formData) => {
           setError("");
-          const result = await createCode(String(formData.get("label") ?? ""));
-          if (result.ok) setFresh(result.code);
-          else setError(result.error);
+          const result = await createCode(String(formData.get("label") ?? ""), String(formData.get("code") ?? ""));
+          if (!result.ok) setError(result.error);
         }}
       >
         <input name="label" placeholder="Label, e.g. Databases class" maxLength={60} required aria-label="New code label" />
-        <button type="submit">New code</button>
+        <input name="code" placeholder="Code, e.g. NOV-2026" minLength={4} maxLength={40} pattern="[A-Za-z0-9\-]{4,40}" required aria-label="New code" />
+        <button type="submit">Add code</button>
         {error ? <span className={styles.error} role="alert">{error}</span> : null}
       </form>
     </div>

@@ -7,7 +7,7 @@ import { adminConfigured, getAdminSession, requireAdmin, tokenMatches } from "@/
 import { defaultStore } from "@/lib/jobs/store";
 import { logEvent } from "@/lib/log";
 import { setReportStatus } from "@/lib/reports";
-import { newInviteCode, readSettings, withCodeLimit, writeSettings } from "@/lib/settings";
+import { addInviteCode, readSettings, withCodeLimit, writeSettings } from "@/lib/settings";
 import { courseTag } from "@/lib/sites/load";
 import { MESSAGES_TAG, updateOverrides, type TranslationChange } from "@/lib/translations";
 
@@ -63,20 +63,20 @@ export async function saveSettings(formData: FormData): Promise<ActionResult> {
   return { ok: true };
 }
 
-/** Returns the new code once; only its hash is stored. */
-export async function createCode(label: string): Promise<{ ok: true; code: string } | { ok: false; error: string }> {
+/** Adds an invite code the admin typed; it is stored and shown in plain text. */
+export async function createCode(label: string, code: string): Promise<ActionResult> {
   await requireAdmin();
   const store = defaultStore();
-  const current = await readSettings(store);
-  const { code, entry } = newInviteCode(String(label ?? ""), new Date());
+  const next = addInviteCode(await readSettings(store), String(label ?? ""), String(code ?? ""), new Date());
+  if (next === "taken") return { ok: false, error: "Another code already uses that text." };
   try {
-    await writeSettings(store, { ...current, codes: [...current.codes, entry] });
+    await writeSettings(store, next);
   } catch {
-    return { ok: false, error: "Give the code a label of 1–60 characters. At most 50 codes." };
+    return { ok: false, error: "Give a label of 1–60 characters and a code of 4–40 letters, digits or dashes. At most 50 codes." };
   }
   logEvent("admin.settings", { action: "code-created" });
   revalidatePath("/admin");
-  return { ok: true, code };
+  return { ok: true };
 }
 
 export async function setCodeActive(id: string, active: boolean): Promise<ActionResult> {

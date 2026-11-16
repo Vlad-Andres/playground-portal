@@ -91,7 +91,7 @@ describe("admin session", () => {
   it("every admin action rejects without a session", async () => {
     const form = new FormData();
     await expect(saveSettings(form)).rejects.toThrow("Not authorised.");
-    await expect(createCode("x")).rejects.toThrow("Not authorised.");
+    await expect(createCode("x", "CODE-1")).rejects.toThrow("Not authorised.");
     await expect(setCodeActive("00000000", true)).rejects.toThrow("Not authorised.");
     await expect(deleteCode("00000000")).rejects.toThrow("Not authorised.");
     await expect(deleteCourse("demo-aaaaaaaa")).rejects.toThrow("Not authorised.");
